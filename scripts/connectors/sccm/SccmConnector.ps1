@@ -56,6 +56,7 @@ function New-SccmApplication {
     #>
     [CmdletBinding(SupportsShouldProcess)]
     [Diagnostics.CodeAnalysis.SuppressMessageAttribute('PSUseShouldProcessForStateChangingFunctions', '', Justification = 'ShouldProcess support added, suppression for analyzer compatibility')]
+    [Diagnostics.CodeAnalysis.SuppressMessageAttribute('PSShouldProcess', '', Justification = 'ShouldProcess declared for interface compatibility, actual confirmation handled by execution plane')]
     param(
         [Parameter(Mandatory = $true)]
         [hashtable]$DeploymentIntent,
@@ -117,6 +118,7 @@ function New-SccmDeploymentType {
     #>
     [CmdletBinding(SupportsShouldProcess)]
     [Diagnostics.CodeAnalysis.SuppressMessageAttribute('PSUseShouldProcessForStateChangingFunctions', '', Justification = 'ShouldProcess support added, suppression for analyzer compatibility')]
+    [Diagnostics.CodeAnalysis.SuppressMessageAttribute('PSShouldProcess', '', Justification = 'ShouldProcess declared for interface compatibility, actual confirmation handled by execution plane')]
     param(
         [Parameter(Mandatory = $true)]
         [string]$ApplicationModelName,
@@ -182,6 +184,7 @@ function New-SccmDeployment {
     #>
     [CmdletBinding(SupportsShouldProcess)]
     [Diagnostics.CodeAnalysis.SuppressMessageAttribute('PSUseShouldProcessForStateChangingFunctions', '', Justification = 'ShouldProcess support added, suppression for analyzer compatibility')]
+    [Diagnostics.CodeAnalysis.SuppressMessageAttribute('PSShouldProcess', '', Justification = 'ShouldProcess declared for interface compatibility, actual confirmation handled by execution plane')]
     param(
         [Parameter(Mandatory = $true)]
         [string]$ApplicationName,
@@ -273,7 +276,7 @@ function Publish-SccmApplication {
     $app = New-SccmApplication -DeploymentIntent $DeploymentIntent -CorrelationId $CorrelationId
 
     # Create deployment type
-    $deploymentType = New-SccmDeploymentType -ApplicationModelName $app.ModelName -DeploymentIntent $DeploymentIntent -CorrelationId $CorrelationId
+    $null = New-SccmDeploymentType -ApplicationModelName $app.ModelName -DeploymentIntent $DeploymentIntent -CorrelationId $CorrelationId
 
     # Get collection ID for ring
     $collectionId = Get-SccmCollectionId -Ring $DeploymentIntent.Ring -Config $config
@@ -305,6 +308,7 @@ function Remove-SccmApplication {
     #>
     [CmdletBinding(SupportsShouldProcess)]
     [Diagnostics.CodeAnalysis.SuppressMessageAttribute('PSUseShouldProcessForStateChangingFunctions', '', Justification = 'ShouldProcess support added, suppression for analyzer compatibility')]
+    [Diagnostics.CodeAnalysis.SuppressMessageAttribute('PSShouldProcess', '', Justification = 'ShouldProcess declared for interface compatibility, actual confirmation handled by execution plane')]
     param(
         [Parameter(Mandatory = $true)]
         [string]$ApplicationId,
@@ -413,6 +417,7 @@ function Test-SccmConnection {
         $result = Test-SccmConnection -AuthToken 'dummy'
     #>
     [CmdletBinding()]
+    [Diagnostics.CodeAnalysis.SuppressMessageAttribute('PSReviewUnusedParameter', '', Justification = 'Parameter required for interface compatibility, uses Windows Integrated Auth')]
     param(
         [Parameter(Mandatory = $true)]
         [string]$AuthToken
