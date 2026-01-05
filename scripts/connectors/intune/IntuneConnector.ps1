@@ -32,10 +32,10 @@ function New-IntuneWin32App {
     param(
         [Parameter(Mandatory = $true)]
         [hashtable]$DeploymentIntent,
-        
+
         [Parameter(Mandatory = $true)]
         [string]$AccessToken,
-        
+
         [Parameter(Mandatory = $true)]
         [string]$CorrelationId
     )
@@ -111,17 +111,17 @@ function New-IntuneAssignment {
     param(
         [Parameter(Mandatory = $true)]
         [string]$AppId,
-        
+
         [Parameter(Mandatory = $true)]
         [string]$GroupId,
-        
+
         [Parameter(Mandatory = $false)]
         [ValidateSet('available', 'required', 'uninstall')]
         [string]$Intent = 'required',
-        
+
         [Parameter(Mandatory = $true)]
         [string]$AccessToken,
-        
+
         [Parameter(Mandatory = $true)]
         [string]$CorrelationId
     )
@@ -170,7 +170,7 @@ function Publish-IntuneApplication {
     param(
         [Parameter(Mandatory = $true)]
         [hashtable]$DeploymentIntent,
-        
+
         [Parameter(Mandatory = $true)]
         [string]$CorrelationId
     )
@@ -228,7 +228,7 @@ function Remove-IntuneApplication {
     param(
         [Parameter(Mandatory = $true)]
         [string]$ApplicationId,
-        
+
         [Parameter(Mandatory = $true)]
         [string]$CorrelationId
     )
@@ -457,7 +457,7 @@ function Get-RingGroupId {
     param(
         [Parameter(Mandatory = $true)]
         [string]$Ring,
-        
+
         [Parameter(Mandatory = $true)]
         [hashtable]$Config
     )

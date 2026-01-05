@@ -16,7 +16,7 @@ BeforeAll {
 
 Describe "Integration - End-to-End Publish Workflow" {
     BeforeEach {
-        Mock Get-ConnectorConfig { 
+        Mock Get-ConnectorConfig {
             param($Name)
             return @{
                 intune = @{
@@ -50,7 +50,7 @@ Describe "Integration - End-to-End Publish Workflow" {
             }[$Name]
         }
         Mock Get-ConnectorAuthToken { return 'mock-access-token' }
-        Mock Invoke-ConnectorRequest { 
+        Mock Invoke-ConnectorRequest {
             param($Uri, $Method)
             if ($Method -eq 'POST') {
                 return @{
@@ -154,7 +154,7 @@ Describe "Integration - End-to-End Publish Workflow" {
 
 Describe "Integration - Idempotency Validation" {
     BeforeEach {
-        Mock Get-ConnectorConfig { 
+        Mock Get-ConnectorConfig {
             return @{
                 client_id = 'test-client-id'
                 client_secret = 'test-client-secret'
@@ -164,7 +164,7 @@ Describe "Integration - Idempotency Validation" {
         }
         Mock Get-ConnectorAuthToken { return 'mock-access-token' }
         Mock Write-StructuredLog { }
-        
+
         # First call succeeds, second call should be skipped
         $script:callCount = 0
         Mock Invoke-ConnectorRequest {
@@ -189,7 +189,7 @@ Describe "Integration - Idempotency Validation" {
 
         # First publish
         $result1 = Publish-Application -DeploymentIntent $intent -CorrelationId 'idempotency-test-001'
-        
+
         # Second publish with same correlation ID
         $result2 = Publish-Application -DeploymentIntent $intent -CorrelationId 'idempotency-test-001'
 
@@ -200,7 +200,7 @@ Describe "Integration - Idempotency Validation" {
 
 Describe "Integration - Error Classification Validation" {
     BeforeEach {
-        Mock Get-ConnectorConfig { 
+        Mock Get-ConnectorConfig {
             return @{
                 client_id = 'test-client-id'
                 client_secret = 'test-client-secret'
@@ -261,7 +261,7 @@ Describe "Integration - Error Classification Validation" {
 
 Describe "Integration - Ring-Based Targeting Validation" {
     BeforeEach {
-        Mock Get-ConnectorConfig { 
+        Mock Get-ConnectorConfig {
             return @{
                 client_id = 'test-client-id'
                 client_secret = 'test-client-secret'
@@ -331,7 +331,7 @@ Describe "Integration - Ring-Based Targeting Validation" {
 
 Describe "Integration - Deployment Status Querying" {
     BeforeEach {
-        Mock Get-ConnectorConfig { 
+        Mock Get-ConnectorConfig {
             return @{
                 client_id = 'test-client-id'
                 client_secret = 'test-client-secret'

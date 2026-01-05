@@ -359,7 +359,7 @@ export function useAuth() {
   const login = async () => {
     try {
       const response = await instance.loginPopup(loginRequest);
-      
+
       // Exchange authorization code for Django session
       const loginResponse = await fetch(`${import.meta.env.VITE_API_URL}/api/v1/auth/login`, {
         method: 'POST',
@@ -406,7 +406,7 @@ export function useAuth() {
 ```typescript
 /**
  * Global UI state (theme, sidebar, notifications).
- * 
+ *
  * Zustand is the ONLY allowed client state container (Redux banned).
  */
 import { create } from 'zustand';
@@ -432,7 +432,7 @@ export const useUIStore = create<UIState>((set) => ({
 ```typescript
 /**
  * TanStack Query client configuration.
- * 
+ *
  * Handles server state (deployments, evidence packs, etc.).
  */
 import { QueryClient } from '@tanstack/react-query';
@@ -477,7 +477,7 @@ function App() {
       <BrowserRouter>
         <Routes>
           <Route path="/login" element={<Login />} />
-          
+
           {/* Protected routes */}
           <Route path="/" element={isAuthenticated ? <Navigate to="/dashboard" /> : <Navigate to="/login" />} />
           <Route path="/dashboard" element={isAuthenticated ? <Dashboard /> : <Navigate to="/login" />} />
@@ -561,7 +561,7 @@ export const api = {
 ```typescript
 /**
  * API type definitions (generated from Django OpenAPI schema).
- * 
+ *
  * Generate command: npx openapi-typescript http://localhost:8000/api/schema/ -o src/types/api.ts
  */
 

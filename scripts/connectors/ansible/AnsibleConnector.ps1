@@ -81,10 +81,10 @@ function Get-AnsibleJobResults {
     param(
         [Parameter(Mandatory = $true)]
         [int]$JobId,
-        
+
         [Parameter(Mandatory = $true)]
         [string]$AccessToken,
-        
+
         [Parameter(Mandatory = $true)]
         [string]$CorrelationId
     )
@@ -139,10 +139,10 @@ function Get-AnsibleJobLog {
     param(
         [Parameter(Mandatory = $true)]
         [int]$JobId,
-        
+
         [Parameter(Mandatory = $true)]
         [string]$AccessToken,
-        
+
         [Parameter(Mandatory = $true)]
         [string]$CorrelationId
     )

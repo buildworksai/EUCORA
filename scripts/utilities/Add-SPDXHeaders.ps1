@@ -38,14 +38,14 @@ $spdxHeader = @"
 
 function Test-HasSPDXHeader {
     param([string]$FilePath)
-    
+
     $firstLine = Get-Content $FilePath -TotalCount 1 -ErrorAction SilentlyContinue
     return $firstLine -match 'SPDX-License-Identifier'
 }
 
 function Add-SPDXHeader {
     param([string]$FilePath)
-    
+
     if (Test-HasSPDXHeader -FilePath $FilePath) {
         Write-Host "✓ Already has SPDX: $FilePath" -ForegroundColor Green
         return $false
@@ -65,7 +65,7 @@ function Add-SPDXHeader {
 }
 
 # Find all PowerShell files
-$ps1Files = Get-ChildItem -Path $Path -Filter "*.ps1" -Recurse -File | 
+$ps1Files = Get-ChildItem -Path $Path -Filter "*.ps1" -Recurse -File |
     Where-Object { $_.FullName -notmatch 'node_modules|\.venv|\.git' }
 
 Write-Host "`nScanning $($ps1Files.Count) PowerShell files..." -ForegroundColor White

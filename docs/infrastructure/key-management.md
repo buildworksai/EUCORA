@@ -15,15 +15,15 @@ Documents how code signing keys, certificates, and supporting PKI artifacts are 
 ## 1. Key Inventory & PKI Hierarchy
 1. **Root CA** (offline/air-gapped) issues intermediate-level keys for signing pipelines; stored in HSM with access by the Security Reviewer.
 2. **Intermediate CAs** create signing certificates for each platform pipeline:
-   - **Windows Authenticode** (MSIX/Win32). 
-   - **macOS Developer ID Installer** (flat packages/PKG). 
-   - **APT repo signing (GPG)** for Linux packages. 
+   - **Windows Authenticode** (MSIX/Win32).
+   - **macOS Developer ID Installer** (flat packages/PKG).
+   - **APT repo signing (GPG)** for Linux packages.
 3. **Connector certificates** for Intune Graph and other APIs (stored in vaults, renewed via automation).
 4. **PKI ownership**: Security Reviewer is accountable for root/intermediate management; Packaging Engineers are responsible for daily usage but cannot export private key material.
 
 ### HSM Requirements
 - All signing keys must reside in FIPS 140-2 Level 2 (minimum) certified HSMs (Azure Key Vault Managed HSM, AWS CloudHSM, or equivalent).
-- HSM operations produce audit logs and require dual control for critical operations (generate, delete, export). 
+- HSM operations produce audit logs and require dual control for critical operations (generate, delete, export).
 - Validation rule: `HSMAccessReviewFrequency = 90 days` and `HSMExportLock = True`.
 
 ## 2. Certificate Lifecycle (Generation → Rotation → Revocation)

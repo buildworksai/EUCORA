@@ -40,7 +40,7 @@ try {
 } catch {
     Write-Host "⚠ pre-commit not found. Installing..." -ForegroundColor Yellow
     pip install pre-commit
-    
+
     if ($LASTEXITCODE -ne 0) {
         Write-Error "❌ Failed to install pre-commit"
         exit 1
@@ -66,12 +66,12 @@ Write-Host "`nInstalling pre-commit hooks..." -ForegroundColor Yellow
 
 try {
     pre-commit install
-    
+
     if ($LASTEXITCODE -ne 0) {
         Write-Error "❌ Failed to install pre-commit hooks"
         exit 1
     }
-    
+
     Write-Host "✓ Pre-commit hooks installed successfully" -ForegroundColor Green
 } catch {
     Write-Error "❌ Failed to install pre-commit hooks: $($_.Exception.Message)"

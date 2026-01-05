@@ -31,9 +31,9 @@ Reusable agent expertise and knowledge patterns.
    description: What this skill provides
    status: ✅ Working
    ---
-   
+
    # My Skill
-   
+
    Content here...
    ```
 3. Update this README

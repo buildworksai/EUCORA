@@ -57,7 +57,7 @@ function New-SccmApplication {
     param(
         [Parameter(Mandatory = $true)]
         [hashtable]$DeploymentIntent,
-        
+
         [Parameter(Mandatory = $true)]
         [string]$CorrelationId
     )
@@ -117,10 +117,10 @@ function New-SccmDeploymentType {
     param(
         [Parameter(Mandatory = $true)]
         [string]$ApplicationModelName,
-        
+
         [Parameter(Mandatory = $true)]
         [hashtable]$DeploymentIntent,
-        
+
         [Parameter(Mandatory = $true)]
         [string]$CorrelationId
     )
@@ -181,13 +181,13 @@ function New-SccmDeployment {
     param(
         [Parameter(Mandatory = $true)]
         [string]$ApplicationName,
-        
+
         [Parameter(Mandatory = $true)]
         [string]$CollectionId,
-        
+
         [Parameter(Mandatory = $true)]
         [hashtable]$DeploymentIntent,
-        
+
         [Parameter(Mandatory = $true)]
         [string]$CorrelationId
     )
@@ -248,7 +248,7 @@ function Publish-SccmApplication {
     param(
         [Parameter(Mandatory = $true)]
         [hashtable]$DeploymentIntent,
-        
+
         [Parameter(Mandatory = $true)]
         [string]$CorrelationId
     )
@@ -303,7 +303,7 @@ function Remove-SccmApplication {
     param(
         [Parameter(Mandatory = $true)]
         [string]$ApplicationId,
-        
+
         [Parameter(Mandatory = $true)]
         [string]$CorrelationId
     )
@@ -518,7 +518,7 @@ function Get-SccmCollectionId {
     param(
         [Parameter(Mandatory = $true)]
         [string]$Ring,
-        
+
         [Parameter(Mandatory = $true)]
         [hashtable]$Config
     )

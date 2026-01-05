@@ -1,6 +1,6 @@
 # Contributing to EUCORA
 
-Thank you for your interest in contributing to **EUCORA** (End-User Computing Orchestration & Reliability Architecture). 
+Thank you for your interest in contributing to **EUCORA** (End-User Computing Orchestration & Reliability Architecture).
 
 **BuildWorks.AI** enforces strict architectural and quality standards to ensure enterprise-grade reliability. Please review this document carefully before submitting changes.
 

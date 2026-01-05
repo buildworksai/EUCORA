@@ -14,7 +14,7 @@ This guide covers setting up your development environment for EUCORA with all qu
    ```bash
    # macOS/Linux
    brew install powershell
-   
+
    # Windows
    winget install Microsoft.PowerShell
    ```
@@ -23,7 +23,7 @@ This guide covers setting up your development environment for EUCORA with all qu
    ```bash
    # macOS
    brew install python
-   
+
    # Windows
    winget install Python.Python.3.12
    ```
@@ -32,7 +32,7 @@ This guide covers setting up your development environment for EUCORA with all qu
    ```bash
    # macOS
    brew install git
-   
+
    # Windows
    winget install Git.Git
    ```

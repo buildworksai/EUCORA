@@ -7,7 +7,7 @@ BeforeAll {
 
 Describe "IntuneConnector - Publish-IntuneApplication" {
     BeforeEach {
-        Mock Get-ConnectorConfig { 
+        Mock Get-ConnectorConfig {
             return @{
                 client_id = 'test-client-id'
                 client_secret = 'test-client-secret'
@@ -18,13 +18,13 @@ Describe "IntuneConnector - Publish-IntuneApplication" {
             }
         }
         Mock Get-ConnectorAuthToken { return 'mock-access-token' }
-        Mock New-IntuneWin32App { 
+        Mock New-IntuneWin32App {
             return @{
                 id = 'app-123'
                 displayName = 'Test App'
             }
         }
-        Mock New-IntuneAssignment { 
+        Mock New-IntuneAssignment {
             return @{ id = 'assignment-456' }
         }
         Mock Write-StructuredLog { }
@@ -55,7 +55,7 @@ Describe "IntuneConnector - Publish-IntuneApplication" {
     }
 
     It "Should return stub when credentials are missing" {
-        Mock Get-ConnectorConfig { 
+        Mock Get-ConnectorConfig {
             return @{ client_id = $null; client_secret = $null }
         }
 
@@ -70,7 +70,7 @@ Describe "IntuneConnector - Publish-IntuneApplication" {
 Describe "IntuneConnector - New-IntuneWin32App" {
     BeforeEach {
         Mock Get-ConnectorConfig { return @{} }
-        Mock Invoke-ConnectorRequest { 
+        Mock Invoke-ConnectorRequest {
             return @{
                 id = 'app-789'
                 displayName = 'Mock App'
@@ -170,7 +170,7 @@ Describe "IntuneConnector - Get-IntuneDeploymentStatus" {
 
 Describe "IntuneConnector - Test-IntuneConnection" {
     BeforeEach {
-        Mock Get-ConnectorConfig { 
+        Mock Get-ConnectorConfig {
             return @{
                 tenant_id = 'test-tenant-id'
                 client_id = 'test-client-id'
@@ -183,7 +183,7 @@ Describe "IntuneConnector - Test-IntuneConnection" {
     }
 
     It "Should return healthy when connection succeeds" {
-        Mock Invoke-ConnectorRequest { 
+        Mock Invoke-ConnectorRequest {
             return @{ value = @() }
         }
 
@@ -207,7 +207,7 @@ Describe "IntuneConnector - Test-IntuneConnection" {
 
 Describe "IntuneConnector - Get-IntuneTargetDevices" {
     BeforeEach {
-        Mock Get-ConnectorConfig { 
+        Mock Get-ConnectorConfig {
             return @{
                 ring_groups = @{
                     canary = 'group-canary-123'
@@ -249,7 +249,7 @@ Describe "IntuneConnector - Get-IntuneTargetDevices" {
     }
 
     It "Should return empty array when group ID is not configured" {
-        Mock Get-ConnectorConfig { 
+        Mock Get-ConnectorConfig {
             return @{ ring_groups = @{} }
         }
 

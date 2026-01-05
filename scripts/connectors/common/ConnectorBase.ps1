@@ -58,7 +58,7 @@ function Get-ConnectorAuthToken {
         [Parameter(Mandatory = $true)]
         [ValidateSet('intune','jamf','ansible')]
         [string]$ConnectorName,
-        
+
         [Parameter(Mandatory = $true)]
         [string]$CorrelationId
     )
@@ -154,7 +154,7 @@ function Get-ErrorClassification {
     param(
         [Parameter(Mandatory = $false)]
         [int]$StatusCode,
-        
+
         [Parameter(Mandatory = $true)]
         [string]$ErrorMessage
     )
@@ -208,20 +208,20 @@ function Invoke-ConnectorRequest {
     param(
         [Parameter(Mandatory = $true)]
         [string]$Uri,
-        
+
         [Parameter(Mandatory = $true)]
         [ValidateSet('GET','POST','PUT','PATCH','DELETE')]
         [string]$Method,
-        
+
         [Parameter(Mandatory = $false)]
         $Body,
-        
+
         [Parameter(Mandatory = $false)]
         [hashtable]$Headers,
-        
+
         [Parameter(Mandatory = $true)]
         [string]$CorrelationId,
-        
+
         [Parameter(Mandatory = $false)]
         [string]$IdempotencyKey
     )
@@ -271,7 +271,7 @@ function Invoke-ConnectorRequest {
             & $scriptBlock $Uri $Method $payload $requestHeaders
         } -CorrelationId $CorrelationId -MaxRetries 3 -BaseDelaySeconds 2
 
-        Write-StructuredLog -Level 'Debug' -Message 'Connector request succeeded' -CorrelationId $CorrelationId -Metadata @{ 
+        Write-StructuredLog -Level 'Debug' -Message 'Connector request succeeded' -CorrelationId $CorrelationId -Metadata @{
             uri = $Uri
             method = $Method
             idempotency_key = $idempotencyKey
@@ -284,7 +284,7 @@ function Invoke-ConnectorRequest {
         $errorMessage = $_.Exception.Message
         $errorClassification = Get-ErrorClassification -StatusCode $statusCode -ErrorMessage $errorMessage
 
-        Write-StructuredLog -Level 'Warning' -Message "Connector request failed: $errorMessage" -CorrelationId $CorrelationId -Metadata @{ 
+        Write-StructuredLog -Level 'Warning' -Message "Connector request failed: $errorMessage" -CorrelationId $CorrelationId -Metadata @{
             uri = $Uri
             method = $Method
             status_code = $statusCode

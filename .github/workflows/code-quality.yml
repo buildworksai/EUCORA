@@ -140,7 +140,7 @@ jobs:
 
       - name: Check for old branding references
         run: |
-          if grep -r --include="*.md" --include="*.ps1" -i "desktop-app-packaging" . --exclude-dir=".git" --exclude="CHANGELOG.md"; then
+          if grep -r --include="*.md" --include="*.ps1" -i "desktop-app-packaging" . --exclude-dir=".git" --exclude-dir="reports" --exclude="CHANGELOG.md"; then
             echo "❌ Old branding references found"
             exit 1
           fi

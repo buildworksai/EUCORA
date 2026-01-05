@@ -35,13 +35,13 @@ function New-JamfPackage {
         [Parameter(Mandatory = $true)]
         [ValidateScript({ Test-Path $_ })]
         [string]$PackagePath,
-        
+
         [Parameter(Mandatory = $true)]
         [string]$PackageName,
-        
+
         [Parameter(Mandatory = $true)]
         [string]$AccessToken,
-        
+
         [Parameter(Mandatory = $true)]
         [string]$CorrelationId
     )
@@ -83,7 +83,7 @@ function New-JamfPackage {
     # Read file as byte array
     $fileBytes = [System.IO.File]::ReadAllBytes($PackagePath)
     $boundary = [System.Guid]::NewGuid().ToString()
-    
+
     $uploadHeaders = @{
         Authorization = "Bearer $AccessToken"
         'Content-Type' = "multipart/form-data; boundary=$boundary"
@@ -102,7 +102,7 @@ function New-JamfPackage {
 
     try {
         $uploadResponse = Invoke-RestMethod -Uri $uploadUri -Method 'POST' -Headers $uploadHeaders -Body $bodyString -TimeoutSec 300
-        
+
         Write-StructuredLog -Level 'Info' -Message 'Jamf package uploaded' -CorrelationId $CorrelationId -Metadata @{
             package_id = $packageId
             package_name = $PackageName
@@ -139,13 +139,13 @@ function New-JamfPolicy {
     param(
         [Parameter(Mandatory = $true)]
         [hashtable]$DeploymentIntent,
-        
+
         [Parameter(Mandatory = $true)]
         [int]$PackageId,
-        
+
         [Parameter(Mandatory = $true)]
         [string]$AccessToken,
-        
+
         [Parameter(Mandatory = $true)]
         [string]$CorrelationId
     )
@@ -237,7 +237,7 @@ function Publish-JamfApplication {
     param(
         [Parameter(Mandatory = $true)]
         [hashtable]$DeploymentIntent,
-        
+
         [Parameter(Mandatory = $true)]
         [string]$CorrelationId
     )
@@ -260,7 +260,7 @@ function Publish-JamfApplication {
     # Upload package
     if ($DeploymentIntent.PackagePath) {
         $package = New-JamfPackage -PackagePath $DeploymentIntent.PackagePath -PackageName $DeploymentIntent.AppName -AccessToken $accessToken -CorrelationId $CorrelationId
-        
+
         if ($package.status -eq 'failed') {
             return $package
         }
@@ -298,7 +298,7 @@ function Remove-JamfApplication {
     param(
         [Parameter(Mandatory = $true)]
         [string]$ApplicationId,
-        
+
         [Parameter(Mandatory = $true)]
         [string]$CorrelationId
     )
@@ -533,7 +533,7 @@ function Get-JamfSmartGroupId {
     param(
         [Parameter(Mandatory = $true)]
         [string]$Ring,
-        
+
         [Parameter(Mandatory = $true)]
         [hashtable]$Config
     )

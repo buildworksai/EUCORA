@@ -353,14 +353,14 @@ class CorrelationIdMiddleware(MiddlewareMixin):
         # Extract from header or generate new
         correlation_id = request.headers.get('X-Correlation-ID', str(uuid.uuid4()))
         request.correlation_id = correlation_id
-        
+
         # Inject into logging context
         logger = logging.LoggerAdapter(
             logging.getLogger(__name__),
             {'correlation_id': correlation_id}
         )
         request.logger = logger
-        
+
     def process_response(self, request, response):
         # Add correlation ID to response headers
         if hasattr(request, 'correlation_id'):
@@ -393,21 +393,21 @@ from decouple import config
 def entra_id_login(request):
     """
     Exchange Entra ID authorization code for user session.
-    
+
     POST /api/v1/auth/login
     Body: {"code": "..."}
     """
     code = request.data.get('code')
     if not code:
         return Response({'error': 'Authorization code required'}, status=status.HTTP_400_BAD_REQUEST)
-    
+
     # Exchange code for token (MSAL backend handles this in frontend)
     # Backend validates token and creates session
     token_data = _exchange_code_for_token(code)
-    
+
     if not token_data:
         return Response({'error': 'Invalid authorization code'}, status=status.HTTP_401_UNAUTHORIZED)
-    
+
     # Get or create user from Entra ID profile
     user_profile = _get_user_profile(token_data['access_token'])
     user, created = User.objects.get_or_create(
@@ -418,10 +418,10 @@ def entra_id_login(request):
             'last_name': user_profile.get('surname', ''),
         }
     )
-    
+
     # Create Django session
     login(request, user)
-    
+
     return Response({
         'user': {
             'username': user.username,
@@ -435,7 +435,7 @@ def entra_id_login(request):
 def auth_logout(request):
     """
     Logout and destroy session.
-    
+
     POST /api/v1/auth/logout
     """
     logout(request)
@@ -510,7 +510,7 @@ class RiskModel(TimeStampedModel):
     factors = models.JSONField()  # List of factors with weights
     threshold = models.IntegerField(default=50)  # CAB approval threshold
     is_active = models.BooleanField(default=False)
-    
+
     class Meta:
         ordering = ['-version']
 
@@ -524,7 +524,7 @@ class RiskAssessment(TimeStampedModel):
     risk_score = models.IntegerField()  # 0-100
     factor_scores = models.JSONField()  # Detailed breakdown per factor
     requires_cab_approval = models.BooleanField()
-    
+
     class Meta:
         indexes = [
             models.Index(fields=['risk_score']),
@@ -544,7 +544,7 @@ from typing import Dict
 def calculate_risk_score(evidence_pack: Dict) -> Dict:
     """
     Calculate risk score from evidence pack using active risk model.
-    
+
     Returns:
         {
             'risk_score': int (0-100),
@@ -556,24 +556,24 @@ def calculate_risk_score(evidence_pack: Dict) -> Dict:
     risk_model = RiskModel.objects.filter(is_active=True).first()
     if not risk_model:
         raise ValueError("No active risk model found")
-    
+
     factor_scores = {}
     weighted_sum = 0.0
-    
+
     for factor in risk_model.factors:
         name = factor['name']
         weight = factor['weight']
         rubric = factor['rubric']
-        
+
         # Evaluate factor score (0.0 - 1.0) based on evidence pack
         normalized_score = _evaluate_factor(name, evidence_pack, rubric)
         factor_scores[name] = normalized_score
-        
+
         weighted_sum += weight * normalized_score
-    
+
     # Clamp to 0-100
     risk_score = int(max(0, min(100, weighted_sum * 100)))
-    
+
     return {
         'risk_score': risk_score,
         'factor_scores': factor_scores,
@@ -585,12 +585,12 @@ def calculate_risk_score(evidence_pack: Dict) -> Dict:
 def _evaluate_factor(factor_name: str, evidence_pack: Dict, rubric: Dict) -> float:
     """
     Evaluate a single risk factor.
-    
+
     Args:
         factor_name: Name of the factor (e.g., "Privilege Elevation")
         evidence_pack: Complete evidence pack data
         rubric: Scoring rubric for this factor
-    
+
     Returns:
         Normalized score (0.0 - 1.0)
     """
@@ -603,7 +603,7 @@ def _evaluate_factor(factor_name: str, evidence_pack: Dict, rubric: Dict) -> flo
             return 0.5
         else:
             return 0.0
-    
+
     # TODO: Implement all 8 factors from risk-model.md
     return 0.5  # Default placeholder
 ```
@@ -642,9 +642,9 @@ def test_high_risk_requires_cab_approval(active_risk_model):
         'blast_radius': 'global',
         # ... other fields
     }
-    
+
     result = calculate_risk_score(evidence_pack)
-    
+
     assert result['risk_score'] > 50
     assert result['requires_cab_approval'] is True
 
@@ -656,9 +656,9 @@ def test_low_risk_bypasses_cab(active_risk_model):
         'requires_admin': False,
         'blast_radius': 'lab',
     }
-    
+
     result = calculate_risk_score(evidence_pack)
-    
+
     assert result['risk_score'] <= 50
     assert result['requires_cab_approval'] is False
 ```
@@ -695,32 +695,32 @@ class DeploymentIntent(TimeStampedModel, CorrelationIdModel):
         COMPLETED = 'COMPLETED', 'Completed'
         FAILED = 'FAILED', 'Failed'
         ROLLED_BACK = 'ROLLED_BACK', 'Rolled Back'
-    
+
     class Ring(models.TextChoices):
         LAB = 'LAB', 'Lab'
         CANARY = 'CANARY', 'Canary'
         PILOT = 'PILOT', 'Pilot'
         DEPARTMENT = 'DEPARTMENT', 'Department'
         GLOBAL = 'GLOBAL', 'Global'
-    
+
     app_name = models.CharField(max_length=255)
     version = models.CharField(max_length=50)
     target_ring = models.CharField(max_length=20, choices=Ring.choices)
     status = models.CharField(max_length=20, choices=Status.choices, default=Status.PENDING)
-    
+
     # Evidence pack (JSON reference to artifact storage)
     evidence_pack_id = models.UUIDField()
-    
+
     # Risk assessment
     risk_score = models.IntegerField(null=True, blank=True)
     requires_cab_approval = models.BooleanField(default=False)
-    
+
     # CAB workflow link
     cab_approval = models.OneToOneField('cab_workflow.CABApproval', on_delete=models.SET_NULL, null=True, blank=True)
-    
+
     # Submitter
     submitter = models.ForeignKey(User, on_delete=models.CASCADE, related_name='deployment_intents')
-    
+
     class Meta:
         indexes = [
             models.Index(fields=['status', 'target_ring']),
@@ -735,16 +735,16 @@ class RingDeployment(TimeStampedModel):
     """
     deployment_intent = models.ForeignKey(DeploymentIntent, on_delete=models.CASCADE, related_name='ring_deployments')
     ring = models.CharField(max_length=20, choices=DeploymentIntent.Ring.choices)
-    
+
     # Execution plane tracking
     connector_type = models.CharField(max_length=20)  # 'intune', 'jamf', 'sccm', etc.
     connector_object_id = models.CharField(max_length=255, null=True, blank=True)  # Platform-specific ID
-    
+
     # Metrics
     success_count = models.IntegerField(default=0)
     failure_count = models.IntegerField(default=0)
     success_rate = models.FloatField(default=0.0)
-    
+
     # Promotion status
     promoted_at = models.DateTimeField(null=True, blank=True)
     promotion_gate_passed = models.BooleanField(default=False)
@@ -767,25 +767,25 @@ from apps.policy_engine.services import calculate_risk_score
 class DeploymentIntentViewSet(viewsets.ModelViewSet):
     """
     API endpoints for deployment intents.
-    
+
     POST /api/v1/deployment-intents/ - Create deployment intent
     GET /api/v1/deployment-intents/ - List deployment intents
     GET /api/v1/deployment-intents/{id}/ - Get deployment intent details
     """
     queryset = DeploymentIntent.objects.all()
     serializer_class = DeploymentIntentSerializer
-    
+
     def create(self, request, *args, **kwargs):
         """
         Create deployment intent with risk assessment.
         """
         serializer = self.get_serializer(data=request.data)
         serializer.is_valid(raise_exception=True)
-        
+
         # Calculate risk score
         evidence_pack_data = request.data.get('evidence_pack', {})
         risk_result = calculate_risk_score(evidence_pack_data)
-        
+
         # Create intent with risk assessment
         deployment_intent = serializer.save(
             submitter=request.user,
@@ -793,51 +793,51 @@ class DeploymentIntentViewSet(viewsets.ModelViewSet):
             requires_cab_approval=risk_result['requires_cab_approval'],
             status=DeploymentIntent.Status.AWAITING_CAB if risk_result['requires_cab_approval'] else DeploymentIntent.Status.APPROVED
         )
-        
+
         # Log to event store
         self._log_event(deployment_intent, 'INTENT_CREATED', risk_result)
-        
+
         return Response(
             self.get_serializer(deployment_intent).data,
             status=status.HTTP_201_CREATED
         )
-    
+
     @action(detail=True, methods=['post'])
     def promote_ring(self, request, pk=None):
         """
         Promote deployment to next ring (with promotion gate validation).
-        
+
         POST /api/v1/deployment-intents/{id}/promote_ring/
         """
         intent = self.get_object()
-        
+
         # Validate promotion gates
         if not self._validate_promotion_gates(intent):
             return Response(
                 {'error': 'Promotion gates not met'},
                 status=status.HTTP_400_BAD_REQUEST
             )
-        
+
         # Promote to next ring
         next_ring = self._get_next_ring(intent.target_ring)
         intent.target_ring = next_ring
         intent.save()
-        
+
         self._log_event(intent, 'RING_PROMOTED', {'new_ring': next_ring})
-        
+
         return Response(self.get_serializer(intent).data)
-    
+
     def _validate_promotion_gates(self, intent: DeploymentIntent) -> bool:
         """Validate promotion gate thresholds."""
         # Implementation: Check success rate, time-to-compliance, rollback validation
         return True  # Placeholder
-    
+
     def _get_next_ring(self, current_ring: str) -> str:
         """Get next ring in sequence."""
         rings = ['LAB', 'CANARY', 'PILOT', 'DEPARTMENT', 'GLOBAL']
         current_index = rings.index(current_ring)
         return rings[current_index + 1] if current_index < len(rings) - 1 else current_ring
-    
+
     def _log_event(self, intent: DeploymentIntent, event_type: str, metadata: dict):
         """Log event to event store."""
         from apps.event_store.models import DeploymentEvent
@@ -873,7 +873,7 @@ def test_create_deployment_intent_high_risk(authenticated_client, active_risk_mo
             'evidence_pack': {'requires_admin': True}
         }
     )
-    
+
     assert response.status_code == 201
     assert response.data['status'] == 'AWAITING_CAB'
     assert response.data['requires_cab_approval'] is True
@@ -891,7 +891,7 @@ def test_create_deployment_intent_low_risk(authenticated_client, active_risk_mod
             'evidence_pack': {'requires_admin': False}
         }
     )
-    
+
     assert response.status_code == 201
     assert response.data['status'] == 'APPROVED'
     assert response.data['requires_cab_approval'] is False
@@ -923,22 +923,22 @@ class CABApproval(TimeStampedModel):
         APPROVED = 'APPROVED', 'Approved'
         REJECTED = 'REJECTED', 'Rejected'
         CONDITIONAL = 'CONDITIONAL', 'Approved with Conditions'
-    
+
     deployment_intent = models.OneToOneField('deployment_intents.DeploymentIntent', on_delete=models.CASCADE)
     decision = models.CharField(max_length=20, choices=Decision.choices, default=Decision.PENDING)
-    
+
     # Approver details
     approver = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, related_name='cab_approvals')
     approval_date = models.DateTimeField(null=True, blank=True)
-    
+
     # Comments and conditions
     comments = models.TextField(blank=True)
     conditions = models.JSONField(default=list, blank=True)  # List of conditions for CONDITIONAL approval
-    
+
     # Audit trail
     submitted_at = models.DateTimeField(auto_now_add=True)
     reviewed_at = models.DateTimeField(null=True, blank=True)
-    
+
     class Meta:
         ordering = ['-submitted_at']
 ```
@@ -960,28 +960,28 @@ class EvidencePack(TimeStampedModel, CorrelationIdModel):
     Immutable evidence pack for CAB submission.
     """
     deployment_intent = models.ForeignKey('deployment_intents.DeploymentIntent', on_delete=models.CASCADE)
-    
+
     # Artifact metadata
     artifact_hash = models.CharField(max_length=64)  # SHA-256
     artifact_signature = models.TextField()  # Code signing certificate details
     artifact_storage_url = models.URLField()  # MinIO/Blob Storage URL
-    
+
     # SBOM and vulnerability scan
     sbom_data = models.JSONField()  # SPDX/CycloneDX format
     vulnerability_scan_results = models.JSONField()
     scan_policy_decision = models.CharField(max_length=20)  # 'PASS', 'FAIL', 'EXCEPTION'
-    
+
     # Exception tracking (if scan_policy_decision == 'EXCEPTION')
     exception_reason = models.TextField(blank=True)
     exception_expiry_date = models.DateTimeField(null=True, blank=True)
     compensating_controls = models.JSONField(default=list, blank=True)
-    
+
     # Rollback plan
     rollback_plan = models.JSONField()  # Platform-specific rollback strategies
-    
+
     # Test evidence
     test_evidence = models.JSONField(default=dict, blank=True)  # Lab + Ring 0 test results
-    
+
     class Meta:
         indexes = [
             models.Index(fields=['correlation_id']),
@@ -1008,16 +1008,16 @@ from apps.core.models import TimeStampedModel
 class DeploymentEvent(TimeStampedModel):
     """
     Immutable deployment event for audit trail.
-    
+
     This table is APPEND-ONLY. No updates or deletes allowed.
     """
     correlation_id = models.UUIDField(db_index=True)
     event_type = models.CharField(max_length=50)  # e.g., 'INTENT_CREATED', 'RING_PROMOTED', 'ROLLBACK_INITIATED'
-    
+
     # Event metadata
     deployment_intent = models.ForeignKey('deployment_intents.DeploymentIntent', on_delete=models.CASCADE, related_name='events')
     metadata = models.JSONField(default=dict)
-    
+
     # Classification
     error_classification = models.CharField(
         max_length=30,
@@ -1029,7 +1029,7 @@ class DeploymentEvent(TimeStampedModel):
         ],
         default='NONE'
     )
-    
+
     class Meta:
         indexes = [
             models.Index(fields=['correlation_id', 'created_at']),
@@ -1039,13 +1039,13 @@ class DeploymentEvent(TimeStampedModel):
         permissions = [
             ('view_audit_trail', 'Can view audit trail'),
         ]
-    
+
     def save(self, *args, **kwargs):
         """Override save to enforce append-only behavior."""
         if self.pk:
             raise ValueError("Cannot update existing event (append-only store)")
         super().save(*args, **kwargs)
-    
+
     def delete(self, *args, **kwargs):
         """Override delete to prevent deletion."""
         raise ValueError("Cannot delete events (append-only store)")
@@ -1070,7 +1070,7 @@ from django.db import connection
 def health_check(request):
     """
     Health check endpoint.
-    
+
     GET /api/v1/health
     """
     # Check database connectivity
@@ -1080,7 +1080,7 @@ def health_check(request):
             db_status = "healthy"
     except Exception as e:
         db_status = f"unhealthy: {str(e)}"
-    
+
     # Check Redis connectivity
     from django.core.cache import cache
     try:
@@ -1088,7 +1088,7 @@ def health_check(request):
         redis_status = "healthy" if cache.get('health_check') == 'ok' else "unhealthy"
     except Exception as e:
         redis_status = f"unhealthy: {str(e)}"
-    
+
     return Response({
         'status': 'healthy' if db_status == 'healthy' and redis_status == 'healthy' else 'degraded',
         'components': {
@@ -1122,28 +1122,28 @@ from apps.deployment_intents.models import DeploymentIntent, RingDeployment
 class ConnectorAPIViewSet(viewsets.ViewSet):
     """
     API endpoints for PowerShell connectors.
-    
+
     GET /api/v1/connectors/pending-deployments/?connector_type=intune&ring=CANARY
     POST /api/v1/connectors/update-deployment-status/
     """
-    
+
     @action(detail=False, methods=['get'])
     def pending_deployments(self, request):
         """
         Get pending deployments for a connector and ring.
-        
+
         Query Params:
             connector_type: 'intune', 'jamf', 'sccm', 'landscape', 'ansible'
             ring: 'LAB', 'CANARY', 'PILOT', 'DEPARTMENT', 'GLOBAL'
         """
         connector_type = request.query_params.get('connector_type')
         ring = request.query_params.get('ring')
-        
+
         deployments = DeploymentIntent.objects.filter(
             status=DeploymentIntent.Status.APPROVED,
             target_ring=ring,
         )
-        
+
         # Format for PowerShell consumption
         return Response([
             {
@@ -1154,12 +1154,12 @@ class ConnectorAPIViewSet(viewsets.ViewSet):
             }
             for d in deployments
         ])
-    
+
     @action(detail=False, methods=['post'])
     def update_deployment_status(self, request):
         """
         Update deployment status from PowerShell connector.
-        
+
         POST Body:
         {
             "correlation_id": "...",
@@ -1173,12 +1173,12 @@ class ConnectorAPIViewSet(viewsets.ViewSet):
         correlation_id = request.data.get('correlation_id')
         ring = request.data.get('ring')
         connector_type = request.data.get('connector_type')
-        
+
         try:
             intent = DeploymentIntent.objects.get(correlation_id=correlation_id)
         except DeploymentIntent.DoesNotExist:
             return Response({'error': 'Deployment intent not found'}, status=404)
-        
+
         # Update or create ring deployment
         ring_deployment, created = RingDeployment.objects.update_or_create(
             deployment_intent=intent,
@@ -1191,7 +1191,7 @@ class ConnectorAPIViewSet(viewsets.ViewSet):
                 'success_rate': request.data.get('success_count', 0) / (request.data.get('success_count', 0) + request.data.get('failure_count', 1)) * 100,
             }
         )
-        
+
         return Response({'status': 'updated'})
 ```
 
@@ -1202,14 +1202,14 @@ function Publish-ToControlPlane {
     param(
         [Parameter(Mandatory = $true)]
         [string]$CorrelationId,
-        
+
         [Parameter(Mandatory = $true)]
         [hashtable]$DeploymentStatus
     )
-    
+
     $apiUri = Get-ConfigValue -Key "ControlPlaneApiUri"
     $sessionToken = Get-ControlPlaneSession
-    
+
     $body = @{
         correlation_id = $CorrelationId
         ring = $DeploymentStatus.Ring
@@ -1218,7 +1218,7 @@ function Publish-ToControlPlane {
         success_count = $DeploymentStatus.SuccessCount
         failure_count = $DeploymentStatus.FailureCount
     } | ConvertTo-Json
-    
+
     Invoke-RestMethod -Uri "$apiUri/api/v1/connectors/update-deployment-status/" `
         -Method POST `
         -Body $body `

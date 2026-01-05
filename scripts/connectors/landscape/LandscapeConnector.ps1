@@ -32,10 +32,10 @@ function New-LandscapePackageProfile {
     param(
         [Parameter(Mandatory = $true)]
         [hashtable]$DeploymentIntent,
-        
+
         [Parameter(Mandatory = $true)]
         [string]$AccessToken,
-        
+
         [Parameter(Mandatory = $true)]
         [string]$CorrelationId
     )
@@ -91,13 +91,13 @@ function New-LandscapeActivity {
     param(
         [Parameter(Mandatory = $true)]
         [int]$ProfileId,
-        
+
         [Parameter(Mandatory = $true)]
         [string]$ComputerQuery,
-        
+
         [Parameter(Mandatory = $true)]
         [string]$AccessToken,
-        
+
         [Parameter(Mandatory = $true)]
         [string]$CorrelationId
     )
@@ -146,7 +146,7 @@ function Publish-LandscapeApplication {
     param(
         [Parameter(Mandatory = $true)]
         [hashtable]$DeploymentIntent,
-        
+
         [Parameter(Mandatory = $true)]
         [string]$CorrelationId
     )
@@ -202,7 +202,7 @@ function Remove-LandscapeApplication {
     param(
         [Parameter(Mandatory = $true)]
         [string]$ApplicationId,
-        
+
         [Parameter(Mandatory = $true)]
         [string]$CorrelationId
     )

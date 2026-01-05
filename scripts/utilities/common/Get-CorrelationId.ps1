@@ -80,7 +80,7 @@ function Test-CorrelationId {
         [ValidateSet('deployment','evidence','cab','uuid','any')]
         [string]$Type = 'any'
     )
-    $patterns = @{ 
+    $patterns = @{
         uuid = '^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$'
         deployment = '^dp-[0-9]{8}-[0-9a-f]{4}$'
         evidence = '^ep-[0-9a-f]{8}$'

@@ -46,7 +46,7 @@ This document defines the **authoritative** technology stack for the Enterprise 
 - **Coverage**: pytest-cov 6.1.1 (≥90% enforced)
 - **Mocking**: pytest-mock (built-in)
 - **Integration**: Django test client (built-in)
-- **Code Quality**: 
+- **Code Quality**:
   - Black 25.1.0 (formatting)
   - Flake8 7.2.0 (linting, --max-warnings 0)
   - django-stubs 5.0.2 (mypy type stubs)
@@ -79,7 +79,7 @@ This document defines the **authoritative** technology stack for the Enterprise 
 
 ### Styling & UI Components
 - **Styling**: Tailwind CSS 3.4.17 + Tailwind CSS Animate 1.0.7
-- **Component Library**: 
+- **Component Library**:
   - Radix UI (headless accessible components)
   - shadcn/ui (component patterns built on Radix)
 - **Icons**: Lucide React 0.454.0
@@ -147,7 +147,7 @@ This document defines the **authoritative** technology stack for the Enterprise 
 - **Static Analysis**: PSScriptAnalyzer (ZERO errors, ZERO warnings)
 
 ### Packaging Tools
-- **Windows**: 
+- **Windows**:
   - PSADT (PowerShell App Deployment Toolkit) 3.9.x
   - Intune Content Prep Tool (intunewin)
 - **macOS**: pkgbuild, productsign, notarytool

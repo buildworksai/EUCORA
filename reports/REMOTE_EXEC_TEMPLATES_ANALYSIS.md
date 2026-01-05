@@ -1,7 +1,7 @@
 # Remote-Exec & Templates Folder Analysis
 
-**Date**: 2026-01-04  
-**Analyst**: Amani (BuildWorks.AI)  
+**Date**: 2026-01-04
+**Analyst**: Amani (BuildWorks.AI)
 **Status**: ⚠️ **ARCHITECTURAL MISALIGNMENT DETECTED**
 
 ---
@@ -107,7 +107,7 @@ These folders represent a **pre-EUCORA** approach where:
 └─────────────────────────────────────────────┘
 ```
 
-**Key Difference**: 
+**Key Difference**:
 - ❌ Old: Script → Endpoint (direct)
 - ✅ New: Control Plane → Execution Plane → Endpoint (orchestrated)
 

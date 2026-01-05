@@ -1,8 +1,8 @@
 # SPDX Implementation Report for EUCORA
 
-**Date**: 2026-01-04  
-**License**: Apache-2.0  
-**Organization**: BuildWorks.AI  
+**Date**: 2026-01-04
+**License**: Apache-2.0
+**Organization**: BuildWorks.AI
 
 ---
 
