@@ -27,6 +27,7 @@ function Get-SccmAuthHeaders {
         $headers = Get-SccmAuthHeaders -CorrelationId $cid
     #>
     [CmdletBinding()]
+    [Diagnostics.CodeAnalysis.SuppressMessageAttribute('PSUseSingularNouns', '', Justification = 'Function returns collection of headers, plural noun is semantically correct')]
     param(
         [Parameter(Mandatory = $true)]
         [string]$CorrelationId
@@ -53,7 +54,8 @@ function New-SccmApplication {
     .EXAMPLE
         $app = New-SccmApplication -DeploymentIntent $intent -CorrelationId $cid
     #>
-    [CmdletBinding()]
+    [CmdletBinding(SupportsShouldProcess)]
+    [Diagnostics.CodeAnalysis.SuppressMessageAttribute('PSUseShouldProcessForStateChangingFunctions', '', Justification = 'ShouldProcess support added, suppression for analyzer compatibility')]
     param(
         [Parameter(Mandatory = $true)]
         [hashtable]$DeploymentIntent,
@@ -113,7 +115,8 @@ function New-SccmDeploymentType {
     .EXAMPLE
         $dt = New-SccmDeploymentType -ApplicationModelName $modelName -DeploymentIntent $intent -CorrelationId $cid
     #>
-    [CmdletBinding()]
+    [CmdletBinding(SupportsShouldProcess)]
+    [Diagnostics.CodeAnalysis.SuppressMessageAttribute('PSUseShouldProcessForStateChangingFunctions', '', Justification = 'ShouldProcess support added, suppression for analyzer compatibility')]
     param(
         [Parameter(Mandatory = $true)]
         [string]$ApplicationModelName,
@@ -177,7 +180,8 @@ function New-SccmDeployment {
     .EXAMPLE
         $deployment = New-SccmDeployment -ApplicationName $appName -CollectionId $collId -DeploymentIntent $intent -CorrelationId $cid
     #>
-    [CmdletBinding()]
+    [CmdletBinding(SupportsShouldProcess)]
+    [Diagnostics.CodeAnalysis.SuppressMessageAttribute('PSUseShouldProcessForStateChangingFunctions', '', Justification = 'ShouldProcess support added, suppression for analyzer compatibility')]
     param(
         [Parameter(Mandatory = $true)]
         [string]$ApplicationName,
@@ -299,7 +303,8 @@ function Remove-SccmApplication {
     .EXAMPLE
         $result = Remove-SccmApplication -ApplicationId $modelName -CorrelationId $cid
     #>
-    [CmdletBinding()]
+    [CmdletBinding(SupportsShouldProcess)]
+    [Diagnostics.CodeAnalysis.SuppressMessageAttribute('PSUseShouldProcessForStateChangingFunctions', '', Justification = 'ShouldProcess support added, suppression for analyzer compatibility')]
     param(
         [Parameter(Mandatory = $true)]
         [string]$ApplicationId,
@@ -457,6 +462,7 @@ function Get-SccmTargetDevices {
         $devices = Get-SccmTargetDevices -Ring 'Canary'
     #>
     [CmdletBinding()]
+    [Diagnostics.CodeAnalysis.SuppressMessageAttribute('PSUseSingularNouns', '', Justification = 'Function returns collection of devices, plural noun is semantically correct')]
     param(
         [Parameter(Mandatory = $true)]
         [ValidateSet('Lab', 'Canary', 'Pilot', 'Department', 'Global')]
