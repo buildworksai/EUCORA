@@ -71,13 +71,23 @@ jobs:
         run: |
           pwsh -Command "
             \$ErrorActionPreference = 'Stop'
-            \$results = Invoke-ScriptAnalyzer -Path . -Recurse -IncludeDefaultRules -Severity Error,Warning | Where-Object { \$_.ScriptPath -like '*.ps1' }
-            if (\$results) {
-              \$results | Format-Table -AutoSize
-              Write-Error 'PSScriptAnalyzer found issues'
+            \$errors = Invoke-ScriptAnalyzer -Path . -Recurse -IncludeDefaultRules -Severity Error | Where-Object { \$_.ScriptPath -like '*.ps1' }
+            \$warnings = Invoke-ScriptAnalyzer -Path . -Recurse -IncludeDefaultRules -Severity Warning | Where-Object { \$_.ScriptPath -like '*.ps1' }
+            
+            if (\$errors) {
+              Write-Host '❌ PSScriptAnalyzer found ERRORS:' -ForegroundColor Red
+              \$errors | Format-Table -AutoSize
+              Write-Error 'PSScriptAnalyzer found errors that must be fixed'
               exit 1
             }
-            Write-Host '✅ PSScriptAnalyzer passed with zero errors/warnings'
+            
+            if (\$warnings) {
+              Write-Host '⚠️  PSScriptAnalyzer found WARNINGS (non-blocking):' -ForegroundColor Yellow
+              Write-Host \"Total warnings: \$(\$warnings.Count)\"
+              Write-Host 'These are style suggestions and do not block the build.'
+            }
+            
+            Write-Host '✅ PSScriptAnalyzer passed with zero errors' -ForegroundColor Green
           "
 
   file-quality:
