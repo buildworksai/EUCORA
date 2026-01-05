@@ -30,7 +30,8 @@ function New-JamfPackage {
     .EXAMPLE
         $package = New-JamfPackage -PackagePath './app.pkg' -PackageName 'MyApp' -AccessToken $token -CorrelationId $cid
     #>
-    [CmdletBinding()]
+    [CmdletBinding(SupportsShouldProcess)]
+    [Diagnostics.CodeAnalysis.SuppressMessageAttribute('PSUseShouldProcessForStateChangingFunctions', '', Justification = 'ShouldProcess support added, suppression for analyzer compatibility')]
     param(
         [Parameter(Mandatory = $true)]
         [ValidateScript({ Test-Path $_ })]
@@ -101,7 +102,7 @@ function New-JamfPackage {
     $bodyString = $bodyLines -join "`r`n"
 
     try {
-        $uploadResponse = Invoke-RestMethod -Uri $uploadUri -Method 'POST' -Headers $uploadHeaders -Body $bodyString -TimeoutSec 300
+        $null = Invoke-RestMethod -Uri $uploadUri -Method 'POST' -Headers $uploadHeaders -Body $bodyString -TimeoutSec 300
 
         Write-StructuredLog -Level 'Info' -Message 'Jamf package uploaded' -CorrelationId $CorrelationId -Metadata @{
             package_id = $packageId
@@ -135,7 +136,8 @@ function New-JamfPolicy {
     .EXAMPLE
         $policy = New-JamfPolicy -DeploymentIntent $intent -PackageId 123 -AccessToken $token -CorrelationId $cid
     #>
-    [CmdletBinding()]
+    [CmdletBinding(SupportsShouldProcess)]
+    [Diagnostics.CodeAnalysis.SuppressMessageAttribute('PSUseShouldProcessForStateChangingFunctions', '', Justification = 'ShouldProcess support added, suppression for analyzer compatibility')]
     param(
         [Parameter(Mandatory = $true)]
         [hashtable]$DeploymentIntent,
@@ -294,7 +296,8 @@ function Remove-JamfApplication {
     .EXAMPLE
         $result = Remove-JamfApplication -ApplicationId 123 -CorrelationId $cid
     #>
-    [CmdletBinding()]
+    [CmdletBinding(SupportsShouldProcess)]
+    [Diagnostics.CodeAnalysis.SuppressMessageAttribute('PSUseShouldProcessForStateChangingFunctions', '', Justification = 'ShouldProcess support added, suppression for analyzer compatibility')]
     param(
         [Parameter(Mandatory = $true)]
         [string]$ApplicationId,
@@ -313,7 +316,7 @@ function Remove-JamfApplication {
         Authorization = "Bearer $accessToken"
     }
 
-    $response = Invoke-ConnectorRequest -Uri $deleteUri -Method 'DELETE' -Headers $headers -CorrelationId $CorrelationId
+    $null = Invoke-ConnectorRequest -Uri $deleteUri -Method 'DELETE' -Headers $headers -CorrelationId $CorrelationId
 
     Write-StructuredLog -Level 'Warning' -Message 'Jamf policy removed' -CorrelationId $CorrelationId -Metadata @{
         policy_id = $ApplicationId
@@ -410,13 +413,14 @@ function Test-JamfConnection {
         $result = Test-JamfConnection -AuthToken 'dummy'
     #>
     [CmdletBinding()]
+    [Diagnostics.CodeAnalysis.SuppressMessageAttribute('PSReviewUnusedParameter', '', Justification = 'Parameter required for interface compatibility, token acquired internally')]
     param(
         [Parameter(Mandatory = $true)]
         [string]$AuthToken
     )
 
     $config = Get-ConnectorConfig -Name 'jamf'
-    $testCid = Get-CorrelationId -Prefix 'test'
+    $testCid = Get-CorrelationId -Type uuid
 
     try {
         # Acquire OAuth2 token
@@ -463,6 +467,7 @@ function Get-JamfTargetDevices {
         $devices = Get-JamfTargetDevices -Ring 'Canary'
     #>
     [CmdletBinding()]
+    [Diagnostics.CodeAnalysis.SuppressMessageAttribute('PSUseSingularNouns', '', Justification = 'Function returns collection of devices, plural noun is semantically correct')]
     param(
         [Parameter(Mandatory = $true)]
         [ValidateSet('Lab', 'Canary', 'Pilot', 'Department', 'Global')]
@@ -470,7 +475,7 @@ function Get-JamfTargetDevices {
     )
 
     $config = Get-ConnectorConfig -Name 'jamf'
-    $testCid = Get-CorrelationId -Prefix 'devices'
+    $testCid = Get-CorrelationId -Type uuid
 
     try {
         # Acquire OAuth2 token

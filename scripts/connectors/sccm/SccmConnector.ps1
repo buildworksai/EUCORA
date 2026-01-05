@@ -414,7 +414,7 @@ function Test-SccmConnection {
     )
 
     $config = Get-ConnectorConfig -Name 'sccm'
-    $testCid = Get-CorrelationId -Prefix 'test'
+    $testCid = Get-CorrelationId -Type uuid
 
     try {
         # Test AdminService connectivity
@@ -464,7 +464,7 @@ function Get-SccmTargetDevices {
     )
 
     $config = Get-ConnectorConfig -Name 'sccm'
-    $testCid = Get-CorrelationId -Prefix 'devices'
+    $testCid = Get-CorrelationId -Type uuid
 
     try {
         # Get collection ID

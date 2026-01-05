@@ -23,7 +23,7 @@ $ErrorActionPreference = 'Stop'
 . "$PSScriptRoot/../../connectors/ConnectorManager.ps1"
 . "$PSScriptRoot/../../utilities/logging/Write-StructuredLog.ps1"
 
-$statuses = Test-Connection -AuthToken $AuthToken
+$statuses = Test-ConnectorConnection -AuthToken $AuthToken
 Write-StructuredLog -Level 'Info' -Message 'Connectors command executed' -CorrelationId (Get-CorrelationId -Type uuid) `
     -Metadata @{ count = $statuses.Count }
 

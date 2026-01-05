@@ -42,7 +42,8 @@ function Publish-Application {
     }
 }
 function Remove-Application {
-    [CmdletBinding()]
+    [CmdletBinding(SupportsShouldProcess)]
+    [Diagnostics.CodeAnalysis.SuppressMessageAttribute('PSUseShouldProcessForStateChangingFunctions', '', Justification = 'Stub function for development, does not perform actual removal')]
     param(
         [Parameter(Mandatory = $true)]
         [string]$ApplicationId,
@@ -73,10 +74,11 @@ function Get-DeploymentStatus {
         managed_devices = 42
     }
 }
-function Test-Connection {
+function Test-ConnectorConnection {
     [CmdletBinding()]
+    [Diagnostics.CodeAnalysis.SuppressMessageAttribute('PSAvoidOverwritingBuiltInCmdlets', '', Justification = 'Stub function for connector testing, renamed to avoid conflict')]
     param(
-        [Parameter(Mandatory = $true)]
+        [Parameter(Mandatory = $false)]
         [string]$AuthToken
     )
     $statusReport = $connectorStatuses.Keys | ForEach-Object {
@@ -87,12 +89,13 @@ function Test-Connection {
             checked_at = (Get-Date).ToString('o')
         }
     }
-    Write-StructuredLog -Level 'Info' -Message 'Test-Connection stub executed' -CorrelationId (Get-CorrelationId -Type deployment) `
+    Write-StructuredLog -Level 'Info' -Message 'Test-ConnectorConnection stub executed' -CorrelationId (Get-CorrelationId -Type deployment) `
         -Metadata @{ connectors = $connectorStatuses.Keys }
     return $statusReport
 }
-function Get-TargetDevices {
+function Get-TargetDevice {
     [CmdletBinding()]
+    [Diagnostics.CodeAnalysis.SuppressMessageAttribute('PSUseSingularNouns', '', Justification = 'Function returns collection of devices, plural noun is appropriate')]
     param(
         [Parameter(Mandatory = $true)]
         [string]$Ring
@@ -104,12 +107,13 @@ function Get-TargetDevices {
             last_seen = (Get-Date).AddMinutes(-$_).ToString('o')
         }
     }
-    Write-StructuredLog -Level 'Debug' -Message 'Get-TargetDevices stub invoked' -CorrelationId (Get-CorrelationId -Type uuid) `
+    Write-StructuredLog -Level 'Debug' -Message 'Get-TargetDevice stub invoked' -CorrelationId (Get-CorrelationId -Type uuid) `
         -Metadata @{ ring = $Ring; count = $devices.Count }
     return $devices
 }
-function Get-ConnectorStatuses {
+function Get-ConnectorStatus {
     [CmdletBinding()]
+    [Diagnostics.CodeAnalysis.SuppressMessageAttribute('PSUseSingularNouns', '', Justification = 'Function returns collection of connector statuses, plural noun is appropriate')]
     param()
     return $connectorStatuses.GetEnumerator() | ForEach-Object {
         [ordered]@{

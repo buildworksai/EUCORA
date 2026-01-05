@@ -27,6 +27,7 @@ $ErrorActionPreference = 'Stop'
 $script:LogLock = New-Object System.Threading.SemaphoreSlim(1,1)
 function Write-StructuredLog {
     [CmdletBinding()]
+    [Diagnostics.CodeAnalysis.SuppressMessageAttribute('PSAvoidUsingWriteHost', '', Justification = 'Structured logging requires colored console output')]
     param(
         [Parameter(Mandatory=$true)]
         [string]$Message,

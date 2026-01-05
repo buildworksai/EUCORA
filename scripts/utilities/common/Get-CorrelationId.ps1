@@ -27,6 +27,7 @@ Related Docs: docs/architecture/control-plane-design.md, .agents/rules/08-connec
 Set-StrictMode -Version Latest
 $ErrorActionPreference = 'Stop'
 function New-DeterministicGuid {
+    [Diagnostics.CodeAnalysis.SuppressMessageAttribute('PSUseShouldProcessForStateChangingFunctions', '', Justification = 'Helper function that does not change system state')]
     param([System.Random]$Random)
     $bytes = [byte[]]::new(16)
     for ($i = 0; $i -lt 16; $i++) {

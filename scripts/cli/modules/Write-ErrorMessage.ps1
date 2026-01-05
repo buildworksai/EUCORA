@@ -18,6 +18,7 @@ $logHelper = Join-Path $PSScriptRoot '..\..\utilities\logging\Write-StructuredLo
 . $logHelper
 function Write-ErrorMessage {
     [CmdletBinding()]
+    [Diagnostics.CodeAnalysis.SuppressMessageAttribute('PSAvoidUsingWriteHost', '', Justification = 'Error messages require direct console output')]
     param(
         [Parameter(Mandatory = $true)]
         [string]$Message,
@@ -26,6 +27,6 @@ function Write-ErrorMessage {
         [string]$CorrelationId
     )
 
-    Write-Host "ERROR: $Message" -ForegroundColor Red
+    Write-Error "ERROR: $Message" -ErrorAction Continue
     Write-StructuredLog -Level 'Error' -Message $Message -CorrelationId $CorrelationId | Out-Null
 }

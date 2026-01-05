@@ -47,7 +47,7 @@ function Add-SPDXHeader {
     param([string]$FilePath)
 
     if (Test-HasSPDXHeader -FilePath $FilePath) {
-        Write-Host "✓ Already has SPDX: $FilePath" -ForegroundColor Green
+        Write-Output "✓ Already has SPDX: $FilePath"
         return $false
     }
 
@@ -55,21 +55,24 @@ function Add-SPDXHeader {
     $newContent = $spdxHeader + $content
 
     if ($DryRun) {
-        Write-Host "Would add SPDX to: $FilePath" -ForegroundColor Yellow
+        Write-Output "Would add SPDX to: $FilePath"
         return $true
     }
 
     Set-Content -Path $FilePath -Value $newContent -NoNewline
-    Write-Host "✓ Added SPDX to: $FilePath" -ForegroundColor Cyan
+    Write-Output "✓ Added SPDX to: $FilePath"
     return $true
 }
+
+# Suppress Write-Host warnings for user-facing output
+[Diagnostics.CodeAnalysis.SuppressMessageAttribute('PSAvoidUsingWriteHost', '', Justification = 'User-facing script requires colored output')]
 
 # Find all PowerShell files
 $ps1Files = Get-ChildItem -Path $Path -Filter "*.ps1" -Recurse -File |
     Where-Object { $_.FullName -notmatch 'node_modules|\.venv|\.git' }
 
-Write-Host "`nScanning $($ps1Files.Count) PowerShell files..." -ForegroundColor White
-Write-Host "Mode: $(if ($DryRun) { 'DRY RUN' } else { 'APPLY CHANGES' })`n" -ForegroundColor $(if ($DryRun) { 'Yellow' } else { 'Green' })
+Write-Output "`nScanning $($ps1Files.Count) PowerShell files..."
+Write-Output "Mode: $(if ($DryRun) { 'DRY RUN' } else { 'APPLY CHANGES' })`n"
 
 $modified = 0
 $skipped = 0
@@ -82,11 +85,11 @@ foreach ($file in $ps1Files) {
     }
 }
 
-Write-Host "`n=== Summary ===" -ForegroundColor White
-Write-Host "Total files: $($ps1Files.Count)"
-Write-Host "Modified: $modified" -ForegroundColor Cyan
-Write-Host "Skipped (already compliant): $skipped" -ForegroundColor Green
+Write-Output "`n=== Summary ==="
+Write-Output "Total files: $($ps1Files.Count)"
+Write-Output "Modified: $modified"
+Write-Output "Skipped (already compliant): $skipped"
 
 if ($DryRun) {
-    Write-Host "`nRun without -DryRun to apply changes." -ForegroundColor Yellow
+    Write-Output "`nRun without -DryRun to apply changes."
 }

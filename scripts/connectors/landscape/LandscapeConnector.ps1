@@ -329,7 +329,7 @@ function Test-LandscapeConnection {
     )
 
     $config = Get-ConnectorConfig -Name 'landscape'
-    $testCid = Get-CorrelationId -Prefix 'test'
+    $testCid = Get-CorrelationId -Type uuid
 
     try {
         $accessToken = $config.api_token
@@ -382,7 +382,7 @@ function Get-LandscapeTargetDevices {
     )
 
     $config = Get-ConnectorConfig -Name 'landscape'
-    $testCid = Get-CorrelationId -Prefix 'devices'
+    $testCid = Get-CorrelationId -Type uuid
 
     try {
         $accessToken = $config.api_token

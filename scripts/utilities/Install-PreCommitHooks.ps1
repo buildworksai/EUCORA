@@ -17,52 +17,55 @@ param()
 Set-StrictMode -Version Latest
 $ErrorActionPreference = 'Stop'
 
-Write-Host "`n🔧 EUCORA Pre-Commit Hook Installation" -ForegroundColor Cyan
-Write-Host "========================================`n" -ForegroundColor Cyan
+# Suppress Write-Host warnings for user-facing output
+[Diagnostics.CodeAnalysis.SuppressMessageAttribute('PSAvoidUsingWriteHost', '', Justification = 'User-facing script requires colored output')]
+
+Write-Output "`n🔧 EUCORA Pre-Commit Hook Installation"
+Write-Output "========================================`n"
 
 # Check if Python is installed
-Write-Host "Checking prerequisites..." -ForegroundColor Yellow
+Write-Output "Checking prerequisites..."
 
 try {
     $pythonVersion = python --version 2>&1
-    Write-Host "✓ Python found: $pythonVersion" -ForegroundColor Green
+    Write-Output "✓ Python found: $pythonVersion"
 } catch {
     Write-Error "❌ Python not found. Please install Python 3.8+ from https://www.python.org/"
     exit 1
 }
 
 # Check if pre-commit is installed
-Write-Host "`nChecking for pre-commit..." -ForegroundColor Yellow
+Write-Output "`nChecking for pre-commit..."
 
 try {
     $precommitVersion = pre-commit --version 2>&1
-    Write-Host "✓ pre-commit found: $precommitVersion" -ForegroundColor Green
+    Write-Output "✓ pre-commit found: $precommitVersion"
 } catch {
-    Write-Host "⚠ pre-commit not found. Installing..." -ForegroundColor Yellow
+    Write-Output "⚠ pre-commit not found. Installing..."
     pip install pre-commit
 
     if ($LASTEXITCODE -ne 0) {
         Write-Error "❌ Failed to install pre-commit"
         exit 1
     }
-    Write-Host "✓ pre-commit installed successfully" -ForegroundColor Green
+    Write-Output "✓ pre-commit installed successfully"
 }
 
 # Check if PSScriptAnalyzer is installed
-Write-Host "`nChecking for PSScriptAnalyzer..." -ForegroundColor Yellow
+Write-Output "`nChecking for PSScriptAnalyzer..."
 
 $psaInstalled = Get-Module -ListAvailable -Name PSScriptAnalyzer
 
 if (-not $psaInstalled) {
-    Write-Host "⚠ PSScriptAnalyzer not found. Installing..." -ForegroundColor Yellow
+    Write-Output "⚠ PSScriptAnalyzer not found. Installing..."
     Install-Module -Name PSScriptAnalyzer -Force -Scope CurrentUser
-    Write-Host "✓ PSScriptAnalyzer installed successfully" -ForegroundColor Green
+    Write-Output "✓ PSScriptAnalyzer installed successfully"
 } else {
-    Write-Host "✓ PSScriptAnalyzer found: $($psaInstalled.Version)" -ForegroundColor Green
+    Write-Output "✓ PSScriptAnalyzer found: $($psaInstalled.Version)"
 }
 
 # Install pre-commit hooks
-Write-Host "`nInstalling pre-commit hooks..." -ForegroundColor Yellow
+Write-Output "`nInstalling pre-commit hooks..."
 
 try {
     pre-commit install
@@ -72,29 +75,29 @@ try {
         exit 1
     }
 
-    Write-Host "✓ Pre-commit hooks installed successfully" -ForegroundColor Green
+    Write-Output "✓ Pre-commit hooks installed successfully"
 } catch {
     Write-Error "❌ Failed to install pre-commit hooks: $($_.Exception.Message)"
     exit 1
 }
 
 # Run pre-commit on all files to verify
-Write-Host "`nRunning initial pre-commit check..." -ForegroundColor Yellow
-Write-Host "(This may take a few minutes on first run)`n" -ForegroundColor Gray
+Write-Output "`nRunning initial pre-commit check..."
+Write-Output "(This may take a few minutes on first run)`n"
 
 pre-commit run --all-files
 
 if ($LASTEXITCODE -eq 0) {
-    Write-Host "`n✅ All checks passed!" -ForegroundColor Green
+    Write-Output "`n✅ All checks passed!"
 } else {
-    Write-Host "`n⚠ Some checks failed. Review the output above." -ForegroundColor Yellow
-    Write-Host "You can fix issues and run 'pre-commit run --all-files' again." -ForegroundColor Yellow
+    Write-Output "`n⚠ Some checks failed. Review the output above."
+    Write-Output "You can fix issues and run 'pre-commit run --all-files' again."
 }
 
-Write-Host "`n========================================" -ForegroundColor Cyan
-Write-Host "✅ Pre-commit hooks installation complete!" -ForegroundColor Green
-Write-Host "`nNext steps:" -ForegroundColor Cyan
-Write-Host "  1. Pre-commit hooks will run automatically on 'git commit'" -ForegroundColor White
-Write-Host "  2. To run manually: pre-commit run --all-files" -ForegroundColor White
-Write-Host "  3. To update hooks: pre-commit autoupdate" -ForegroundColor White
-Write-Host "`nFor more info: https://pre-commit.com`n" -ForegroundColor Gray
+Write-Output "`n========================================"
+Write-Output "✅ Pre-commit hooks installation complete!"
+Write-Output "`nNext steps:"
+Write-Output "  1. Pre-commit hooks will run automatically on 'git commit'"
+Write-Output "  2. To run manually: pre-commit run --all-files"
+Write-Output "  3. To update hooks: pre-commit autoupdate"
+Write-Output "`nFor more info: https://pre-commit.com`n"

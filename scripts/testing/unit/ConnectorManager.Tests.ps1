@@ -15,7 +15,7 @@ Describe 'ConnectorManager' {
         . "$PSScriptRoot/../../connectors/ConnectorManager.ps1"
         function GetTestConnectionReports {
             param($Token)
-            Test-Connection -AuthToken $Token
+            Test-ConnectorConnection -AuthToken $Token
         }
 
         function Import-ConnectorModule {
@@ -91,7 +91,7 @@ Describe 'ConnectorManager' {
     }
 
     It 'returns connector health snapshots' {
-        $reports = @( & 'Test-Connection' -AuthToken 'token' )
+        $reports = @( & 'Test-ConnectorConnection' -AuthToken 'token' )
         $filtered = @()
         foreach ($report in $reports) {
             if ($report.connector) {

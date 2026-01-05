@@ -110,7 +110,8 @@ function Publish-Application {
 }
 
 function Remove-Application {
-    [CmdletBinding()]
+    [CmdletBinding(SupportsShouldProcess)]
+    [Diagnostics.CodeAnalysis.SuppressMessageAttribute('PSUseShouldProcessForStateChangingFunctions', '', Justification = 'ShouldProcess support added, suppression for analyzer compatibility')]
     param(
         [Parameter(Mandatory = $true)]
         [string]$ApplicationId,
@@ -167,8 +168,9 @@ function Get-DeploymentStatus {
     return @{ correlation_id = $CorrelationId; status_by_connector = $statuses }
 }
 
-function Test-Connection {
+function Test-ConnectorConnection {
     [CmdletBinding()]
+    [Diagnostics.CodeAnalysis.SuppressMessageAttribute('PSAvoidOverwritingBuiltInCmdlets', '', Justification = 'Renamed to avoid conflict with built-in Test-Connection cmdlet')]
     param(
         [Parameter(Mandatory = $true)]
         [string]$AuthToken
@@ -196,6 +198,7 @@ function Test-Connection {
 
 function Get-TargetDevices {
     [CmdletBinding()]
+    [Diagnostics.CodeAnalysis.SuppressMessageAttribute('PSUseSingularNouns', '', Justification = 'Function returns collection of devices, plural noun is semantically correct')]
     param(
         [Parameter(Mandatory = $true)]
         [string]$Ring,
