@@ -1,0 +1,60 @@
+# SPDX-License-Identifier: Apache-2.0
+# Pre-commit hooks configuration for EUCORA
+# See https://pre-commit.com for more information
+
+repos:
+  # General file quality checks
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v4.5.0
+    hooks:
+      - id: trailing-whitespace
+        name: Trim trailing whitespace
+      - id: end-of-file-fixer
+        name: Fix end of files
+      - id: check-yaml
+        name: Check YAML syntax
+      - id: check-json
+        name: Check JSON syntax
+      - id: check-merge-conflict
+        name: Check for merge conflicts
+      - id: check-added-large-files
+        name: Check for large files
+        args: ['--maxkb=5000']
+      - id: mixed-line-ending
+        name: Check line endings
+        args: ['--fix=lf']
+
+  # PowerShell linting
+  - repo: local
+    hooks:
+      - id: psscriptanalyzer
+        name: PSScriptAnalyzer
+        entry: pwsh -Command "Invoke-ScriptAnalyzer -Path . -Recurse -Settings PSGallery -Severity Error,Warning"
+        language: system
+        types: [powershell]
+        pass_filenames: false
+
+  # SPDX License Header Check
+  - repo: local
+    hooks:
+      - id: check-spdx-headers
+        name: Check SPDX License Headers
+        entry: pwsh -File scripts/utilities/Add-SPDXHeaders.ps1 -DryRun
+        language: system
+        types: [powershell]
+        pass_filenames: false
+        verbose: true
+
+  # Prevent commits to main/master
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v4.5.0
+    hooks:
+      - id: no-commit-to-branch
+        name: Prevent commits to main
+        args: ['--branch', 'main', '--branch', 'master']
+
+# Configuration
+default_language_version:
+  python: python3.10
+
+fail_fast: false

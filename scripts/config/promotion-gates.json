@@ -1,0 +1,57 @@
+{
+  "version": "1.0",
+  "description": "Promotion gate thresholds per docs/architecture/ring-model.md",
+  "rings": {
+    "ring-0-lab": {
+      "success_rate_threshold": 0.95,
+      "time_to_compliance": {
+        "online_hours": 4,
+        "intermittent_hours": 8,
+        "air_gapped_hours": 24
+      },
+      "max_incidents": 1,
+      "rollback_validation_required": true
+    },
+    "ring-1-canary": {
+      "success_rate_threshold": 0.98,
+      "time_to_compliance": {
+        "online_hours": 24,
+        "intermittent_hours": 72,
+        "air_gapped_hours": 168
+      },
+      "max_incidents": 0,
+      "cab_approval_required_if_risk_gt": 50
+    },
+    "ring-2-pilot": {
+      "success_rate_threshold": 0.97,
+      "time_to_compliance": {
+        "online_hours": 24,
+        "intermittent_hours": 72,
+        "air_gapped_hours": 168
+      },
+      "max_incidents": 0,
+      "cab_approval_required_if_risk_gt": 50
+    },
+    "ring-3-department": {
+      "success_rate_threshold": 0.99,
+      "time_to_compliance": {
+        "online_hours": 24,
+        "intermittent_hours": 72,
+        "air_gapped_hours": 168
+      },
+      "max_incidents": 0
+    },
+    "ring-4-global": {
+      "success_rate_threshold": 0.99,
+      "time_to_compliance": {
+        "online_hours": 24,
+        "intermittent_hours": 72,
+        "air_gapped_hours": 168
+      },
+      "max_incidents": 0
+    }
+  },
+  "calibration": {
+    "note": "Thresholds are PROVISIONAL for v1.0 and subject to quarterly calibration"
+  }
+}

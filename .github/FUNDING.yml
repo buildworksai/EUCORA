@@ -1,0 +1,7 @@
+# Funding Configuration
+# See: https://docs.github.com/en/repositories/managing-your-repositorys-settings-and-features/customizing-your-repository/displaying-a-sponsor-button-in-your-repository
+
+custom: ['https://rzp.io/rzp/RPWtYWp'] # Razorpay contribution link
+
+# EUCORA is licensed under Apache License 2.0
+# For licensing questions or commercial support, contact: info@buildworks.ai

@@ -1,0 +1,13 @@
+{
+  "events": [
+    {
+      "details": "ok",
+      "event_id": "e1",
+      "event_type": "publish",
+      "actor": "user",
+      "correlation_id": "dp-1",
+      "outcome": "success",
+      "timestamp": "2026-01-04T20:00:50.4767600+05:30"
+    }
+  ]
+}

@@ -1,0 +1,103 @@
+{
+  "version": "v1.0",
+  "description": "Risk scoring model per docs/architecture/risk-model.md",
+  "factors": {
+    "privilege_impact": {
+      "weight": 20,
+      "max_normalized": 1.0,
+      "rubric": {
+        "user_context_no_elevation": 0.2,
+        "admin_install_user_runtime": 0.7,
+        "service_elevated_runtime": 1.0,
+        "kernel_driver_extension": 1.0
+      }
+    },
+    "supply_chain_trust": {
+      "weight": 15,
+      "max_normalized": 1.0,
+      "rubric": {
+        "signed_known_vendor_provenance": 0.1,
+        "signed_known_vendor_weak_provenance": 0.3,
+        "signed_unknown_vendor": 0.4,
+        "unsigned_self_signed": 0.7,
+        "unsigned_uncertain_provenance": 0.9
+      }
+    },
+    "exploitability": {
+      "weight": 10,
+      "max_normalized": 1.0,
+      "rubric": {
+        "no_listeners_no_scripting": 0.2,
+        "user_listener_non_privileged": 0.5,
+        "embedded_scripting_macros": 0.6,
+        "user_listener_plus_scripting": 0.8,
+        "privileged_listener_elevated": 1.0
+      }
+    },
+    "data_access": {
+      "weight": 10,
+      "max_normalized": 1.0,
+      "rubric": {
+        "scoped_to_app_directory": 0.1,
+        "read_user_documents_desktop": 0.4,
+        "read_write_user_profile": 0.6,
+        "credential_store_access": 0.9,
+        "wide_filesystem_plus_credentials": 1.0
+      }
+    },
+    "sbom_vulnerability": {
+      "weight": 15,
+      "max_normalized": 1.0,
+      "rubric": {
+        "no_high_critical": 0.0,
+        "low_medium_only": 0.3,
+        "high_with_compensating_controls": 0.7,
+        "critical_with_exception": 0.9,
+        "critical_no_exception": 1.0
+      }
+    },
+    "blast_radius": {
+      "weight": 10,
+      "max_normalized": 1.0,
+      "rubric": {
+        "ring_0_lab_lt_10": 0.1,
+        "ring_1_canary_lt_100": 0.3,
+        "ring_2_pilot_lt_1000": 0.5,
+        "ring_3_department_1000_10000": 0.7,
+        "ring_4_global_gt_10000": 1.0
+      }
+    },
+    "operational_complexity": {
+      "weight": 10,
+      "max_normalized": 1.0,
+      "rubric": {
+        "online_no_reboot_lt_5min": 0.1,
+        "online_no_reboot_5_15min": 0.3,
+        "requires_reboot_user_initiated": 0.5,
+        "reboot_plus_sequencing": 0.7,
+        "offline_import_reboot_sequencing": 1.0
+      }
+    },
+    "history": {
+      "weight": 10,
+      "max_normalized": 1.0,
+      "rubric": {
+        "no_incidents_gt_99_success": 0.1,
+        "minor_incidents_95_99_success": 0.3,
+        "moderate_incidents_90_95_success": 0.6,
+        "major_incidents_lt_90_success": 0.9,
+        "prior_security_breach": 1.0
+      }
+    }
+  },
+  "thresholds": {
+    "automated_allowed": 50,
+    "cab_required": 51,
+    "privileged_tooling_always_cab": true
+  },
+  "calibration": {
+    "frequency": "quarterly",
+    "next_review": "2026-04-04",
+    "responsible": "Security + CAB"
+  }
+}

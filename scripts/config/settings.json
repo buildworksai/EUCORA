@@ -1,0 +1,57 @@
+{
+  "version": "1.0",
+  "control_plane": {
+    "api_url": "https://api.control-plane.corp/v1",
+    "timeout_seconds": 30
+  },
+  "azure": {
+    "tenant_id": "${AZURE_TENANT_ID}",
+    "key_vault_name": "${KEY_VAULT_NAME}",
+    "log_analytics_workspace_id": "${LOG_ANALYTICS_WORKSPACE_ID}"
+  },
+  "retry": {
+    "max_attempts": 5,
+    "base_seconds": 4,
+    "max_backoff_seconds": 60,
+    "circuit_breaker_threshold": 5,
+    "circuit_breaker_pause_minutes": 5
+  },
+  "logging": {
+    "default_level": "Info",
+    "file_path": "${LOG_FILE_PATH}",
+    "siem_enabled": true
+  },
+  "event_store": {
+    "connection_string": "${EVENT_STORE_CONNECTION_STRING}",
+    "retention_days": 2555
+  }
+  ,
+  "connectors": {
+    "intune": {
+      "api_url": "https://graph.microsoft.com/v1.0",
+      "tenant_id": "${AZURE_TENANT_ID}",
+      "client_id": "${INTUNE_CLIENT_ID}",
+      "client_secret": "${INTUNE_CLIENT_SECRET}",
+      "resource": "https://graph.microsoft.com"
+    },
+    "jamf": {
+      "api_url": "https://your-jamf.example.com/JSSResource",
+      "client_id": "${JAMF_CLIENT_ID}",
+      "client_secret": "${JAMF_CLIENT_SECRET}",
+      "bearer_token": "${JAMF_BEARER_TOKEN}"
+    },
+    "sccm": {
+      "api_url": "https://sccm.your.corp/ccm",
+      "site_code": "${SCCM_SITE_CODE}",
+      "service_account": "${SCCM_SERVICE_ACCOUNT}"
+    },
+    "landscape": {
+      "api_url": "https://landscape.corp/api/2.0",
+      "api_token": "${LANDSCAPE_API_TOKEN}"
+    },
+    "ansible": {
+      "tower_api_url": "https://awx.corp/api/v2",
+      "token": "${AWX_API_TOKEN}"
+    }
+  }
+}

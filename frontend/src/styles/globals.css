@@ -1,0 +1,196 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --background: 0 0% 98%;
+    --foreground: 222.2 84% 4.9%;
+
+    --card: 0 0% 100%;
+    --card-foreground: 222.2 84% 4.9%;
+
+    /* Deep Blue Primary #1565C0 */
+    --primary: 212 80% 42%;
+    --primary-foreground: 210 40% 98%;
+
+    /* Secondary - lighter blue */
+    --secondary: 214 32% 91%;
+    --secondary-foreground: 222.2 47.4% 11.2%;
+
+    /* Muted - gray tones */
+    --muted: 214 32% 91%;
+    --muted-foreground: 215 16% 47%;
+
+    /* Teal/Electric Blue Info/Accent #00ACC1 */
+    --accent: 186 100% 38%;
+    --accent-foreground: 210 40% 98%;
+
+    /* Gold Warning #FF8F00 */
+    --warning: 34 100% 50%;
+    --warning-foreground: 222.2 47.4% 11.2%;
+
+    /* Green Success #388E3C */
+    --success: 122 43% 39%;
+    --success-foreground: 210 40% 98%;
+
+    /* EUCORA Red (Destructive) #E74C3C */
+    --destructive: 6 78% 57%;
+    --destructive-foreground: 210 40% 98%;
+
+    --border: 214.3 31.8% 91.4%;
+    --input: 214.3 31.8% 91.4%;
+    --ring: 212 80% 42%;
+
+    --popover: 0 0% 100%;
+    --popover-foreground: 222.2 84% 4.9%;
+
+    --radius: 0.5rem;
+  }
+
+  .dark {
+    /* EUCORA Dark Background #0D1117 */
+    --background: 222 47% 7%;
+    --foreground: 210 40% 98%;
+
+    --card: 222 47% 10%;
+    --card-foreground: 210 40% 98%;
+
+    /* Deep Blue Dark #0D47A1 */
+    --primary: 217 86% 34%;
+    --primary-foreground: 210 40% 98%;
+
+    /* Secondary - darker blue-gray */
+    --secondary: 217 33% 17%;
+    --secondary-foreground: 210 40% 98%;
+
+    /* Muted - dark gray tones */
+    --muted: 217 33% 17%;
+    --muted-foreground: 215 20% 65%;
+
+    /* Teal Dark #0097A7 */
+    --accent: 186 100% 33%;
+    --accent-foreground: 210 40% 98%;
+
+    /* Gold Dark #F57C00 */
+    --warning: 30 100% 48%;
+    --warning-foreground: 222.2 47.4% 11.2%;
+
+    /* Green Dark #2E7D32 */
+    --success: 123 46% 34%;
+    --success-foreground: 210 40% 98%;
+
+    --destructive: 0 63% 31%;
+    --destructive-foreground: 210 40% 98%;
+
+    --border: 217 33% 17%;
+    --input: 217 33% 17%;
+    --ring: 186 100% 33%;
+
+    --popover: 222 47% 12%;
+    --popover-foreground: 210 40% 98%;
+  }
+}
+
+@layer utilities {
+  /* Glassmorphism effect */
+  .glass {
+    @apply bg-white/10 backdrop-blur-md border border-white/20;
+  }
+
+  .glass-dark {
+    @apply bg-gray-800/30 backdrop-blur-md border border-gray-700/50;
+  }
+}
+
+/* Typography - Enterprise fonts */
+@import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap');
+
+body {
+  @apply bg-background text-foreground;
+  font-family: 'IBM Plex Sans', system-ui, -apple-system, sans-serif;
+  font-feature-settings: 'kern' 1, 'liga' 1;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* Monospace font for data-heavy components */
+.font-mono,
+code,
+pre,
+kbd,
+samp {
+  font-family: 'JetBrains Mono', 'Courier New', monospace;
+  font-feature-settings: 'liga' 0;
+}
+
+/* Skip to content link for accessibility */
+.skip-to-content {
+  @apply sr-only focus:not-sr-only focus:absolute focus:top-4 focus:left-4 focus:z-50 focus:px-4 focus:py-2 focus:bg-primary focus:text-primary-foreground focus:rounded-md focus:shadow-lg;
+}
+
+/* Custom checkbox styling */
+input[type="checkbox"] {
+  @apply rounded border-white/20 bg-white/5 text-eucora-teal focus:ring-eucora-teal/20;
+}
+
+/* Form input dark mode styling */
+.dark input,
+.dark select,
+.dark textarea {
+  @apply bg-white/5 border-white/10;
+}
+
+/* Custom scrollbar */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  @apply bg-transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  @apply bg-white/10 rounded-full;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  @apply bg-white/20;
+}
+
+/* Animation utilities */
+@keyframes slideInFromBottom {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.animate-slide-in-bottom {
+  animation: slideInFromBottom 0.3s ease-out;
+}
+
+@keyframes shimmer {
+  from {
+    background-position: -200% 0;
+  }
+  to {
+    background-position: 200% 0;
+  }
+}
+
+.animate-shimmer {
+  background: linear-gradient(
+    90deg,
+    transparent 25%,
+    rgba(255, 255, 255, 0.1) 50%,
+    transparent 75%
+  );
+  background-size: 200% 100%;
+  animation: shimmer 1.5s infinite;
+}

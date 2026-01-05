@@ -1,0 +1,65 @@
+# SPDX-License-Identifier: Apache-2.0
+# Copyright (c) 2025 BuildWorks.AI
+
+name: SPDX Compliance Check
+
+on:
+  push:
+    branches: [ main, develop, feature/** ]
+    paths:
+      - '**.ps1'
+  pull_request:
+    branches: [ main, develop ]
+    paths:
+      - '**.ps1'
+
+jobs:
+  spdx-check:
+    name: Verify SPDX Headers
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup PowerShell
+        uses: actions/setup-powershell@v1
+
+      - name: Run SPDX Compliance Check
+        id: spdx-check
+        run: |
+          echo "Checking SPDX compliance..."
+          pwsh -File scripts/utilities/Add-SPDXHeaders.ps1 -DryRun
+          
+          if [ $? -eq 0 ]; then
+            echo "status=success" >> $GITHUB_OUTPUT
+            echo "message=All PowerShell files have SPDX headers" >> $GITHUB_OUTPUT
+          else
+            echo "status=failure" >> $GITHUB_OUTPUT
+            echo "message=SPDX compliance check failed" >> $GITHUB_OUTPUT
+            exit 1
+          fi
+
+      - name: Report Results
+        if: always()
+        run: |
+          if [ "${{ steps.spdx-check.outputs.status }}" == "success" ]; then
+            echo "✅ ${{ steps.spdx-check.outputs.message }}"
+          else
+            echo "❌ ${{ steps.spdx-check.outputs.message }}"
+            echo ""
+            echo "To fix, run locally:"
+            echo "  pwsh -File scripts/utilities/Add-SPDXHeaders.ps1"
+          fi
+
+      - name: Comment on PR
+        if: github.event_name == 'pull_request' && failure()
+        uses: actions/github-script@v7
+        with:
+          script: |
+            github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.name,
+              body: '❌ **SPDX Compliance Check Failed**\n\nSome PowerShell files are missing SPDX license headers.\n\n**To fix:**\n```bash\npwsh -File scripts/utilities/Add-SPDXHeaders.ps1\n```\n\nThen commit and push the changes.'
+            })

@@ -1,0 +1,23 @@
+# EUCORA Control Plane - Development Requirements
+# Extends base.txt with development-only dependencies
+
+-r base.txt
+
+# Testing
+pytest~=8.3.5
+pytest-django~=4.8.0
+pytest-cov~=6.1.1
+pytest-mock~=3.12.0
+
+# Code Quality
+black~=25.1.0
+flake8~=7.2.0
+mypy~=1.8.0
+django-stubs~=5.0.2
+
+# Development Tools
+django-extensions~=3.2.3
+ipython~=8.20.0
+
+# Pre-commit
+pre-commit~=3.6.0

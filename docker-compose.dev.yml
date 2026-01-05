@@ -1,0 +1,118 @@
+# SPDX-License-Identifier: Apache-2.0
+# Copyright (c) 2026 BuildWorks.AI
+# Docker Compose configuration for EUCORA development environment
+
+services:
+  db:
+    image: postgres:17-alpine
+    container_name: eucora-db
+    environment:
+      POSTGRES_DB: eucora
+      POSTGRES_USER: eucora_user
+      POSTGRES_PASSWORD: eucora_dev_password
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U eucora_user -d eucora"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  redis:
+    image: redis:7-alpine
+    container_name: eucora-redis
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  minio:
+    image: minio/minio:latest
+    container_name: eucora-minio
+    command: server /data --console-address ":9001"
+    environment:
+      MINIO_ROOT_USER: minioadmin
+      MINIO_ROOT_PASSWORD: minioadmin
+    ports:
+      - "9000:9000"
+      - "9001:9001"
+    volumes:
+      - minio_data:/data
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:9000/minio/health/live"]
+      interval: 30s
+      timeout: 20s
+      retries: 3
+
+  eucora-api:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile.dev
+    container_name: eucora-control-plane
+    command: python manage.py runserver 0.0.0.0:8000
+    volumes:
+      - ./backend:/app
+    ports:
+      - "8000:8000"
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      minio:
+        condition: service_healthy
+    environment:
+      - DJANGO_SETTINGS_MODULE=config.settings.development
+      - POSTGRES_DB=eucora
+      - POSTGRES_USER=eucora_user
+      - POSTGRES_PASSWORD=eucora_dev_password
+      - POSTGRES_HOST=db
+      - POSTGRES_PORT=5432
+      - REDIS_URL=redis://redis:6379/0
+      - MINIO_ENDPOINT=minio:9000
+      - MINIO_ACCESS_KEY=minioadmin
+      - MINIO_SECRET_KEY=minioadmin
+      - MINIO_USE_SSL=False
+      - DEBUG=True
+    stdin_open: true
+    tty: true
+
+  eucora-web:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile.dev
+    container_name: eucora-web
+    volumes:
+      - ./frontend:/app
+      - /app/node_modules
+    ports:
+      - "5173:5173"
+    environment:
+      # API URL - Points to the dockerized backend
+      - VITE_API_URL=http://localhost:8000/api/v1
+      # Authentication Mode: 'true' for session-based mock auth (dev/demo)
+      - VITE_USE_MOCK_AUTH=true
+      # Microsoft Entra ID Configuration (for production)
+      - VITE_AZURE_CLIENT_ID=${AZURE_CLIENT_ID:-placeholder-client-id}
+      - VITE_AZURE_TENANT_ID=${AZURE_TENANT_ID:-placeholder-tenant-id}
+      - VITE_AZURE_REDIRECT_URI=http://localhost:5173/auth/callback
+      # Application Configuration
+      - VITE_APP_NAME=EUCORA
+      - VITE_APP_VERSION=1.0.0
+    command: sh -c "npm install && npm run dev -- --host"
+    depends_on:
+      - eucora-api
+    stdin_open: true
+    tty: true
+
+volumes:
+  postgres_data:
+  redis_data:
+  minio_data:

@@ -1,0 +1,50 @@
+{
+  "$schema": "http://json-schema.org/draft/2020-12/schema",
+  "type": "object",
+  "required": [
+    "evidence_pack_id",
+    "version",
+    "deployment_intent_id",
+    "artifact",
+    "sbom",
+    "vulnerability_scan",
+    "installation",
+    "rollout_plan",
+    "rollback_plan",
+    "test_evidence",
+    "risk_assessment"
+  ],
+  "properties": {
+    "evidence_pack_id": {"type": "string", "format": "uuid"},
+    "version": {"type": "string", "pattern": "^v\\d+\\.\\d+$"},
+    "artifact": {
+      "type": "object",
+      "required": ["hash", "signing"],
+      "properties": {
+        "signing": {
+          "required": ["signed"],
+          "properties": {
+            "signed": {"type": "boolean", "const": true}
+          }
+        }
+      }
+    },
+    "vulnerability_scan": {
+      "required": ["policy_decision", "findings"],
+      "properties": {
+        "policy_decision": {"enum": ["pass", "fail", "exception_granted"]},
+        "findings": {
+          "properties": {
+            "critical": {"type": "integer", "minimum": 0}
+          }
+        }
+      }
+    },
+    "rollback_plan": {
+      "required": ["validated"],
+      "properties": {
+        "validated": {"type": "boolean", "const": true}
+      }
+    }
+  }
+}

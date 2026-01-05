@@ -1,0 +1,214 @@
+# SPDX-License-Identifier: Apache-2.0
+# Copyright (c) 2026 BuildWorks.AI
+# .gitignore - Git ignore patterns for EUCORA project
+
+# Python / Django
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+share/python-wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+MANIFEST
+*.manifest
+*.spec
+pip-log.txt
+pip-delete-this-directory.txt
+htmlcov/
+.tox/
+.nox/
+.coverage
+.coverage.*
+.cache
+nosetests.xml
+coverage.xml
+*.cover
+*.py,cover
+.hypothesis/
+.pytest_cache/
+cover/
+*.mo
+*.pot
+*.log
+local_settings.py
+db.sqlite3
+db.sqlite3-journal
+/media
+/staticfiles
+/static
+
+# Node.js / React / Frontend
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+lerna-debug.log*
+.pnpm-debug.log*
+dist/
+dist-ssr/
+build/
+*.local
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+*.tsbuildinfo
+.vite/
+
+# Environment Variables
+.env
+.env.*
+!.env.example
+*.env
+.envrc
+
+# Docker
+.dockerignore
+docker-compose.override.yml
+*.dockerignore
+
+# Database
+*.db
+*.sqlite
+*.sqlite3
+postgres_data/
+mysql_data/
+
+# IDE / Editor
+.vscode/*
+!.vscode/extensions.json
+!.vscode/settings.json
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
+
+# Logs
+logs/
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+lerna-debug.log*
+
+# Testing
+.pytest_cache/
+.coverage
+htmlcov/
+.tox/
+.nox/
+coverage/
+*.cover
+.hypothesis/
+test-results/
+playwright-report/
+test-results.xml
+
+# Screenshots and temporary files
+.playwright-mcp/
+*.png
+*.jpg
+*.jpeg
+*.gif
+!**/public/**/*.png
+!**/public/**/*.jpg
+!**/public/**/*.jpeg
+!**/public/**/*.gif
+!EUCORA-logo.png
+!**/logo*.png
+!**/favicon*.png
+!**/apple-touch-icon*.png
+
+# Secrets and credentials
+secrets/
+*.pem
+*.key
+*.crt
+*.p12
+*.pfx
+*.jks
+credentials.json
+service-account*.json
+
+# Temporary files
+tmp/
+temp/
+*.tmp
+*.bak
+*.backup
+*.swp
+*.swo
+
+# OS files
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+Desktop.ini
+
+# Redis
+dump.rdb
+
+# MinIO / S3
+minio_data/
+
+# Reports (keep structure, ignore generated)
+reports/*.html
+reports/*.pdf
+reports/*.xlsx
+reports/*.csv
+!reports/*.md
+
+# Backup files
+*.backup
+*.bak
+*~
+
+# Python virtual environments
+venv/
+ENV/
+env/
+.venv/
+
+# TypeScript
+*.tsbuildinfo
+
+# Misc
+.cache/
+.parcel-cache/
+.next/
+out/
+.nuxt/
+.vuepress/dist/
+.serverless/
+.fusebox/
+.dynamodb/
+.tern-port
+.nyc_output
+

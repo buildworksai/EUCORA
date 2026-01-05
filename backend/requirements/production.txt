@@ -1,0 +1,16 @@
+# EUCORA Control Plane - Production Requirements
+# Extends base.txt with production-only dependencies
+
+-r base.txt
+
+# WSGI Server
+gunicorn~=21.2.0
+
+# ASGI Server (for async support)
+uvicorn[standard]~=0.30.0
+
+# Monitoring
+prometheus-client~=0.20.0
+
+# Sentry (Error Tracking)
+sentry-sdk~=1.40.0

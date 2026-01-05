@@ -1,0 +1,162 @@
+openapi: 3.0.3
+info:
+  title: Control Plane API
+  version: v1.0
+  description: |
+    Core Control Plane endpoints for publishing intents, CAB submissions, and telemetry queries. Concepts enforce thin control plane principles (policy + orchestration + evidence only).
+servers:
+  - url: https://api.control-plane.corp/v1
+    description: Production gateway (Azure Front Door)
+components:
+  securitySchemes:
+    AzureAD:
+      type: oauth2
+      flows:
+        clientCredentials:
+          tokenUrl: https://login.microsoftonline.com/{tenantId}/oauth2/v2.0/token
+          scopes:
+            https://graph.microsoft.com/.default: Access to Intune connectors
+            control_plane/.default: Publish & CAB orchestration
+  schemas:
+    DeploymentIntent:
+      type: object
+      required: [correlation_id, artifact_id, ring, scope]
+      properties:
+        correlation_id:
+          type: string
+          example: dp-20260104-000A
+        artifact_id:
+          type: string
+          example: win32-app-v2.4
+        ring:
+          type: integer
+          enum: [0,1,2,3,4]
+        scope:
+          type: object
+          properties:
+            acquisition:
+              type: string
+            business_unit:
+              type: string
+            site:
+              type: string
+        evidence_pack_uri:
+          type: string
+          format: uri
+        rollback_plan_id:
+          type: string
+    CABSubmission:
+      type: object
+      required: [correlation_id, artifact_id, risk_score, evidence_uri]
+      properties:
+        correlation_id:
+          type: string
+        artifact_id:
+          type: string
+        risk_score:
+          type: number
+          minimum: 0
+          maximum: 100
+        evidence_uri:
+          type: string
+          format: uri
+        exceptions:
+          type: array
+          items:
+            $ref: '#/components/schemas/ExceptionRecord'
+    ExceptionRecord:
+      type: object
+      required: [exception_id, expires_on, compensating_controls]
+      properties:
+        exception_id:
+          type: string
+        expires_on:
+          type: string
+          format: date-time
+        compensating_controls:
+          type: array
+          items:
+            type: string
+        approver:
+          type: string
+paths:
+  /deployments:
+    post:
+      summary: Submit deployment intent
+      description: |
+        Creates a deployment intent and records correlation id. Idempotency enforced by correlation_id header. Requires complete evidence pack and CAB approval if risk_score > 50.
+      operationId: createDeploymentIntent
+      security:
+        - AzureAD: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              allOf:
+                - $ref: '#/components/schemas/DeploymentIntent'
+                - type: object
+                  properties:
+                    evidence_complete:
+                      type: boolean
+                      default: true
+      responses:
+        '201':
+          description: Deployment intent accepted; returns event id.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  event_id:
+                    type: string
+                    example: evt-20260104-0001
+        '400':
+          description: Missing evidence (code=EVIDENCE_INCOMPLETE)
+        '503':
+          description: Evidence store unavailable (code=EVIDENCE_STORE_UNAVAILABLE)
+  /cab/submissions:
+    post:
+      summary: Submit evidence pack for CAB review
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CABSubmission'
+      responses:
+        '201':
+          description: CAB submission accepted (event logged).
+        '202':
+          description: Submission accepted but waiting for approvals (Risk > 50).
+  /telemetry/events/{correlation_id}:
+    get:
+      summary: Query deployment events
+      parameters:
+        - name: correlation_id
+          in: path
+          required: true
+          schema:
+            type: string
+            example: dp-20260104-000A
+      responses:
+        '200':
+          description: Event list
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    timestamp:
+                      type: string
+                      format: date-time
+                    component:
+                      type: string
+                    status:
+                      type: string
+                    error_class:
+                      type: string
+    security:
+      - AzureAD: []

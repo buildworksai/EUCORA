@@ -1,0 +1,1 @@
+{"control_plane":{"api_url":"https://test-api.corp/v1","timeout_seconds":45},"retry":{"max_attempts":7}}

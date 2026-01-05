@@ -1,0 +1,105 @@
+openapi: 3.0.3
+info:
+  title: Deployment Intent API
+  version: v1.0
+  description: |
+    CRUD operations for deployment intents, including scope validation, rollout rings, and CAB gating enforcement.
+servers:
+  - url: https://api.control-plane.corp/v1
+components:
+  securitySchemes:
+    AzureAD:
+      type: oauth2
+      flows:
+        clientCredentials:
+          tokenUrl: https://login.microsoftonline.com/{tenantId}/oauth2/v2.0/token
+          scopes:
+            control_plane/.default: Manage deployment intents
+  schemas:
+    DeploymentIntent:
+      type: object
+      required: [correlation_id, artifact_id, ring, scope]
+      properties:
+        correlation_id:
+          type: string
+        artifact_id:
+          type: string
+        ring:
+          type: integer
+        scope:
+          type: object
+          properties:
+            acquisition:
+              type: string
+            business_unit:
+              type: string
+            site:
+              type: string
+        status:
+          type: string
+          enum: [staged, approved, published, failed]
+        rollback_plan_id:
+          type: string
+        risk_score:
+          type: integer
+paths:
+  /deployment-intents/{correlation_id}:
+    get:
+      summary: Retrieve intent status
+      parameters:
+        - name: correlation_id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Deployment intent found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DeploymentIntent'
+    delete:
+      summary: Cancel intent
+      responses:
+        '204':
+          description: Intent canceled
+        '409':
+          description: Cannot cancel active deployment (code=INTENT_ACTIVE)
+  /deployment-intents:
+    post:
+      summary: Create deployment intent
+      security:
+        - AzureAD: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/DeploymentIntent'
+      responses:
+        '201':
+          description: Intent created
+        '403':
+          description: Policy violation (scope mismatch or missing CAB approval)
+    patch:
+      summary: Update intent (e.g., scope/rollout adjustments)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                ring:
+                  type: integer
+                status:
+                  type: string
+                  enum: [staged, approved, published, failed]
+                evidence_complete:
+                  type: boolean
+      responses:
+        '200':
+          description: Intent updated
+        '423':
+          description: Intent locked (awaiting CAB decision)

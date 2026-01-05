@@ -1,0 +1,93 @@
+openapi: 3.0.3
+info:
+  title: Risk Assessment API
+  version: v1.0
+  description: |
+    Provides deterministic risk scoring based on normalized factors and returns gating decisions for CAB/promotion.
+servers:
+  - url: https://api.control-plane.corp/v1
+components:
+  securitySchemes:
+    AzureAD:
+      type: oauth2
+      flows:
+        clientCredentials:
+          tokenUrl: https://login.microsoftonline.com/{tenantId}/oauth2/v2.0/token
+          scopes:
+            control_plane/.default: Risk assessment access
+  schemas:
+    RiskRequest:
+      type: object
+      required: [artifact_id, normalized_factors]
+      properties:
+        artifact_id:
+          type: string
+        normalized_factors:
+          type: object
+          properties:
+            privilege_impact:
+              type: number
+              minimum: 0
+              maximum: 1
+            supply_chain_trust:
+              type: number
+              minimum: 0
+              maximum: 1
+            exploitability:
+              type: number
+              minimum: 0
+              maximum: 1
+            data_access:
+              type: number
+              minimum: 0
+              maximum: 1
+            sbom_vulnerability:
+              type: number
+              minimum: 0
+              maximum: 1
+            blast_radius:
+              type: number
+              minimum: 0
+              maximum: 1
+            operational_complexity:
+              type: number
+              minimum: 0
+              maximum: 1
+            history:
+              type: number
+              minimum: 0
+              maximum: 1
+    RiskResponse:
+      type: object
+      properties:
+        risk_score:
+          type: integer
+          minimum: 0
+          maximum: 100
+        cab_required:
+          type: boolean
+        normalized_factors:
+          type: object
+        model_version:
+          type: string
+paths:
+  /risk/score:
+    post:
+      summary: Compute risk score
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RiskRequest'
+      responses:
+        '200':
+          description: Risk score returned
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RiskResponse'
+        '400':
+          description: Invalid normalized factor values (must be 0-1)
+        '500':
+          description: Risk engine unavailable; event logged with alert to SIEM
