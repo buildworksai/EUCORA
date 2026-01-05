@@ -111,13 +111,13 @@ jobs:
 
       - name: Validate JSON files
         run: |
-          for file in $(find . -name "*.json" -not -path "*/node_modules/*"); do
+          for file in $(find . -name "*.json" -not -path "*/node_modules/*" -not -name "tsconfig*.json" -not -name "tsconfig.*.json"); do
             if ! jq empty "$file" 2>/dev/null; then
               echo "❌ Invalid JSON: $file"
               exit 1
             fi
           done
-          echo "✅ All JSON files valid"
+          echo "✅ All JSON files valid (excluding TypeScript config files which use JSONC)"
 
       - name: Validate YAML files
         run: |
