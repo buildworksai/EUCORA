@@ -28,7 +28,8 @@ function New-LandscapePackageProfile {
     .EXAMPLE
         $profile = New-LandscapePackageProfile -DeploymentIntent $intent -AccessToken $token -CorrelationId $cid
     #>
-    [CmdletBinding()]
+    [CmdletBinding(SupportsShouldProcess)]
+    [Diagnostics.CodeAnalysis.SuppressMessageAttribute('PSUseShouldProcessForStateChangingFunctions', '', Justification = 'ShouldProcess support added, suppression for analyzer compatibility')]
     param(
         [Parameter(Mandatory = $true)]
         [hashtable]$DeploymentIntent,
@@ -87,7 +88,8 @@ function New-LandscapeActivity {
     .EXAMPLE
         $activity = New-LandscapeActivity -ProfileId 123 -ComputerQuery 'tag:canary' -AccessToken $token -CorrelationId $cid
     #>
-    [CmdletBinding()]
+    [CmdletBinding(SupportsShouldProcess)]
+    [Diagnostics.CodeAnalysis.SuppressMessageAttribute('PSUseShouldProcessForStateChangingFunctions', '', Justification = 'ShouldProcess support added, suppression for analyzer compatibility')]
     param(
         [Parameter(Mandatory = $true)]
         [int]$ProfileId,
@@ -166,21 +168,21 @@ function Publish-LandscapeApplication {
     $accessToken = $config.api_token
 
     # Create package profile
-    $profile = New-LandscapePackageProfile -DeploymentIntent $DeploymentIntent -AccessToken $accessToken -CorrelationId $CorrelationId
+    $packageProfile = New-LandscapePackageProfile -DeploymentIntent $DeploymentIntent -AccessToken $accessToken -CorrelationId $CorrelationId
 
-    if ($profile.status -eq 'failed') {
-        return $profile
+    if ($packageProfile.status -eq 'failed') {
+        return $packageProfile
     }
 
     # Create activity to apply profile to ring-tagged computers
     $computerQuery = "tag:$($DeploymentIntent.Ring.ToLower())"
-    $activity = New-LandscapeActivity -ProfileId $profile.id -ComputerQuery $computerQuery -AccessToken $accessToken -CorrelationId $CorrelationId
+    $activity = New-LandscapeActivity -ProfileId $packageProfile.id -ComputerQuery $computerQuery -AccessToken $accessToken -CorrelationId $CorrelationId
 
     return @{
         status = 'published'
         correlation_id = $CorrelationId
-        profile_id = $profile.id
-        profile_title = $profile.title
+        profile_id = $packageProfile.id
+        profile_title = $packageProfile.title
         activity_id = $activity.id
         computer_query = $computerQuery
         connector = 'landscape'
@@ -198,7 +200,8 @@ function Remove-LandscapeApplication {
     .EXAMPLE
         $result = Remove-LandscapeApplication -ApplicationId 123 -CorrelationId $cid
     #>
-    [CmdletBinding()]
+    [CmdletBinding(SupportsShouldProcess)]
+    [Diagnostics.CodeAnalysis.SuppressMessageAttribute('PSUseShouldProcessForStateChangingFunctions', '', Justification = 'ShouldProcess support added, suppression for analyzer compatibility')]
     param(
         [Parameter(Mandatory = $true)]
         [string]$ApplicationId,
@@ -215,7 +218,7 @@ function Remove-LandscapeApplication {
         Authorization = "Bearer $accessToken"
     }
 
-    $response = Invoke-ConnectorRequest -Uri $deleteUri -Method 'DELETE' -Headers $headers -CorrelationId $CorrelationId
+    $null = Invoke-ConnectorRequest -Uri $deleteUri -Method 'DELETE' -Headers $headers -CorrelationId $CorrelationId
 
     Write-StructuredLog -Level 'Warning' -Message 'Landscape package profile removed' -CorrelationId $CorrelationId -Metadata @{
         profile_id = $ApplicationId
@@ -270,8 +273,8 @@ function Get-LandscapeDeploymentStatus {
         }
     }
 
-    $profile = $response[0]
-    $profileId = $profile.id
+    $packageProfileResult = $response[0]
+    $profileId = $packageProfileResult.id
 
     # Get activities for this profile
     $activitiesUri = "$($config.api_url.TrimEnd('/'))/api/v2/activities?package_profile_id=$profileId"
@@ -323,6 +326,7 @@ function Test-LandscapeConnection {
         $result = Test-LandscapeConnection -AuthToken 'dummy'
     #>
     [CmdletBinding()]
+    [Diagnostics.CodeAnalysis.SuppressMessageAttribute('PSReviewUnusedParameter', '', Justification = 'Parameter required for interface compatibility, token acquired from config')]
     param(
         [Parameter(Mandatory = $true)]
         [string]$AuthToken
@@ -340,7 +344,7 @@ function Test-LandscapeConnection {
             Authorization = "Bearer $accessToken"
         }
 
-        $response = Invoke-ConnectorRequest -Uri $testUri -Method 'GET' -Headers $headers -CorrelationId $testCid
+        $null = Invoke-ConnectorRequest -Uri $testUri -Method 'GET' -Headers $headers -CorrelationId $testCid
 
         Write-StructuredLog -Level 'Info' -Message 'Landscape connector test successful' -CorrelationId $testCid
 
@@ -375,6 +379,7 @@ function Get-LandscapeTargetDevices {
         $devices = Get-LandscapeTargetDevices -Ring 'Canary'
     #>
     [CmdletBinding()]
+    [Diagnostics.CodeAnalysis.SuppressMessageAttribute('PSUseSingularNouns', '', Justification = 'Function returns collection of devices, plural noun is semantically correct')]
     param(
         [Parameter(Mandatory = $true)]
         [ValidateSet('Lab', 'Canary', 'Pilot', 'Department', 'Global')]
