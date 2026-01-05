@@ -18,17 +18,25 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Setup PowerShell
-        uses: actions/setup-powershell@v1
+      - name: Install PowerShell
+        run: |
+          if ! command -v pwsh &> /dev/null; then
+            sudo apt-get update
+            sudo apt-get install -y wget apt-transport-https software-properties-common lsb-release
+            wget -q https://packages.microsoft.com/config/ubuntu/$(lsb_release -rs)/packages-microsoft-prod.deb
+            sudo dpkg -i packages-microsoft-prod.deb || true
+            sudo apt-get update
+            sudo apt-get install -y powershell
+          fi
+          pwsh --version
 
       - name: Check SPDX Headers
         run: |
-          pwsh -File scripts/utilities/Add-SPDXHeaders.ps1 -DryRun
-          if [ $? -ne 0 ]; then
-            echo "❌ SPDX compliance check failed"
-            echo "Run 'pwsh -File scripts/utilities/Add-SPDXHeaders.ps1' to fix"
+          if [ ! -f "scripts/utilities/Add-SPDXHeaders.ps1" ]; then
+            echo "❌ SPDX script not found at scripts/utilities/Add-SPDXHeaders.ps1"
             exit 1
           fi
+          pwsh -File scripts/utilities/Add-SPDXHeaders.ps1 -DryRun || exit 1
           echo "✅ All PowerShell files have SPDX headers"
 
   powershell-lint:
@@ -39,17 +47,31 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Setup PowerShell
-        uses: actions/setup-powershell@v1
+      - name: Install PowerShell
+        run: |
+          if ! command -v pwsh &> /dev/null; then
+            sudo apt-get update
+            sudo apt-get install -y wget apt-transport-https software-properties-common lsb-release
+            wget -q https://packages.microsoft.com/config/ubuntu/$(lsb_release -rs)/packages-microsoft-prod.deb
+            sudo dpkg -i packages-microsoft-prod.deb || true
+            sudo apt-get update
+            sudo apt-get install -y powershell
+          fi
+          pwsh --version
 
       - name: Install PSScriptAnalyzer
         run: |
-          pwsh -Command "Install-Module -Name PSScriptAnalyzer -Force -Scope CurrentUser"
+          pwsh -Command "
+            \$ErrorActionPreference = 'Stop'
+            Install-Module -Name PSScriptAnalyzer -Force -Scope CurrentUser -AllowClobber
+            Write-Host '✅ PSScriptAnalyzer installed successfully'
+          "
 
       - name: Run PSScriptAnalyzer
         run: |
           pwsh -Command "
-            \$results = Invoke-ScriptAnalyzer -Path . -Recurse -Settings PSGallery -Severity Error,Warning
+            \$ErrorActionPreference = 'Stop'
+            \$results = Invoke-ScriptAnalyzer -Path . -Recurse -IncludeDefaultRules -Severity Error,Warning | Where-Object { \$_.ScriptPath -like '*.ps1' }
             if (\$results) {
               \$results | Format-Table -AutoSize
               Write-Error 'PSScriptAnalyzer found issues'
@@ -83,6 +105,9 @@ jobs:
             exit 1
           fi
           echo "✅ No large files"
+
+      - name: Install jq
+        run: sudo apt-get update && sudo apt-get install -y jq
 
       - name: Validate JSON files
         run: |

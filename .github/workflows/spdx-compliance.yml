@@ -22,16 +22,30 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Setup PowerShell
-        uses: actions/setup-powershell@v1
+      - name: Install PowerShell
+        run: |
+          if ! command -v pwsh &> /dev/null; then
+            sudo apt-get update
+            sudo apt-get install -y wget apt-transport-https software-properties-common lsb-release
+            wget -q https://packages.microsoft.com/config/ubuntu/$(lsb_release -rs)/packages-microsoft-prod.deb
+            sudo dpkg -i packages-microsoft-prod.deb || true
+            sudo apt-get update
+            sudo apt-get install -y powershell
+          fi
+          pwsh --version
 
       - name: Run SPDX Compliance Check
         id: spdx-check
         run: |
           echo "Checking SPDX compliance..."
-          pwsh -File scripts/utilities/Add-SPDXHeaders.ps1 -DryRun
+          if [ ! -f "scripts/utilities/Add-SPDXHeaders.ps1" ]; then
+            echo "status=failure" >> $GITHUB_OUTPUT
+            echo "message=SPDX script not found" >> $GITHUB_OUTPUT
+            echo "❌ SPDX script not found at scripts/utilities/Add-SPDXHeaders.ps1"
+            exit 1
+          fi
           
-          if [ $? -eq 0 ]; then
+          if pwsh -File scripts/utilities/Add-SPDXHeaders.ps1 -DryRun; then
             echo "status=success" >> $GITHUB_OUTPUT
             echo "message=All PowerShell files have SPDX headers" >> $GITHUB_OUTPUT
           else
