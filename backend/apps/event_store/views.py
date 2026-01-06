@@ -4,7 +4,7 @@
 Event Store views for audit trail.
 """
 from rest_framework.decorators import api_view, permission_classes
-from rest_framework.permissions import IsAuthenticated
+from rest_framework.permissions import IsAuthenticated, AllowAny
 from rest_framework.response import Response
 from .models import DeploymentEvent
 import logging
@@ -13,7 +13,7 @@ logger = logging.getLogger(__name__)
 
 
 @api_view(['GET'])
-@permission_classes([IsAuthenticated])
+@permission_classes([AllowAny])
 def list_events(request):
     """
     List deployment events with filters.

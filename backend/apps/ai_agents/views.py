@@ -262,34 +262,41 @@ def list_conversations(request):
 
 
 @api_view(['GET'])
-@permission_classes([IsAuthenticated])
+@permission_classes([AllowAny])
 def agent_stats(request):
     """Get AI agent statistics."""
     try:
-        active_tasks = AIAgentTask.objects.filter(
-            initiated_by=request.user,
-            status__in=['pending', 'in_progress', 'awaiting_approval']
-        ).count()
-        
-        awaiting_approval = AIAgentTask.objects.filter(
-            initiated_by=request.user,
-            status='awaiting_approval'
-        ).count()
-        
-        completed_today = AIAgentTask.objects.filter(
-            initiated_by=request.user,
-            status='completed',
-            updated_at__date=timezone.now().date()
-        ).count()
-        
-        # Calculate tokens used (rough estimate)
-        today_messages = AIMessage.objects.filter(
-            conversation__user=request.user,
-            created_at__date=timezone.now().date(),
-            role='assistant'
-        )
-        tokens_used = sum(msg.token_count for msg in today_messages)
-        
+        if request.user.is_authenticated:
+            active_tasks = AIAgentTask.objects.filter(
+                initiated_by=request.user,
+                status__in=['pending', 'in_progress', 'awaiting_approval']
+            ).count()
+
+            awaiting_approval = AIAgentTask.objects.filter(
+                initiated_by=request.user,
+                status='awaiting_approval'
+            ).count()
+
+            completed_today = AIAgentTask.objects.filter(
+                initiated_by=request.user,
+                status='completed',
+                updated_at__date=timezone.now().date()
+            ).count()
+
+            # Calculate tokens used (rough estimate)
+            today_messages = AIMessage.objects.filter(
+                conversation__user=request.user,
+                created_at__date=timezone.now().date(),
+                role='assistant'
+            )
+            tokens_used = sum(msg.token_count for msg in today_messages)
+        else:
+            # Anonymous users get zeros
+            active_tasks = 0
+            awaiting_approval = 0
+            completed_today = 0
+            tokens_used = 0
+
         return Response({
             'active_tasks': active_tasks,
             'awaiting_approval': awaiting_approval,
@@ -305,12 +312,12 @@ def agent_stats(request):
 
 
 @api_view(['GET'])
-@permission_classes([IsAuthenticated])
+@permission_classes([AllowAny])
 def list_tasks(request):
     """List AI agent tasks."""
     status_filter = request.query_params.get('status')
     
-    queryset = AIAgentTask.objects.filter(initiated_by=request.user)
+    queryset = AIAgentTask.objects.filter(initiated_by=request.user) if request.user.is_authenticated else AIAgentTask.objects.none()
     
     if status_filter:
         queryset = queryset.filter(status=status_filter)

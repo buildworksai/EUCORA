@@ -26,6 +26,13 @@ CORS_ALLOW_ALL_ORIGINS = True
 
 # Email backend (console for development)
 EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
+# DRF default permissions: Allow anonymous reads in development
+REST_FRAMEWORK.update({
+    'DEFAULT_PERMISSION_CLASSES': [
+        'rest_framework.permissions.AllowAny',
+    ],
+})
+
 
 # Django Debug Toolbar (optional)
 if config('ENABLE_DEBUG_TOOLBAR', default=False, cast=bool):
