@@ -1,5 +1,8 @@
 # SPDX-License-Identifier: Apache-2.0
 # Copyright (c) 2026 BuildWorks.AI
+# Suppress common test file warnings
+[Diagnostics.CodeAnalysis.SuppressMessageAttribute('PSUseDeclaredVarsMoreThanAssignments', '', Justification = 'Test variables are used in assertions via Should')]
+[Diagnostics.CodeAnalysis.SuppressMessageAttribute('PSReviewUnusedParameter', '', Justification = 'Mock function parameters required for interface compatibility')]
 
 BeforeAll {
     . "$PSScriptRoot/../../connectors/common/ConnectorBase.ps1"
@@ -97,13 +100,13 @@ Describe "ConnectorBase - Invoke-ConnectorRequest Idempotency" {
     }
 
     It "Should check idempotency for POST requests" {
-        $result = Invoke-ConnectorRequest -Uri 'https://test.example.com/api' -Method 'POST' -CorrelationId 'test-cid-001'
+        $null = Invoke-ConnectorRequest -Uri 'https://test.example.com/api' -Method 'POST' -CorrelationId 'test-cid-001'
 
         Should -Invoke Test-IdempotencyKey -Times 1 -Exactly
     }
 
     It "Should skip idempotency check for GET requests" {
-        $result = Invoke-ConnectorRequest -Uri 'https://test.example.com/api' -Method 'GET' -CorrelationId 'test-cid-002'
+        $null = Invoke-ConnectorRequest -Uri 'https://test.example.com/api' -Method 'GET' -CorrelationId 'test-cid-002'
 
         Should -Invoke Test-IdempotencyKey -Times 0 -Exactly
     }
@@ -121,7 +124,7 @@ Describe "ConnectorBase - Invoke-ConnectorRequest Idempotency" {
     It "Should proceed with request when idempotency check passes" {
         Mock Test-IdempotencyKey { return $false }
 
-        $result = Invoke-ConnectorRequest -Uri 'https://test.example.com/api' -Method 'POST' -CorrelationId 'test-cid-004'
+        $null = Invoke-ConnectorRequest -Uri 'https://test.example.com/api' -Method 'POST' -CorrelationId 'test-cid-004'
 
         Should -Invoke Invoke-RetryWithBackoff -Times 1 -Exactly
     }
@@ -132,26 +135,28 @@ Describe "ConnectorBase - Invoke-ConnectorRequest Headers" {
         Mock Test-IdempotencyKey { return $false }
         Mock Invoke-RetryWithBackoff {
             param($ScriptBlock)
+            # Execute the script block to use the parameter
+            & $ScriptBlock
             return @{ status = 'success' }
         }
         Mock Write-StructuredLog { }
     }
 
     It "Should add X-Correlation-ID header" {
-        $result = Invoke-ConnectorRequest -Uri 'https://test.example.com/api' -Method 'GET' -CorrelationId 'test-cid-005'
+        $null = Invoke-ConnectorRequest -Uri 'https://test.example.com/api' -Method 'GET' -CorrelationId 'test-cid-005'
 
         # Verify via mock invocation (headers passed to Invoke-RetryWithBackoff)
         Should -Invoke Invoke-RetryWithBackoff -Times 1 -Exactly
     }
 
     It "Should add X-Idempotency-Key header for POST requests" {
-        $result = Invoke-ConnectorRequest -Uri 'https://test.example.com/api' -Method 'POST' -CorrelationId 'test-cid-006'
+        $null = Invoke-ConnectorRequest -Uri 'https://test.example.com/api' -Method 'POST' -CorrelationId 'test-cid-006'
 
         Should -Invoke Invoke-RetryWithBackoff -Times 1 -Exactly
     }
 
     It "Should use custom idempotency key when provided" {
-        $result = Invoke-ConnectorRequest -Uri 'https://test.example.com/api' -Method 'POST' -CorrelationId 'test-cid-007' -IdempotencyKey 'custom-key-001'
+        $null = Invoke-ConnectorRequest -Uri 'https://test.example.com/api' -Method 'POST' -CorrelationId 'test-cid-007' -IdempotencyKey 'custom-key-001'
 
         Should -Invoke Test-IdempotencyKey -Times 1 -ParameterFilter { $CorrelationId -eq 'custom-key-001' }
     }
@@ -159,7 +164,7 @@ Describe "ConnectorBase - Invoke-ConnectorRequest Headers" {
     It "Should merge custom headers with default headers" {
         $customHeaders = @{ 'X-Custom-Header' = 'CustomValue' }
 
-        $result = Invoke-ConnectorRequest -Uri 'https://test.example.com/api' -Method 'GET' -Headers $customHeaders -CorrelationId 'test-cid-008'
+        $null = Invoke-ConnectorRequest -Uri 'https://test.example.com/api' -Method 'GET' -Headers $customHeaders -CorrelationId 'test-cid-008'
 
         Should -Invoke Invoke-RetryWithBackoff -Times 1 -Exactly
     }

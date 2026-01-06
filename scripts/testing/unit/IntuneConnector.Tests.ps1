@@ -1,5 +1,8 @@
 # SPDX-License-Identifier: Apache-2.0
 # Copyright (c) 2026 BuildWorks.AI
+# Suppress common test file warnings
+[Diagnostics.CodeAnalysis.SuppressMessageAttribute('PSUseDeclaredVarsMoreThanAssignments', '', Justification = 'Test variables are used in assertions via Should')]
+[Diagnostics.CodeAnalysis.SuppressMessageAttribute('PSReviewUnusedParameter', '', Justification = 'Mock function parameters required for interface compatibility')]
 
 BeforeAll {
     . "$PSScriptRoot/../../connectors/intune/IntuneConnector.ps1"

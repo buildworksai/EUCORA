@@ -24,6 +24,7 @@ $script:IdempotencyCache = @{}
 . "$PSScriptRoot/Get-CorrelationId.ps1"
 . "$PSScriptRoot/Get-ConfigValue.ps1"
 function Get-EventStoreRecords {
+    [Diagnostics.CodeAnalysis.SuppressMessageAttribute('PSUseSingularNouns', '', Justification = 'Function returns collection of records, plural noun is semantically correct')]
     param(
         [string]$Path
     )
@@ -35,6 +36,7 @@ function Get-EventStoreRecords {
     return @($json.events)
 }
 function Normalize-Path {
+    [Diagnostics.CodeAnalysis.SuppressMessageAttribute('PSUseApprovedVerbs', '', Justification = 'Normalize is an acceptable verb for path operations')]
     param([string]$InputPath)
     $full = [System.IO.Path]::GetFullPath($InputPath)
     $base = [System.IO.Path]::GetFullPath((Join-Path $PSScriptRoot '..\..\config'))

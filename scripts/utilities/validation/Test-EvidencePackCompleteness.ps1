@@ -11,6 +11,7 @@ Hashtable representation of evidence pack.
 Path to JSON schema for validation.
 .EXAMPLE
 $result = Test-EvidencePackCompleteness -EvidencePack $pack
+if ($result.IsValid) { Write-Output "Evidence pack is valid" } else { Write-Output "Errors: $($result.Errors)" }
 .NOTES
 Version: 1.0
 Author: Control Plane Engineering

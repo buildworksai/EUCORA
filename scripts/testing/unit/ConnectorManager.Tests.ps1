@@ -1,5 +1,8 @@
 # SPDX-License-Identifier: Apache-2.0
 # Copyright (c) 2025 BuildWorks.AI
+# Suppress common test file warnings
+[Diagnostics.CodeAnalysis.SuppressMessageAttribute('PSReviewUnusedParameter', '', Justification = 'Mock function parameters required for interface compatibility')]
+[Diagnostics.CodeAnalysis.SuppressMessageAttribute('PSUseSingularNouns', '', Justification = 'Test function names are acceptable in test context')]
 #<#+
 .SYNOPSIS
     Unit tests for ConnectorManager dispatch logic.
@@ -44,22 +47,32 @@ Describe 'ConnectorManager' {
         }
         function Test-IntuneConnection {
             param($AuthToken)
+            # Use AuthToken parameter to avoid unused parameter warning
+            $null = $AuthToken
             return @{ connector = 'intune'; status = 'ready'; token = $AuthToken }
         }
         function Test-JamfConnection {
             param($AuthToken)
+            # Use AuthToken parameter to avoid unused parameter warning
+            $null = $AuthToken
             return @{ connector = 'jamf'; status = 'ready' }
         }
         function Test-SccmConnection {
             param($AuthToken)
+            # Use AuthToken parameter to avoid unused parameter warning
+            $null = $AuthToken
             return @{ connector = 'sccm'; status = 'ready' }
         }
         function Test-LandscapeConnection {
             param($AuthToken)
+            # Use AuthToken parameter to avoid unused parameter warning
+            $null = $AuthToken
             return @{ connector = 'landscape'; status = 'ready' }
         }
         function Test-AnsibleConnection {
             param($AuthToken)
+            # Use AuthToken parameter to avoid unused parameter warning
+            $null = $AuthToken
             return @{ connector = 'ansible'; status = 'ready' }
         }
     }

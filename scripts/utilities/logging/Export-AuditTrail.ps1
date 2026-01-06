@@ -26,6 +26,7 @@ Set-StrictMode -Version Latest
 $ErrorActionPreference = 'Stop'
 . "$PSScriptRoot/../common/Get-ConfigValue.ps1"
 function Get-Events {
+    [Diagnostics.CodeAnalysis.SuppressMessageAttribute('PSUseSingularNouns', '', Justification = 'Function returns collection of events, plural noun is semantically correct')]
     param([string]$Path)
     $safe = [System.IO.Path]::GetFullPath($Path)
     $base = [System.IO.Path]::GetFullPath((Join-Path $PSScriptRoot '..\..\config'))

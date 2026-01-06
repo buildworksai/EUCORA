@@ -8,7 +8,8 @@
     `az account get-access-token` for the Microsoft Graph resource. Fallbacks throw a clear error.
 .PARAMETER None
 .EXAMPLE
-    $token = Initialize-Auth
+    $authToken = Initialize-Auth
+    Write-Output "Token: $authToken"
 .NOTES
 Version: 1.0
 Author: Platform Engineering
@@ -17,11 +18,9 @@ Related Docs: .agents/rules/02-control-plane-rules.md
 Set-StrictMode -Version Latest
 $ErrorActionPreference = 'Stop'
 function Initialize-Auth {
-    [Diagnostics.CodeAnalysis.SuppressMessageAttribute('PSUseDeclaredVarsMoreThanAssignments', '', Justification = 'Variable is used immediately after assignment')]
     param()
-    $envToken = $env:DAPCTL_AUTH_TOKEN
-    if ($envToken -and $envToken -ne '') {
-        return $envToken
+    if ($env:DAPCTL_AUTH_TOKEN -and $env:DAPCTL_AUTH_TOKEN -ne '') {
+        return $env:DAPCTL_AUTH_TOKEN
     }
     if (-not (Get-Command az -ErrorAction SilentlyContinue)) {
         throw 'Authentication failed: DAPCTL_AUTH_TOKEN missing and Azure CLI (az) not installed.'

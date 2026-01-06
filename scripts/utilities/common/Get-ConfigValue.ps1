@@ -15,6 +15,7 @@ Value returned when key is missing and not required.
 Switch to throw if the key cannot be resolved.
 .EXAMPLE
 $apiUrl = Get-ConfigValue -Key 'control_plane.api_url' -Required
+Write-Output "API URL: $apiUrl"
 .NOTES
 Version: 1.0
 Author: Control Plane Engineering

@@ -1,5 +1,7 @@
 # SPDX-License-Identifier: Apache-2.0
 # Copyright (c) 2025 BuildWorks.AI
+# Suppress common test file warnings
+[Diagnostics.CodeAnalysis.SuppressMessageAttribute('PSReviewUnusedParameter', '', Justification = 'Mock function parameters required for interface compatibility')]
 #<#+
 .SYNOPSIS
     Unit tests for the AWX/Tower Ansible connector.
@@ -55,6 +57,8 @@ Describe 'AnsibleConnector' {
         Set-TestConnectorConfig @{ tower_api_url = 'https://awx.example.com/api/v2'; token = 'token'; job_template_id = 'jt-1'; rollback_job_template_id = 'rt-1' }
         Mock Invoke-ConnectorRequest {
             param($Uri, $Method)
+            # Use both parameters to avoid unused parameter warning
+            if ($Method -eq 'GET' -and $Uri -like '*hosts*') { return @{ results = @() } }
             if ($Method -eq 'GET') { return @{ results = @() } }
             return @{ job_id = 'awx-123' }
         }

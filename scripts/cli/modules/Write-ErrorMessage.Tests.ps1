@@ -1,5 +1,7 @@
 # SPDX-License-Identifier: Apache-2.0
 # Copyright (c) 2025 BuildWorks.AI
+# Suppress common test file warnings
+[Diagnostics.CodeAnalysis.SuppressMessageAttribute('PSReviewUnusedParameter', '', Justification = 'Mock function parameters required for interface compatibility')]
 #Set-StrictMode -Version Latest
 $ErrorActionPreference = 'Stop'
 Describe 'Write-ErrorMessage' {

@@ -1,5 +1,8 @@
 # SPDX-License-Identifier: Apache-2.0
 # Copyright (c) 2026 BuildWorks.AI
+# Suppress common test file warnings
+[Diagnostics.CodeAnalysis.SuppressMessageAttribute('PSUseDeclaredVarsMoreThanAssignments', '', Justification = 'Test variables are used in assertions via Should')]
+[Diagnostics.CodeAnalysis.SuppressMessageAttribute('PSReviewUnusedParameter', '', Justification = 'Mock function parameters required for interface compatibility')]
 #<#+
 .SYNOPSIS
     Integration tests for connector end-to-end workflows.
@@ -17,6 +20,7 @@ BeforeAll {
 Describe "Integration - End-to-End Publish Workflow" {
     BeforeEach {
         Mock Get-ConnectorConfig {
+            [Diagnostics.CodeAnalysis.SuppressMessageAttribute('PSReviewUnusedParameter', '', Justification = 'Mock function parameter required for interface compatibility')]
             param($Name)
             return @{
                 intune = @{
