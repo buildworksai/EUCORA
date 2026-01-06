@@ -1,0 +1,41 @@
+# SPDX-License-Identifier: Apache-2.0
+# Copyright (c) 2026 BuildWorks.AI
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: eucora-celery-beat
+  namespace: eucora
+  labels:
+    app: eucora-celery-beat
+    component: scheduler
+spec:
+  replicas: 1  # Only one beat scheduler should run
+  strategy:
+    type: Recreate  # Beat must be singleton
+  selector:
+    matchLabels:
+      app: eucora-celery-beat
+  template:
+    metadata:
+      labels:
+        app: eucora-celery-beat
+        component: scheduler
+    spec:
+      containers:
+      - name: beat
+        image: eucora/api:latest
+        imagePullPolicy: Always
+        command: ["celery", "-A", "config", "beat", "--loglevel=info"]
+        envFrom:
+        - configMapRef:
+            name: eucora-config
+        - secretRef:
+            name: eucora-secrets
+        resources:
+          requests:
+            memory: "256Mi"
+            cpu: "100m"
+          limits:
+            memory: "512Mi"
+            cpu: "250m"
+

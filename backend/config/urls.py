@@ -8,8 +8,13 @@ API versioning via URL path: /api/v1/
 from django.contrib import admin
 from django.urls import path, include
 from drf_spectacular.views import SpectacularAPIView, SpectacularSwaggerView
+from apps.core.health import liveness_check, readiness_check
 
 urlpatterns = [
+    # Health checks (Kubernetes probes)
+    path('health/live', liveness_check, name='liveness'),
+    path('health/ready', readiness_check, name='readiness'),
+    
     # Admin
     path('admin/', admin.site.urls),
     

@@ -29,6 +29,7 @@ INSTALLED_APPS = [
     'rest_framework',
     'corsheaders',
     'drf_spectacular',
+    'django_celery_beat',
     # Local apps
     'apps.core',
     'apps.authentication',
@@ -256,3 +257,16 @@ ENTRA_ID_REDIRECT_URI = config('ENTRA_ID_REDIRECT_URI', default='http://localhos
 # Azure Sentinel (SIEM) integration
 AZURE_SENTINEL_WORKSPACE_ID = config('AZURE_SENTINEL_WORKSPACE_ID', default='')
 AZURE_SENTINEL_SHARED_KEY = config('AZURE_SENTINEL_SHARED_KEY', default='')
+
+# Celery Configuration
+CELERY_BROKER_URL = config('CELERY_BROKER_URL', default='redis://localhost:6379/1')
+CELERY_RESULT_BACKEND = config('CELERY_RESULT_BACKEND', default='redis://localhost:6379/1')
+CELERY_ACCEPT_CONTENT = ['json']
+CELERY_TASK_SERIALIZER = 'json'
+CELERY_RESULT_SERIALIZER = 'json'
+CELERY_TIMEZONE = 'UTC'
+CELERY_ENABLE_UTC = True
+CELERY_TASK_ACKS_LATE = True
+CELERY_WORKER_PREFETCH_MULTIPLIER = 1
+CELERY_TASK_TIME_LIMIT = 30 * 60  # 30 minutes
+CELERY_TASK_SOFT_TIME_LIMIT = 25 * 60  # 25 minutes

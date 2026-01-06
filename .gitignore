@@ -212,3 +212,5 @@ out/
 .tern-port
 .nyc_output
 
+k8s/secrets.yaml
+.secrets.baseline
