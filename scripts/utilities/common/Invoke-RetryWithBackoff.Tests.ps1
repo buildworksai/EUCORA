@@ -18,11 +18,11 @@ Describe 'Invoke-RetryWithBackoff' {
     }
     BeforeEach {
         $scriptBlockCalls = 0
-        Mock -CommandName Start-Sleep { 
-            param($Seconds) 
+        Mock -CommandName Start-Sleep {
+            param($Seconds)
             # Use Seconds parameter to avoid unused parameter warning
             $null = $Seconds
-            $scriptBlockCalls++ 
+            $scriptBlockCalls++
         } -Verifiable
     }
     It 'Returns result on first attempt without sleep' {
