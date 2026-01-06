@@ -35,5 +35,10 @@ RUN pip install --upgrade pip && \
 # Copy project
 COPY . /app/
 
-# Run migrations and start server (overridden by docker-compose command)
+# Make entrypoint script executable and install psycopg2 for connection testing
+RUN chmod +x /app/entrypoint.sh && \
+    pip install psycopg2-binary
+
+# Set entrypoint to handle migrations automatically
+ENTRYPOINT ["/bin/bash", "/app/entrypoint.sh"]
 CMD ["python", "manage.py", "runserver", "0.0.0.0:8000"]
