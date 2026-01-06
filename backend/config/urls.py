@@ -26,7 +26,7 @@ urlpatterns = [
     path('api/v1/evidence/', include('apps.evidence_store.urls')),
     path('api/v1/events/', include('apps.event_store.urls')),
     path('api/v1/connectors/', include('apps.connectors.urls')),
-    path('api/v1/', include('apps.connectors.urls')),  # Assets endpoints at /api/v1/assets/
+    path('api/v1/assets/', include('apps.connectors.urls', namespace='assets')),
     path('api/v1/health/', include('apps.telemetry.urls')),
     path('api/v1/ai/', include('apps.ai_agents.urls')),
     
