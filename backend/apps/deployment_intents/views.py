@@ -4,7 +4,7 @@
 Deployment Intent views for orchestration.
 """
 from rest_framework.decorators import api_view, permission_classes
-from rest_framework.permissions import IsAuthenticated
+from rest_framework.permissions import IsAuthenticated, AllowAny
 from rest_framework.response import Response
 from rest_framework import status
 from .models import DeploymentIntent, RingDeployment
@@ -71,7 +71,7 @@ def create_deployment(request):
 
 
 @api_view(['GET'])
-@permission_classes([IsAuthenticated])
+@permission_classes([AllowAny])
 def list_deployments(request):
     """
     List deployment intents with filters.
