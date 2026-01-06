@@ -5,7 +5,7 @@ API views for AI Agents.
 """
 import logging
 from rest_framework.decorators import api_view, permission_classes
-from rest_framework.permissions import IsAuthenticated
+from rest_framework.permissions import IsAuthenticated, AllowAny
 from rest_framework.response import Response
 from rest_framework import status
 from django.utils import timezone
@@ -17,7 +17,7 @@ logger = logging.getLogger(__name__)
 
 
 @api_view(['GET'])
-@permission_classes([IsAuthenticated])
+@permission_classes([AllowAny])
 def list_providers(request):
     """List all configured AI model providers."""
     # Only Platform Admins can see provider details
@@ -340,18 +340,22 @@ def list_tasks(request):
 
 
 @api_view(['GET'])
-@permission_classes([IsAuthenticated])
+@permission_classes([AllowAny])
 def list_pending_approvals(request):
     """List all AI agent tasks pending human approval."""
     # Users see their own tasks pending approval
     # Admins/Staff can see all pending approvals
-    if request.user.is_staff or request.user.is_superuser:
+    # Anonymous users see no approvals
+    if request.user.is_authenticated and (request.user.is_staff or request.user.is_superuser):
         queryset = AIAgentTask.objects.filter(status='awaiting_approval')
-    else:
+    elif request.user.is_authenticated:
         queryset = AIAgentTask.objects.filter(
             initiated_by=request.user,
             status='awaiting_approval'
         )
+    else:
+        # Anonymous users get empty list
+        queryset = AIAgentTask.objects.none()
     
     tasks = queryset.order_by('-created_at')[:100]
     

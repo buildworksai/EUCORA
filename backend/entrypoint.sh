@@ -30,5 +30,8 @@ done
 echo "Running Django migrations..."
 python manage.py migrate --noinput
 
+echo "Setting up development data..."
+python manage.py setup_dev_data
+
 echo "Starting Django development server..."
 exec "$@"
