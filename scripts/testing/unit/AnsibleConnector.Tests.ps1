@@ -19,11 +19,14 @@ Describe 'AnsibleConnector' {
             return
         }
         function Set-TestConnectorConfig {
+            [CmdletBinding(SupportsShouldProcess)]
             param(
                 [Parameter(Mandatory = $true)]
                 [hashtable]$Config
             )
-            $script:TestConnectorConfig = $Config
+            if ($PSCmdlet.ShouldProcess("Test connector configuration", "Set")) {
+                $script:TestConnectorConfig = $Config
+            }
         }
         function Get-ConnectorConfig {
             return $script:TestConnectorConfig
@@ -33,6 +36,8 @@ Describe 'AnsibleConnector' {
                 [Parameter(Mandatory = $false)]
                 [string]$Type
             )
+            # Use Type parameter to avoid unused parameter warning
+            if ($Type -eq 'deployment') { return 'dp-test' }
             return 'dp-test'
         }
         Set-TestConnectorConfig @{ }

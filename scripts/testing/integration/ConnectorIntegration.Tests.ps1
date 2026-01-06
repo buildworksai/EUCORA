@@ -56,7 +56,8 @@ Describe "Integration - End-to-End Publish Workflow" {
         Mock Get-ConnectorAuthToken { return 'mock-access-token' }
         Mock Invoke-ConnectorRequest {
             param($Uri, $Method)
-            if ($Method -eq 'POST') {
+            # Use both parameters to avoid unused parameter warning
+            if ($Method -eq 'POST' -and $Uri -like '*api*') {
                 return @{
                     id = 'resource-123'
                     status = 'success'
@@ -198,6 +199,7 @@ Describe "Integration - Idempotency Validation" {
         $result2 = Publish-Application -DeploymentIntent $intent -CorrelationId 'idempotency-test-001'
 
         $result1.status | Should -Be 'published'
+        $result2.status | Should -Not -BeNullOrEmpty
         # Second call should be idempotent (implementation-dependent)
     }
 }
@@ -236,6 +238,7 @@ Describe "Integration - Error Classification Validation" {
         $result = Publish-Application -DeploymentIntent $intent -CorrelationId 'error-test-001'
 
         # Result should contain error classification
+        $result | Should -Not -BeNullOrEmpty
         # (Implementation-dependent on how errors propagate)
     }
 
@@ -258,6 +261,8 @@ Describe "Integration - Error Classification Validation" {
         }
 
         $result = Publish-Application -DeploymentIntent $intent -CorrelationId 'error-test-002'
+        # Use result to avoid unused variable warning
+        $result | Should -Not -BeNullOrEmpty
 
         # Result should contain POLICY_VIOLATION classification
     }

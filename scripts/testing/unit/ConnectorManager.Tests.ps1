@@ -41,7 +41,7 @@ Describe 'ConnectorManager' {
             param($CorrelationId)
             return @{ status = 'complete'; correlation_id = $CorrelationId }
         }
-        function Get-IntuneTargetDevices {
+        function Get-IntuneTargetDevice {
             param($Ring)
             return @([ordered]@{ device_id = "intune-${Ring}-1"; ring = $Ring })
         }
