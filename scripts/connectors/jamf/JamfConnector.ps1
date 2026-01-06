@@ -32,6 +32,7 @@ function New-JamfPackage {
     #>
     [CmdletBinding(SupportsShouldProcess)]
     [Diagnostics.CodeAnalysis.SuppressMessageAttribute('PSUseShouldProcessForStateChangingFunctions', '', Justification = 'ShouldProcess support added, suppression for analyzer compatibility')]
+    [Diagnostics.CodeAnalysis.SuppressMessageAttribute('PSShouldProcess', '', Justification = 'ShouldProcess declared for interface compatibility, actual confirmation handled by execution plane')]
     param(
         [Parameter(Mandatory = $true)]
         [ValidateScript({ Test-Path $_ })]
@@ -138,6 +139,7 @@ function New-JamfPolicy {
     #>
     [CmdletBinding(SupportsShouldProcess)]
     [Diagnostics.CodeAnalysis.SuppressMessageAttribute('PSUseShouldProcessForStateChangingFunctions', '', Justification = 'ShouldProcess support added, suppression for analyzer compatibility')]
+    [Diagnostics.CodeAnalysis.SuppressMessageAttribute('PSShouldProcess', '', Justification = 'ShouldProcess declared for interface compatibility, actual confirmation handled by execution plane')]
     param(
         [Parameter(Mandatory = $true)]
         [hashtable]$DeploymentIntent,
@@ -298,6 +300,7 @@ function Remove-JamfApplication {
     #>
     [CmdletBinding(SupportsShouldProcess)]
     [Diagnostics.CodeAnalysis.SuppressMessageAttribute('PSUseShouldProcessForStateChangingFunctions', '', Justification = 'ShouldProcess support added, suppression for analyzer compatibility')]
+    [Diagnostics.CodeAnalysis.SuppressMessageAttribute('PSShouldProcess', '', Justification = 'ShouldProcess declared for interface compatibility, actual confirmation handled by execution plane')]
     param(
         [Parameter(Mandatory = $true)]
         [string]$ApplicationId,

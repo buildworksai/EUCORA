@@ -19,6 +19,7 @@ Related Docs: .agents/rules/05-cab-approval-rules.md
 Set-StrictMode -Version Latest
 $ErrorActionPreference = 'Stop'
 function Get-CABRecords {
+    [Diagnostics.CodeAnalysis.SuppressMessageAttribute('PSUseSingularNouns', '', Justification = 'Function returns collection of records, plural noun is semantically correct')]
     param([string]$Path)
     if (-not (Test-Path -Path $Path)) { return @() }
     $content = Get-Content -Path $Path -Raw

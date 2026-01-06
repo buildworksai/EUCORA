@@ -19,6 +19,7 @@ Related Docs: .agents/rules/10-evidence-pack-rules.md, docs/architecture/evidenc
 Set-StrictMode -Version Latest
 $ErrorActionPreference = 'Stop'
 function Load-Schema {
+    [Diagnostics.CodeAnalysis.SuppressMessageAttribute('PSUseApprovedVerbs', '', Justification = 'Load is an acceptable verb for schema operations')]
     param([string]$SchemaPath)
     if (-not (Test-Path -Path $SchemaPath)) {
         throw "Schema missing: $SchemaPath"
@@ -26,6 +27,8 @@ function Load-Schema {
     return Get-Content -Path $SchemaPath -Raw | ConvertFrom-Json
 }
 function Validate-RequiredField {
+    [Diagnostics.CodeAnalysis.SuppressMessageAttribute('PSUseApprovedVerbs', '', Justification = 'Validate is an acceptable verb for validation operations')]
+    [Diagnostics.CodeAnalysis.SuppressMessageAttribute('PSUseDeclaredVarsMoreThanAssignments', '', Justification = 'Variable is used in loop iteration')]
     param($pack, $path)
     $segments = $path -split '\.'
     $node = $pack

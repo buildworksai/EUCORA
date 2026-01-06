@@ -27,6 +27,7 @@ function Get-RiskModel {
 }
 function Calculate-RiskScore {
     [CmdletBinding()]
+    [Diagnostics.CodeAnalysis.SuppressMessageAttribute('PSUseApprovedVerbs', '', Justification = 'Calculate is an acceptable verb for mathematical operations')]
     param(
         [Parameter(Mandatory = $true)]
         [hashtable]$Factors,

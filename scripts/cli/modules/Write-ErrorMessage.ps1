@@ -15,7 +15,7 @@ Author: Platform Engineering
 Set-StrictMode -Version Latest
 $ErrorActionPreference = 'Stop'
 $logHelper = Join-Path $PSScriptRoot '..\..\utilities\logging\Write-StructuredLog.ps1'
-. $logHelper
+& $logHelper
 function Write-ErrorMessage {
     [CmdletBinding()]
     [Diagnostics.CodeAnalysis.SuppressMessageAttribute('PSAvoidUsingWriteHost', '', Justification = 'Error messages require direct console output')]

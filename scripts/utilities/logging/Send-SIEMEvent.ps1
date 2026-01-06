@@ -65,6 +65,6 @@ function Send-SIEMEvent {
     if ($RetryTransientErrorCodes) {
         $retryArgs.TransientErrorCodes = $RetryTransientErrorCodes
     }
-    $response = Invoke-RetryWithBackoff @retryArgs
+    $null = Invoke-RetryWithBackoff @retryArgs
     return $true
 }

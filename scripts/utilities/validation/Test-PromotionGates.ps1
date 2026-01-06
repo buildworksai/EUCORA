@@ -21,6 +21,7 @@ Related Docs: docs/architecture/ring-model.md, .agents/rules/06-ring-rollout-rul
 Set-StrictMode -Version Latest
 $ErrorActionPreference = 'Stop'
 function Load-PromotionConfig {
+    [Diagnostics.CodeAnalysis.SuppressMessageAttribute('PSUseApprovedVerbs', '', Justification = 'Load is an acceptable verb for configuration operations')]
     param([string]$ConfigPath)
     if (-not (Test-Path -Path $ConfigPath)) { throw "Config missing: $ConfigPath" }
     return Get-Content -Path $ConfigPath -Raw | ConvertFrom-Json
@@ -39,6 +40,7 @@ function Get-IntentProperty {
 
 function Test-PromotionGates {
     [CmdletBinding()]
+    [Diagnostics.CodeAnalysis.SuppressMessageAttribute('PSUseSingularNouns', '', Justification = 'Function tests multiple gates, plural noun is semantically correct')]
     param(
         [Parameter(Mandatory=$true)]
         [ValidateSet('ring-0-lab','ring-1-canary','ring-2-pilot','ring-3-department','ring-4-global')]

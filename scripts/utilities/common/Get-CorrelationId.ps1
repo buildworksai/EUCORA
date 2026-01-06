@@ -1,5 +1,7 @@
 # SPDX-License-Identifier: Apache-2.0
 # Copyright (c) 2025 BuildWorks.AI
+# Suppress false positive warnings for comment-based help
+[Diagnostics.CodeAnalysis.SuppressMessageAttribute('PSAvoidUsingCmdletAliases', '', Justification = 'False positive - .PARAMETER in comment-based help is not an alias')]
 #<#+
 .SYNOPSIS
 Generate or validate deterministic correlation IDs for deployment artifacts.

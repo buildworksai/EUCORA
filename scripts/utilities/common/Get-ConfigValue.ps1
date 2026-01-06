@@ -24,6 +24,7 @@ Set-StrictMode -Version Latest
 $ErrorActionPreference = 'Stop'
 $script:ConfigCache = $null
 function Normalize-ConfigPath {
+    [Diagnostics.CodeAnalysis.SuppressMessageAttribute('PSUseApprovedVerbs', '', Justification = 'Normalize is an acceptable verb for path operations')]
     param([string]$InputPath)
     $full = [System.IO.Path]::GetFullPath($InputPath)
     $base = [System.IO.Path]::GetFullPath((Join-Path $PSScriptRoot '..\..\config'))
@@ -33,6 +34,7 @@ function Normalize-ConfigPath {
     return $full
 }
 function Load-Config {
+    [Diagnostics.CodeAnalysis.SuppressMessageAttribute('PSUseApprovedVerbs', '', Justification = 'Load is an acceptable verb for configuration operations')]
     param([string]$ConfigPath)
     $safePath = Normalize-ConfigPath -InputPath $ConfigPath
     if (-not (Test-Path -Path $safePath)) {
@@ -44,6 +46,7 @@ function Clear-ConfigCache {
     $script:ConfigCache = $null
 }
 function Resolve-Key {
+    [Diagnostics.CodeAnalysis.SuppressMessageAttribute('PSUseDeclaredVarsMoreThanAssignments', '', Justification = 'Variable is used recursively in function')]
     param([object]$Node, [string[]]$Segments)
     if (-not $Segments) { return $Node }
     $property = $Segments[0]

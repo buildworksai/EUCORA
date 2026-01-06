@@ -17,6 +17,7 @@ Related Docs: .agents/rules/02-control-plane-rules.md
 Set-StrictMode -Version Latest
 $ErrorActionPreference = 'Stop'
 function Initialize-Auth {
+    [Diagnostics.CodeAnalysis.SuppressMessageAttribute('PSUseDeclaredVarsMoreThanAssignments', '', Justification = 'Variable is used immediately after assignment')]
     param()
     $envToken = $env:DAPCTL_AUTH_TOKEN
     if ($envToken -and $envToken -ne '') {

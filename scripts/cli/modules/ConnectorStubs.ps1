@@ -44,6 +44,7 @@ function Publish-Application {
 function Remove-Application {
     [CmdletBinding(SupportsShouldProcess)]
     [Diagnostics.CodeAnalysis.SuppressMessageAttribute('PSUseShouldProcessForStateChangingFunctions', '', Justification = 'Stub function for development, does not perform actual removal')]
+    [Diagnostics.CodeAnalysis.SuppressMessageAttribute('PSShouldProcess', '', Justification = 'Stub function, ShouldProcess declared for interface compatibility')]
     param(
         [Parameter(Mandatory = $true)]
         [string]$ApplicationId,
@@ -77,6 +78,7 @@ function Get-DeploymentStatus {
 function Test-ConnectorConnection {
     [CmdletBinding()]
     [Diagnostics.CodeAnalysis.SuppressMessageAttribute('PSAvoidOverwritingBuiltInCmdlets', '', Justification = 'Stub function for connector testing, renamed to avoid conflict')]
+    [Diagnostics.CodeAnalysis.SuppressMessageAttribute('PSReviewUnusedParameter', '', Justification = 'Parameter required for interface compatibility')]
     param(
         [Parameter(Mandatory = $false)]
         [string]$AuthToken

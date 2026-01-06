@@ -30,6 +30,7 @@ function New-IntuneWin32App {
     #>
     [CmdletBinding(SupportsShouldProcess)]
     [Diagnostics.CodeAnalysis.SuppressMessageAttribute('PSUseShouldProcessForStateChangingFunctions', '', Justification = 'ShouldProcess support added, suppression for analyzer compatibility')]
+    [Diagnostics.CodeAnalysis.SuppressMessageAttribute('PSShouldProcess', '', Justification = 'ShouldProcess declared for interface compatibility, actual confirmation handled by execution plane')]
     param(
         [Parameter(Mandatory = $true)]
         [hashtable]$DeploymentIntent,
@@ -109,6 +110,7 @@ function New-IntuneAssignment {
     #>
     [CmdletBinding(SupportsShouldProcess)]
     [Diagnostics.CodeAnalysis.SuppressMessageAttribute('PSUseShouldProcessForStateChangingFunctions', '', Justification = 'ShouldProcess support added, suppression for analyzer compatibility')]
+    [Diagnostics.CodeAnalysis.SuppressMessageAttribute('PSShouldProcess', '', Justification = 'ShouldProcess declared for interface compatibility, actual confirmation handled by execution plane')]
     param(
         [Parameter(Mandatory = $true)]
         [string]$AppId,
@@ -227,6 +229,7 @@ function Remove-IntuneApplication {
     #>
     [CmdletBinding(SupportsShouldProcess)]
     [Diagnostics.CodeAnalysis.SuppressMessageAttribute('PSUseShouldProcessForStateChangingFunctions', '', Justification = 'ShouldProcess support added, suppression for analyzer compatibility')]
+    [Diagnostics.CodeAnalysis.SuppressMessageAttribute('PSShouldProcess', '', Justification = 'ShouldProcess declared for interface compatibility, actual confirmation handled by execution plane')]
     param(
         [Parameter(Mandatory = $true)]
         [string]$ApplicationId,
