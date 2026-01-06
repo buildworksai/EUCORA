@@ -18,7 +18,12 @@ Describe 'Invoke-RetryWithBackoff' {
     }
     BeforeEach {
         $scriptBlockCalls = 0
-        Mock -CommandName Start-Sleep { param($Seconds) $scriptBlockCalls++ } -Verifiable
+        Mock -CommandName Start-Sleep { 
+            param($Seconds) 
+            # Use Seconds parameter to avoid unused parameter warning
+            $null = $Seconds
+            $scriptBlockCalls++ 
+        } -Verifiable
     }
     It 'Returns result on first attempt without sleep' {
         $result = Invoke-RetryWithBackoff -ScriptBlock { return 'ok' }

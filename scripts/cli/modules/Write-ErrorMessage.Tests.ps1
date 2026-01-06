@@ -14,6 +14,8 @@ Describe 'Write-ErrorMessage' {
         . (Resolve-Path $modulePath).Path
         Mock -CommandName Write-StructuredLog -MockWith {
             param($Message, $Level, $CorrelationId, $Component, $Metadata, $LogFilePath)
+            # Use all parameters to avoid unused parameter warnings
+            $null = $Message, $Level, $CorrelationId, $Component, $Metadata, $LogFilePath
         } -Verifiable
     }
     It 'writes error message and logs' {

@@ -27,11 +27,11 @@ Describe 'Send-SIEMEvent' {
         Remove-Item Env:AZURE_LOG_ANALYTICS_WORKSPACE_ID -ErrorAction SilentlyContinue
     }
     It 'Sends event successfully' {
-        $event = @{ timestamp = (Get-Date).ToUniversalTime().ToString('o'); level = 'Info'; message = 'msg'; correlation_id = 'dp-1'; component = 'orchestrator' }
+        $testEvent = @{ timestamp = (Get-Date).ToUniversalTime().ToString('o'); level = 'Info'; message = 'msg'; correlation_id = 'dp-1'; component = 'orchestrator' }
         Mock -CommandName Invoke-RestMethod {
             @{ status = 'ok' }
         } -Verifiable
-        Send-SIEMEvent -Event $event -WorkspaceId 'workspace' -SharedKey $env:AZURE_LOG_ANALYTICS_SHARED_KEY -LogType 'ControlPlaneEvents'
+        Send-SIEMEvent -Event $testEvent -WorkspaceId 'workspace' -SharedKey $env:AZURE_LOG_ANALYTICS_SHARED_KEY -LogType 'ControlPlaneEvents'
         Assert-MockCalled Invoke-RestMethod -Times 1
     }
     It 'Retries on 503' {
@@ -41,14 +41,14 @@ Describe 'Send-SIEMEvent' {
             if ($script:retryCalls -lt 2) { throw [System.Net.WebException]::new('timeout') }
             return @{ status = 'ok' }
         }
-        $event = @{ timestamp = (Get-Date).ToUniversalTime().ToString('o'); level = 'Info'; message = 'msg'; correlation_id = 'dp-1'; component = 'orchestrator' }
-        Send-SIEMEvent -Event $event -WorkspaceId 'workspace' -SharedKey $env:AZURE_LOG_ANALYTICS_SHARED_KEY `
+        $testEvent = @{ timestamp = (Get-Date).ToUniversalTime().ToString('o'); level = 'Info'; message = 'msg'; correlation_id = 'dp-1'; component = 'orchestrator' }
+        Send-SIEMEvent -Event $testEvent -WorkspaceId 'workspace' -SharedKey $env:AZURE_LOG_ANALYTICS_SHARED_KEY `
             -RetryMaxAttempts 2 -RetryBaseSeconds 0 -RetryMaxBackoffSeconds 0 -RetryTransientErrorCodes @('WebException')
         Assert-MockCalled Invoke-RestMethod -Times 2
     }
     It 'Fails on permanent error' {
         Mock -CommandName Invoke-RestMethod { throw [System.Exception]::new('bad') }
-        $event = @{ timestamp = (Get-Date).ToUniversalTime().ToString('o'); level = 'Info'; message = 'msg'; correlation_id = 'dp-1'; component = 'orchestrator' }
-        { Send-SIEMEvent -Event $event -WorkspaceId 'workspace' -SharedKey $env:AZURE_LOG_ANALYTICS_SHARED_KEY } | Should -Throw
+        $testEvent = @{ timestamp = (Get-Date).ToUniversalTime().ToString('o'); level = 'Info'; message = 'msg'; correlation_id = 'dp-1'; component = 'orchestrator' }
+        { Send-SIEMEvent -Event $testEvent -WorkspaceId 'workspace' -SharedKey $env:AZURE_LOG_ANALYTICS_SHARED_KEY } | Should -Throw
     }
 }

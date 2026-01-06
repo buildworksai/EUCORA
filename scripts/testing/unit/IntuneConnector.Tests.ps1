@@ -116,6 +116,7 @@ Describe "IntuneConnector - New-IntuneWin32App" {
 
         $result = New-IntuneWin32App -DeploymentIntent $intent -AccessToken 'mock-token' -CorrelationId 'test-cid-004'
 
+        $result.id | Should -Be 'app-789'
         Should -Invoke Invoke-ConnectorRequest -Times 1
     }
 }
