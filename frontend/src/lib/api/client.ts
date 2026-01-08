@@ -6,11 +6,41 @@ import { toast } from 'sonner';
 const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000';
 
 /**
- * Get CSRF token from cookie (set by Django).
+ * Get CSRF token from cookie (set by Django) or fetch from API.
  */
-function getCsrfToken(): string | null {
+let csrfTokenCache: string | null = null;
+
+async function getCsrfToken(): Promise<string | null> {
+  // First, try to get from cookie
   const match = document.cookie.match(/csrftoken=([^;]+)/);
-  return match ? match[1] : null;
+  if (match) {
+    csrfTokenCache = match[1];
+    return csrfTokenCache;
+  }
+  
+  // If not in cookie and we have a cached token, use it
+  if (csrfTokenCache) {
+    return csrfTokenCache;
+  }
+  
+  // Try to fetch from API endpoint (for development/mock auth scenarios)
+  try {
+    const response = await fetch(`${API_BASE_URL}/api/v1/admin/csrf-token`, {
+      method: 'GET',
+      credentials: 'include',
+    });
+    
+    if (response.ok) {
+      const data = await response.json();
+      csrfTokenCache = data.csrf_token || null;
+      return csrfTokenCache;
+    }
+  } catch (error) {
+    // Silently fail - CSRF token might not be needed for GET requests
+    console.debug('Failed to fetch CSRF token:', error);
+  }
+  
+  return null;
 }
 
 /**
@@ -44,7 +74,7 @@ async function apiRequest<T>(
   options: RequestInit = {},
   retryCount = 0
 ): Promise<T> {
-  const csrfToken = getCsrfToken();
+  const csrfToken = await getCsrfToken();
   const isMutation = options.method && options.method !== 'GET';
 
   try {
@@ -79,11 +109,19 @@ async function apiRequest<T>(
         errorMessage = response.statusText || errorMessage;
       }
 
-      // Don't show toast for 401 (handled by auth redirect) or 404 (handled by components)
-      if (response.status !== 401 && response.status !== 404) {
+      // Suppress authentication errors for demo/testing (401, 403, 404)
+      // These are handled by components or are expected in demo mode
+      const suppressError = response.status === 401 || response.status === 403 || response.status === 404;
+      
+      if (!suppressError) {
         toast.error(errorMessage, {
           description: errorDetail && errorDetail !== errorMessage ? errorDetail : undefined,
         });
+      } else {
+        // Silently log to console in development only
+        if (import.meta.env.DEV) {
+          console.debug(`Suppressed ${response.status} error for ${endpoint}:`, errorMessage);
+        }
       }
 
       throw new Error(errorMessage);

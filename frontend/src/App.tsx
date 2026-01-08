@@ -15,8 +15,10 @@ import CABPortal from './routes/CABPortal';
 import DeploymentWizard from './routes/DeploymentWizard';
 import AuditTrail from './routes/AuditTrail';
 import EvidenceViewer from './routes/EvidenceViewer';
-import Settings from './routes/Settings';
+import Settings from './routes/settings';
 import AIAgentHub from './routes/AIAgentHub';
+import AdminDemoData from './routes/AdminDemoData';
+import Notifications from './routes/Notifications';
 import Login from './routes/Login';
 
 function App() {
@@ -57,7 +59,9 @@ function App() {
             <Route path="/audit" element={<AuditTrail />} />
             <Route path="/evidence/:id" element={<EvidenceViewer />} />
             <Route path="/ai-agents" element={<AIAgentHub />} />
+            <Route path="/notifications" element={<Notifications />} />
             <Route path="/settings" element={<Settings />} />
+            <Route path="/admin/demo-data" element={<AdminDemoData />} />
           </Route>
         </Routes>
       </QueryClientProvider>

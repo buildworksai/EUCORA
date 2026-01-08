@@ -41,6 +41,7 @@ INSTALLED_APPS = [
     'apps.connectors',
     'apps.telemetry',
     'apps.ai_agents',
+    'apps.integrations',
 ]
 
 MIDDLEWARE = [

@@ -7,6 +7,7 @@ from rest_framework.decorators import api_view, permission_classes
 from rest_framework.permissions import IsAuthenticated, AllowAny
 from rest_framework.response import Response
 from .models import DeploymentEvent
+from apps.core.utils import apply_demo_filter, get_demo_mode_enabled
 import logging
 
 logger = logging.getLogger(__name__)
@@ -20,7 +21,7 @@ def list_events(request):
     
     GET /api/v1/events/?correlation_id=...&event_type=...
     """
-    queryset = DeploymentEvent.objects.all()
+    queryset = apply_demo_filter(DeploymentEvent.objects.all(), request)
     
     # Filters
     correlation_id = request.query_params.get('correlation_id')
@@ -61,6 +62,7 @@ def log_event(request):
         event_type=request.data.get('event_type'),
         event_data=request.data.get('event_data', {}),
         actor=request.user.username,
+        is_demo=get_demo_mode_enabled(),
     )
     
     logger.info(

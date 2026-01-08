@@ -4,7 +4,7 @@
 Connectors models for asset inventory (CMDB).
 """
 from django.db import models
-from apps.core.models import TimeStampedModel
+from apps.core.models import TimeStampedModel, DemoQuerySet
 
 
 class Asset(TimeStampedModel):
@@ -65,6 +65,9 @@ class Asset(TimeStampedModel):
     # Metadata
     connector_type = models.CharField(max_length=20, blank=True, help_text='Source connector (intune, jamf, sccm, landscape)')
     connector_object_id = models.CharField(max_length=255, blank=True, help_text='Platform-specific object ID')
+    is_demo = models.BooleanField(default=False, db_index=True, help_text='Whether this is demo data')
+
+    objects = DemoQuerySet.as_manager()
     
     class Meta:
         indexes = [
@@ -122,6 +125,9 @@ class Application(TimeStampedModel):
     
     # Risk assessment
     default_risk_score = models.IntegerField(default=30, help_text='Default risk score (0-100)')
+    is_demo = models.BooleanField(default=False, db_index=True, help_text='Whether this is demo data')
+
+    objects = DemoQuerySet.as_manager()
     
     class Meta:
         indexes = [

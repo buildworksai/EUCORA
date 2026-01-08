@@ -6,7 +6,7 @@ import { isAdmin, isDemo, hasPermission } from '@/types/auth';
 import { cn } from '@/lib/utils';
 import { 
     LayoutDashboard, Box, ShieldCheck, Settings, Database, Activity, 
-    HeartPulse, Sparkles, Shield, Users, Link2 
+    HeartPulse, Sparkles, Shield, Users, Link2, Bell
 } from 'lucide-react';
 import { NavLink } from 'react-router-dom';
 
@@ -27,7 +27,9 @@ const navItems: NavItem[] = [
     { href: '/cab', label: 'CAB Portal', icon: Activity, resource: 'cab' },
     { href: '/ai-agents', label: 'AI Agents', icon: Sparkles, resource: 'ai' },
     { href: '/audit', label: 'Audit Trail', icon: Database, resource: 'audit' },
+    { href: '/notifications', label: 'Notifications', icon: Bell, resource: 'notifications' },
     { href: '/settings', label: 'Settings', icon: Settings, resource: 'settings' },
+    { href: '/admin/demo-data', label: 'Demo Data', icon: Shield, resource: 'admin', adminOnly: true },
 ];
 
 export function Sidebar() {
@@ -40,6 +42,8 @@ export function Sidebar() {
     const visibleNavItems = navItems.filter(item => {
         // Admin users see everything
         if (userIsAdmin) return true;
+
+        if (item.adminOnly) return false;
         
         // Demo users see all read-only pages
         if (userIsDemo) return true;

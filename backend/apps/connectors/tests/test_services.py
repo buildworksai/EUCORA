@@ -73,6 +73,29 @@ class TestPowerShellConnectorService:
         
         assert result['status'] == 'unhealthy'
         assert 'Unknown connector' in result['message']
+
+    @patch('apps.connectors.services.Path.exists')
+    def test_health_check_missing_script(self, mock_exists):
+        """Test health check when script does not exist."""
+        mock_exists.return_value = False
+        result = self.service.health_check('intune')
+        assert result['status'] == 'unhealthy'
+        assert 'Script not found' in result['message']
+
+    @patch('apps.connectors.services.Path.exists')
+    @patch('subprocess.run')
+    def test_health_check_invalid_json(self, mock_run, mock_exists):
+        """Test health check with non-JSON output."""
+        mock_exists.return_value = True
+        mock_result = MagicMock()
+        mock_result.returncode = 0
+        mock_result.stdout = 'OK'
+        mock_run.return_value = mock_result
+
+        result = self.service.health_check('intune')
+
+        assert result['status'] == 'healthy'
+        assert result['details'] == {}
     
     @patch('apps.connectors.services.Path.exists')
     @patch('subprocess.run')
@@ -121,3 +144,87 @@ class TestPowerShellConnectorService:
         
         assert result['status'] == 'failed'
         assert 'Deployment failed' in result['message']
+
+    def test_deploy_unknown_connector(self):
+        """Test deployment with unknown connector type."""
+        result = self.service.deploy('unknown', {
+            'deployment_intent_id': 'test-id',
+            'artifact_path': 'artifacts/test.msi',
+            'target_ring': 'LAB',
+            'app_name': 'TestApp',
+            'version': '1.0.0',
+        })
+
+        assert result['status'] == 'failed'
+        assert 'Unknown connector' in result['message']
+
+    @patch('apps.connectors.services.Path.exists')
+    def test_deploy_missing_script(self, mock_exists):
+        """Test deployment when script does not exist."""
+        mock_exists.return_value = False
+        result = self.service.deploy('intune', {
+            'deployment_intent_id': 'test-id',
+            'artifact_path': 'artifacts/test.msi',
+            'target_ring': 'LAB',
+            'app_name': 'TestApp',
+            'version': '1.0.0',
+        })
+        assert result['status'] == 'failed'
+        assert 'Script not found' in result['message']
+
+    @patch('apps.connectors.services.Path.exists')
+    @patch('subprocess.run')
+    def test_deploy_invalid_json(self, mock_run, mock_exists):
+        """Test deployment when PowerShell output is not JSON."""
+        mock_exists.return_value = True
+        mock_result = MagicMock()
+        mock_result.returncode = 0
+        mock_result.stdout = 'OK'
+        mock_run.return_value = mock_result
+
+        result = self.service.deploy('intune', {
+            'deployment_intent_id': 'test-id',
+            'artifact_path': 'artifacts/test.msi',
+            'target_ring': 'LAB',
+            'app_name': 'TestApp',
+            'version': '1.0.0',
+        })
+
+        assert result['status'] == 'success'
+        assert result['details'] == {}
+
+    @patch('apps.connectors.services.Path.exists')
+    @patch('subprocess.run')
+    def test_deploy_timeout(self, mock_run, mock_exists):
+        """Test deployment timeout handling."""
+        mock_exists.return_value = True
+        mock_run.side_effect = subprocess.TimeoutExpired('pwsh', 300)
+
+        result = self.service.deploy('intune', {
+            'deployment_intent_id': 'test-id',
+            'artifact_path': 'artifacts/test.msi',
+            'target_ring': 'LAB',
+            'app_name': 'TestApp',
+            'version': '1.0.0',
+        })
+
+        assert result['status'] == 'failed'
+        assert 'timed out' in result['message']
+
+    @patch('apps.connectors.services.Path.exists')
+    @patch('subprocess.run')
+    def test_deploy_exception(self, mock_run, mock_exists):
+        """Test deployment error handling on unexpected exception."""
+        mock_exists.return_value = True
+        mock_run.side_effect = Exception('boom')
+
+        result = self.service.deploy('intune', {
+            'deployment_intent_id': 'test-id',
+            'artifact_path': 'artifacts/test.msi',
+            'target_ring': 'LAB',
+            'app_name': 'TestApp',
+            'version': '1.0.0',
+        })
+
+        assert result['status'] == 'failed'
+        assert 'Deployment error' in result['message']

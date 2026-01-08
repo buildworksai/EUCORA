@@ -5,7 +5,7 @@ import { Badge } from '@/components/ui/badge';
 import { useUIStore } from '@/lib/stores/uiStore';
 import { useAuthStore } from '@/lib/stores/authStore';
 import { isAdmin, isDemo } from '@/types/auth';
-import { Moon, Sun, Menu, Bell, LogOut, User, Shield, Sparkles } from 'lucide-react';
+import { Moon, Sun, Menu, Bell, LogOut, User, Shield, Sparkles, CheckCircle2, XCircle, Clock, AlertCircle } from 'lucide-react';
 import {
     DropdownMenu,
     DropdownMenuContent,
@@ -14,12 +14,22 @@ import {
     DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { ScrollArea } from '@/components/ui/scroll-area';
 import { useNavigate } from 'react-router-dom';
+import { usePendingApprovals } from '@/lib/api/hooks/useCAB';
+import { useDeployments } from '@/lib/api/hooks/useDeployments';
+import { formatDistanceToNow } from 'date-fns';
 
 export function Topbar() {
     const navigate = useNavigate();
     const { toggleSidebar, setTheme } = useUIStore();
     const { user, logout } = useAuthStore();
+    const { data: pendingApprovals = [] } = usePendingApprovals();
+    const { data: deployments = [] } = useDeployments();
+    
+    // Calculate notification count
+    const notificationCount = pendingApprovals.length + 
+        deployments.filter(d => d.status === 'AWAITING_CAB' || d.status === 'DEPLOYING').length;
 
     const handleLogout = async () => {
         await logout();
@@ -84,10 +94,98 @@ export function Topbar() {
 
             <div className="flex items-center gap-3">
                 {/* Notifications */}
-                <Button variant="ghost" size="icon" className="relative">
-                    <Bell className="h-5 w-5 text-muted-foreground" />
-                    <span className="absolute top-1 right-1 w-2 h-2 bg-eucora-red rounded-full" />
-                </Button>
+                <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                        <Button variant="ghost" size="icon" className="relative">
+                            <Bell className="h-5 w-5 text-muted-foreground" />
+                            {notificationCount > 0 && (
+                                <span className="absolute top-1 right-1 w-2 h-2 bg-eucora-red rounded-full animate-pulse" />
+                            )}
+                            <span className="sr-only">Notifications</span>
+                        </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="end" className="w-80">
+                        <div className="px-3 py-2 border-b border-border">
+                            <div className="flex items-center justify-between">
+                                <h3 className="text-sm font-semibold">Notifications</h3>
+                                {notificationCount > 0 && (
+                                    <Badge variant="secondary" className="text-xs">
+                                        {notificationCount} new
+                                    </Badge>
+                                )}
+                            </div>
+                        </div>
+                        <ScrollArea className="h-[400px]">
+                            {notificationCount === 0 ? (
+                                <div className="px-3 py-8 text-center text-sm text-muted-foreground">
+                                    No new notifications
+                                </div>
+                            ) : (
+                                <div className="py-2">
+                                    {/* Pending CAB Approvals */}
+                                    {pendingApprovals.slice(0, 5).map((approval) => (
+                                        <DropdownMenuItem
+                                            key={approval.correlation_id}
+                                            className="flex flex-col items-start gap-1 px-3 py-3 cursor-pointer hover:bg-muted/50"
+                                            onClick={() => navigate('/cab')}
+                                        >
+                                            <div className="flex items-start gap-2 w-full">
+                                                <Clock className="h-4 w-4 text-eucora-gold mt-0.5 flex-shrink-0" />
+                                                <div className="flex-1 min-w-0">
+                                                    <p className="text-sm font-medium truncate">
+                                                        CAB Review: {approval.app_name} {approval.version}
+                                                    </p>
+                                                    <p className="text-xs text-muted-foreground">
+                                                        Risk: {approval.risk_score} • {formatDistanceToNow(new Date(approval.submitted_at), { addSuffix: true })}
+                                                    </p>
+                                                </div>
+                                            </div>
+                                        </DropdownMenuItem>
+                                    ))}
+                                    
+                                    {/* Deployments in progress */}
+                                    {deployments
+                                        .filter(d => d.status === 'DEPLOYING' || d.status === 'AWAITING_CAB')
+                                        .slice(0, 5)
+                                        .map((deployment) => (
+                                            <DropdownMenuItem
+                                                key={deployment.correlation_id}
+                                                className="flex flex-col items-start gap-1 px-3 py-3 cursor-pointer hover:bg-muted/50"
+                                                onClick={() => navigate('/dashboard')}
+                                            >
+                                                <div className="flex items-start gap-2 w-full">
+                                                    {deployment.status === 'DEPLOYING' ? (
+                                                        <CheckCircle2 className="h-4 w-4 text-eucora-green mt-0.5 flex-shrink-0" />
+                                                    ) : (
+                                                        <AlertCircle className="h-4 w-4 text-eucora-gold mt-0.5 flex-shrink-0" />
+                                                    )}
+                                                    <div className="flex-1 min-w-0">
+                                                        <p className="text-sm font-medium truncate">
+                                                            {deployment.status === 'DEPLOYING' ? 'Deploying' : 'Awaiting CAB'}: {deployment.app_name} {deployment.version}
+                                                        </p>
+                                                        <p className="text-xs text-muted-foreground">
+                                                            Ring: {deployment.target_ring} • {formatDistanceToNow(new Date(deployment.created_at), { addSuffix: true })}
+                                                        </p>
+                                                    </div>
+                                                </div>
+                                            </DropdownMenuItem>
+                                        ))}
+                                </div>
+                            )}
+                        </ScrollArea>
+                        {notificationCount > 0 && (
+                            <>
+                                <DropdownMenuSeparator />
+                                <DropdownMenuItem
+                                    className="cursor-pointer justify-center"
+                                    onClick={() => navigate('/notifications')}
+                                >
+                                    View all notifications
+                                </DropdownMenuItem>
+                            </>
+                        )}
+                    </DropdownMenuContent>
+                </DropdownMenu>
 
                 {/* Theme Toggle */}
                 <DropdownMenu>

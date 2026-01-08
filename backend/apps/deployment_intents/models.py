@@ -5,7 +5,7 @@ Deployment Intent models and state machine.
 """
 from django.db import models
 from django.contrib.auth.models import User
-from apps.core.models import TimeStampedModel, CorrelationIdModel
+from apps.core.models import TimeStampedModel, CorrelationIdModel, DemoQuerySet
 
 
 class DeploymentIntent(TimeStampedModel, CorrelationIdModel):
@@ -48,6 +48,9 @@ class DeploymentIntent(TimeStampedModel, CorrelationIdModel):
     
     # Submitter
     submitter = models.ForeignKey(User, on_delete=models.CASCADE, related_name='deployment_intents', help_text='User who submitted the deployment')
+    is_demo = models.BooleanField(default=False, db_index=True, help_text='Whether this is demo data')
+
+    objects = DemoQuerySet.as_manager()
     
     class Meta:
         indexes = [
@@ -82,6 +85,9 @@ class RingDeployment(TimeStampedModel):
     # Promotion status
     promoted_at = models.DateTimeField(null=True, blank=True, help_text='When promoted to next ring')
     promotion_gate_passed = models.BooleanField(default=False, help_text='Whether promotion gate criteria met')
+    is_demo = models.BooleanField(default=False, db_index=True, help_text='Whether this is demo data')
+
+    objects = DemoQuerySet.as_manager()
     
     class Meta:
         indexes = [

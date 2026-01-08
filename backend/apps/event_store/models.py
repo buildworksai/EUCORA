@@ -4,7 +4,7 @@
 Event Store models for append-only audit trail.
 """
 from django.db import models
-from apps.core.models import TimeStampedModel
+from apps.core.models import TimeStampedModel, DemoQuerySet
 
 
 class DeploymentEvent(TimeStampedModel):
@@ -29,6 +29,9 @@ class DeploymentEvent(TimeStampedModel):
     event_type = models.CharField(max_length=30, choices=EventType.choices)
     event_data = models.JSONField(help_text='Event payload')
     actor = models.CharField(max_length=255, help_text='User or system that triggered event')
+    is_demo = models.BooleanField(default=False, db_index=True, help_text='Whether this is demo data')
+
+    objects = DemoQuerySet.as_manager()
     
     class Meta:
         indexes = [

@@ -86,3 +86,72 @@ class TestCABWorkflowViews:
         }, format='json')
         
         assert response.status_code == 404
+
+    def test_list_pending_approvals_default(self, authenticated_client, authenticated_user):
+        """Test listing pending approvals with default filter."""
+        deployment = DeploymentIntent.objects.create(
+            app_name='PendingApp',
+            version='2.0.0',
+            target_ring=DeploymentIntent.Ring.CANARY,
+            evidence_pack_id=uuid.uuid4(),
+            status=DeploymentIntent.Status.AWAITING_CAB,
+            requires_cab_approval=True,
+            submitter=authenticated_user,
+        )
+
+        url = reverse('cab_workflow:pending')
+        response = authenticated_client.get(url)
+
+        assert response.status_code == 200
+        assert len(response.data['approvals']) == 1
+        assert response.data['approvals'][0]['correlation_id'] == str(deployment.correlation_id)
+
+    def test_list_pending_approvals_filtered_decision(self, authenticated_client, authenticated_user):
+        """Test listing pending approvals filtered by decision."""
+        deployment = DeploymentIntent.objects.create(
+            app_name='ApprovedApp',
+            version='3.0.0',
+            target_ring=DeploymentIntent.Ring.PILOT,
+            evidence_pack_id=uuid.uuid4(),
+            status=DeploymentIntent.Status.AWAITING_CAB,
+            requires_cab_approval=True,
+            submitter=authenticated_user,
+        )
+        CABApproval.objects.create(
+            deployment_intent=deployment,
+            decision=CABApproval.Decision.APPROVED,
+            approver=authenticated_user,
+            comments='Approved',
+            reviewed_at=deployment.created_at,
+        )
+
+        url = reverse('cab_workflow:pending') + '?decision=APPROVED'
+        response = authenticated_client.get(url)
+
+        assert response.status_code == 200
+        assert response.data['approvals'][0]['decision'] == CABApproval.Decision.APPROVED
+
+    def test_list_approvals_with_filter(self, authenticated_client, authenticated_user):
+        """Test listing approvals with decision filter."""
+        deployment = DeploymentIntent.objects.create(
+            app_name='FilterApp',
+            version='4.0.0',
+            target_ring=DeploymentIntent.Ring.LAB,
+            evidence_pack_id=uuid.uuid4(),
+            status=DeploymentIntent.Status.APPROVED,
+            requires_cab_approval=True,
+            submitter=authenticated_user,
+        )
+        CABApproval.objects.create(
+            deployment_intent=deployment,
+            decision=CABApproval.Decision.APPROVED,
+            approver=authenticated_user,
+            comments='Approved',
+            reviewed_at=deployment.created_at,
+        )
+
+        url = reverse('cab_workflow:list') + '?decision=APPROVED'
+        response = authenticated_client.get(url)
+
+        assert response.status_code == 200
+        assert response.data['approvals'][0]['decision'] == CABApproval.Decision.APPROVED

@@ -10,6 +10,7 @@ from rest_framework import status
 from .models import CABApproval
 from apps.deployment_intents.models import DeploymentIntent
 from django.utils import timezone
+from apps.core.utils import apply_demo_filter
 import logging
 
 logger = logging.getLogger(__name__)
@@ -25,7 +26,7 @@ def approve_deployment(request, correlation_id):
     Body: {"comments": "...", "conditions": [...]}
     """
     try:
-        deployment = DeploymentIntent.objects.get(correlation_id=correlation_id)
+        deployment = apply_demo_filter(DeploymentIntent.objects.all(), request).get(correlation_id=correlation_id)
     except DeploymentIntent.DoesNotExist:
         return Response({'error': 'Deployment not found'}, status=status.HTTP_404_NOT_FOUND)
     
@@ -41,6 +42,7 @@ def approve_deployment(request, correlation_id):
             'comments': comments,
             'conditions': conditions,
             'reviewed_at': timezone.now(),
+            'is_demo': deployment.is_demo,
         }
     )
     
@@ -74,7 +76,7 @@ def reject_deployment(request, correlation_id):
     Body: {"comments": "..."}
     """
     try:
-        deployment = DeploymentIntent.objects.get(correlation_id=correlation_id)
+        deployment = apply_demo_filter(DeploymentIntent.objects.all(), request).get(correlation_id=correlation_id)
     except DeploymentIntent.DoesNotExist:
         return Response({'error': 'Deployment not found'}, status=status.HTTP_404_NOT_FOUND)
     
@@ -88,6 +90,7 @@ def reject_deployment(request, correlation_id):
             'approver': request.user,
             'comments': comments,
             'reviewed_at': timezone.now(),
+            'is_demo': deployment.is_demo,
         }
     )
     
@@ -122,17 +125,17 @@ def list_pending_approvals(request):
     decision_filter = request.query_params.get('decision', 'PENDING')
     
     # Get deployments awaiting CAB approval
-    deployments = DeploymentIntent.objects.filter(
+    deployments = apply_demo_filter(DeploymentIntent.objects.filter(
         status=DeploymentIntent.Status.AWAITING_CAB,
         requires_cab_approval=True
-    )
+    ), request)
     
     approvals = []
     for deployment in deployments:
         # Get or create CAB approval record
         approval, _ = CABApproval.objects.get_or_create(
             deployment_intent=deployment,
-            defaults={'decision': CABApproval.Decision.PENDING}
+            defaults={'decision': CABApproval.Decision.PENDING, 'is_demo': deployment.is_demo}
         )
         
         if approval.decision == decision_filter:
@@ -155,7 +158,7 @@ def list_pending_approvals(request):
 
 
 @api_view(['GET'])
-@permission_classes([IsAuthenticated])
+@permission_classes([AllowAny])  # Allow unauthenticated for demo mode
 def list_approvals(request):
     """
     List all CAB approvals with optional filter.
@@ -164,7 +167,7 @@ def list_approvals(request):
     """
     decision_filter = request.query_params.get('decision')
     
-    queryset = CABApproval.objects.select_related('deployment_intent', 'approver').all()
+    queryset = apply_demo_filter(CABApproval.objects.select_related('deployment_intent', 'approver').all(), request)
     
     if decision_filter:
         queryset = queryset.filter(decision=decision_filter)
@@ -182,6 +185,6 @@ def list_approvals(request):
         'app_name': approval.deployment_intent.app_name,
         'version': approval.deployment_intent.version,
         'risk_score': approval.deployment_intent.risk_score or 0,
-    } for approval in queryset[:100]]  # Limit to 100
+    } for approval in queryset.order_by('-reviewed_at', '-submitted_at')[:200]]  # Limit to 200, order by most recent
     
     return Response({'approvals': approvals})

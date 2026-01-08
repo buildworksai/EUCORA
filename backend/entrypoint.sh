@@ -33,5 +33,22 @@ python manage.py migrate --noinput
 echo "Setting up development data..."
 python manage.py setup_dev_data
 
+echo "Seeding initial demo data (small set for development)..."
+python manage.py seed_demo_data \
+  --assets 100 \
+  --applications 10 \
+  --deployments 20 \
+  --users 5 \
+  --events 100 \
+  --batch-size 50 \
+  --clear-existing || echo "Demo data seeding skipped (may already exist)"
+
+echo "Enabling demo mode..."
+python manage.py shell -c "
+from apps.core.utils import set_demo_mode_enabled
+set_demo_mode_enabled(True)
+print('Demo mode enabled')
+" || echo "Demo mode setup skipped"
+
 echo "Starting Django development server..."
 exec "$@"

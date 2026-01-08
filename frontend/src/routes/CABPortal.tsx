@@ -10,7 +10,7 @@ import { SkeletonList } from '@/components/ui/skeleton';
 import { EmptyState } from '@/components/ui/empty-state';
 import { Plus, AlertOctagon, CheckCircle2, Clock, FileText } from 'lucide-react';
 import { Separator } from '@/components/ui/separator';
-import { usePendingApprovals, useApproveDeployment, useRejectDeployment } from '@/lib/api/hooks/useCAB';
+import { usePendingApprovals, useCABApprovals, useApproveDeployment, useRejectDeployment } from '@/lib/api/hooks/useCAB';
 import { useEvidencePack } from '@/lib/api/hooks/useEvidence';
 import { useNavigate } from 'react-router-dom';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
@@ -28,16 +28,17 @@ export default function CABPortal() {
     const [comments, setComments] = useState('');
     const [conditions, setConditions] = useState<string[]>([]);
 
-    const { data: approvals = [], isLoading } = usePendingApprovals();
+    // Fetch all CAB approvals (not just pending) to show all workflow stages
+    const { data: approvals = [], isLoading } = useCABApprovals();
     const approveMutation = useApproveDeployment();
     const rejectMutation = useRejectDeployment();
 
-    // Group approvals by status (simplified - in production would use actual status from backend)
+    // Group approvals by status
     const groupedApprovals = {
-        'New': approvals.filter(a => !a.reviewed_at),
-        'Assessing': [],
-        'CAB Review': approvals.filter(a => a.decision === 'PENDING' && a.reviewed_at === null),
-        'Approved': approvals.filter(a => a.decision === 'APPROVED'),
+        'New': approvals.filter(a => !a.reviewed_at && a.decision === 'PENDING' && (!a.comments || !a.comments.includes('CAB review'))),
+        'Assessing': approvals.filter(a => a.reviewed_at && a.decision === 'PENDING'), // Under technical assessment (reviewed but still pending)
+        'CAB Review': approvals.filter(a => a.decision === 'PENDING' && !a.reviewed_at && a.comments && a.comments.includes('CAB review')), // Explicitly awaiting CAB review
+        'Approved': approvals.filter(a => a.decision === 'APPROVED' || a.decision === 'CONDITIONAL'),
     };
 
     const handleApprove = async (correlationId: string) => {

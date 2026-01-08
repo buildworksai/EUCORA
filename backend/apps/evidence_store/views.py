@@ -8,6 +8,7 @@ from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework import status
 from .models import EvidencePack
+from apps.core.utils import apply_demo_filter, get_demo_mode_enabled
 import logging
 
 logger = logging.getLogger(__name__)
@@ -88,6 +89,7 @@ def upload_evidence_pack(request):
         vulnerability_scan_results=vulnerability_scan_results,
         rollback_plan=rollback_plan,
         is_validated=is_validated,
+        is_demo=get_demo_mode_enabled(),
     )
     
     logger.info(
@@ -158,7 +160,7 @@ def get_evidence_pack(request, correlation_id):
     GET /api/v1/evidence/{correlation_id}/
     """
     try:
-        evidence_pack = EvidencePack.objects.get(correlation_id=correlation_id)
+        evidence_pack = apply_demo_filter(EvidencePack.objects.all(), request).get(correlation_id=correlation_id)
     except EvidencePack.DoesNotExist:
         return Response({'error': 'Evidence pack not found'}, status=status.HTTP_404_NOT_FOUND)
     

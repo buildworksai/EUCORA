@@ -46,6 +46,8 @@ groq>=0.9.0
 nest-asyncio~=1.6.0
 
 # Celery for async task processing
-celery~=5.3.6
-django-celery-beat~=2.7.0
 celery[redis]~=5.3.6
+django-celery-beat~=2.7.0
+
+# LDAP for Active Directory integration
+ldap3~=2.9.1

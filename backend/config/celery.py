@@ -30,6 +30,7 @@ app.conf.task_routes = {
     'apps.policy_engine.tasks.*': {'queue': 'policy'},
     'apps.connectors.tasks.*': {'queue': 'connectors'},
     'apps.deployment_intents.tasks.*': {'queue': 'deployment'},
+    'apps.integrations.tasks.*': {'queue': 'integrations'},
 }
 
 # Task result backend
@@ -60,6 +61,10 @@ app.conf.beat_schedule = {
     'cleanup-old-events': {
         'task': 'apps.event_store.tasks.cleanup_old_events',
         'schedule': 86400.0,  # Daily
+    },
+    'sync-all-integrations': {
+        'task': 'apps.integrations.tasks.sync_all_integrations',
+        'schedule': 900.0,  # Every 15 minutes
     },
 }
 

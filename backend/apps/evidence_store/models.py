@@ -4,7 +4,7 @@
 Evidence Store models for artifact management.
 """
 from django.db import models
-from apps.core.models import TimeStampedModel, CorrelationIdModel
+from apps.core.models import TimeStampedModel, CorrelationIdModel, DemoQuerySet
 
 
 class EvidencePack(TimeStampedModel, CorrelationIdModel):
@@ -19,6 +19,9 @@ class EvidencePack(TimeStampedModel, CorrelationIdModel):
     vulnerability_scan_results = models.JSONField(help_text='Vulnerability scan results')
     rollback_plan = models.TextField(help_text='Rollback plan documentation')
     is_validated = models.BooleanField(default=False, help_text='Whether evidence pack is validated')
+    is_demo = models.BooleanField(default=False, db_index=True, help_text='Whether this is demo data')
+
+    objects = DemoQuerySet.as_manager()
     
     class Meta:
         indexes = [

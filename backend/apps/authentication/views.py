@@ -141,7 +141,7 @@ def entra_id_login(request):
         extra={
             'correlation_id': getattr(request, 'correlation_id', 'N/A'),
             'user': user.username,
-            'created': created,
+            'created_user': created,
         }
     )
     

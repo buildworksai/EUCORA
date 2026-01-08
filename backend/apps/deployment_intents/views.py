@@ -9,6 +9,7 @@ from rest_framework.response import Response
 from rest_framework import status
 from .models import DeploymentIntent, RingDeployment
 from apps.policy_engine.services import calculate_risk_score
+from apps.core.utils import apply_demo_filter, get_demo_mode_enabled
 import logging
 
 logger = logging.getLogger(__name__)
@@ -55,6 +56,7 @@ def create_deployment(request):
         requires_cab_approval=risk_result['requires_cab_approval'],
         status=DeploymentIntent.Status.AWAITING_CAB if risk_result['requires_cab_approval'] else DeploymentIntent.Status.APPROVED,
         submitter=request.user,
+        is_demo=get_demo_mode_enabled(),
     )
     
     logger.info(
@@ -78,7 +80,7 @@ def list_deployments(request):
     
     GET /api/v1/deployments/?status=PENDING&ring=LAB
     """
-    queryset = DeploymentIntent.objects.all()
+    queryset = apply_demo_filter(DeploymentIntent.objects.all(), request)
     
     # Filters
     status_filter = request.query_params.get('status')
@@ -111,7 +113,7 @@ def get_deployment(request, correlation_id):
     GET /api/v1/deployments/{correlation_id}/
     """
     try:
-        deployment = DeploymentIntent.objects.get(correlation_id=correlation_id)
+        deployment = apply_demo_filter(DeploymentIntent.objects.all(), request).get(correlation_id=correlation_id)
     except DeploymentIntent.DoesNotExist:
         return Response({'error': 'Deployment not found'}, status=status.HTTP_404_NOT_FOUND)
     

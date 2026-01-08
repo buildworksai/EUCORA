@@ -12,17 +12,11 @@ from apps.core.models import TimeStampedModel, CorrelationIdModel
 class TestModel(TimeStampedModel):
     """Test model inheriting from TimeStampedModel."""
     name = models.CharField(max_length=100)
-    
-    class Meta:
-        app_label = 'core'
 
 
 class TestCorrelationModel(CorrelationIdModel):
     """Test model inheriting from CorrelationIdModel."""
     name = models.CharField(max_length=100)
-    
-    class Meta:
-        app_label = 'core'
 
 
 @pytest.mark.django_db

@@ -214,3 +214,6 @@ out/
 
 k8s/secrets.yaml
 .secrets.baseline
+
+# Investigations MCP storage - contains sensitive investigation data
+.investigations/

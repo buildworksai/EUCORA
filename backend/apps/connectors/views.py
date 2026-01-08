@@ -9,6 +9,8 @@ from rest_framework.response import Response
 from rest_framework import status
 from django.db import models
 import logging
+from apps.core.utils import apply_demo_filter
+from apps.connectors import services
 
 logger = logging.getLogger(__name__)
 
@@ -35,7 +37,7 @@ def list_assets(request):
     page_size = min(int(request.query_params.get('page_size', 50)), 100)  # Max 100 per page
     
     # Build query
-    queryset = Asset.objects.all()
+    queryset = apply_demo_filter(Asset.objects.all(), request)
     
     if asset_type:
         queryset = queryset.filter(type=asset_type)
@@ -105,7 +107,7 @@ def get_asset(request, asset_id):
     from apps.connectors.models import Asset
     
     try:
-        asset = Asset.objects.get(asset_id=asset_id)
+        asset = apply_demo_filter(Asset.objects.all(), request).get(asset_id=asset_id)
         return Response({
             'id': asset.asset_id,
             'name': asset.name,
@@ -140,12 +142,19 @@ def health_check(request, connector_type):
     
     GET /api/v1/connectors/{connector_type}/health
     """
-    # TODO: Implement real health checks per connector type
+    if connector_type not in services.PowerShellConnectorService.CONNECTOR_SCRIPTS:
+        return Response(
+            {'error': f'Invalid connector type: {connector_type}'},
+            status=status.HTTP_400_BAD_REQUEST
+        )
+
+    service = services.get_connector_service()
+    result = service.health_check(connector_type)
+    status_code = status.HTTP_200_OK if result['status'] == 'healthy' else status.HTTP_503_SERVICE_UNAVAILABLE
     return Response({
         'connector_type': connector_type,
-        'status': 'healthy',
-        'message': 'Connector is operational',
-    })
+        **result,
+    }, status=status_code)
 
 
 @api_view(['POST'])
@@ -156,9 +165,31 @@ def deploy(request, connector_type):
     
     POST /api/v1/connectors/{connector_type}/deploy
     """
-    # TODO: Implement deployment logic per connector type
+    if connector_type not in services.PowerShellConnectorService.CONNECTOR_SCRIPTS:
+        return Response(
+            {'error': f'Invalid connector type: {connector_type}'},
+            status=status.HTTP_400_BAD_REQUEST
+        )
+
+    required_fields = ['deployment_intent_id', 'artifact_path', 'target_ring', 'app_name', 'version']
+    missing = [field for field in required_fields if not request.data.get(field)]
+    if missing:
+        return Response(
+            {'error': f'Missing required fields: {", ".join(missing)}'},
+            status=status.HTTP_400_BAD_REQUEST
+        )
+
+    service = services.get_connector_service()
+    result = service.deploy(connector_type, {
+        'deployment_intent_id': request.data['deployment_intent_id'],
+        'artifact_path': request.data['artifact_path'],
+        'target_ring': request.data['target_ring'],
+        'app_name': request.data['app_name'],
+        'version': request.data['version'],
+    })
+
+    status_code = status.HTTP_200_OK if result['status'] == 'success' else status.HTTP_500_INTERNAL_SERVER_ERROR
     return Response({
         'connector_type': connector_type,
-        'status': 'deployed',
-        'message': 'Deployment initiated',
-    }, status=status.HTTP_202_ACCEPTED)
+        **result,
+    }, status=status_code)

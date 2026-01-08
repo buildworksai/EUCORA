@@ -5,7 +5,7 @@ CAB Workflow models for approval workflows.
 """
 from django.db import models
 from django.contrib.auth.models import User
-from apps.core.models import TimeStampedModel
+from apps.core.models import TimeStampedModel, DemoQuerySet
 from apps.deployment_intents.models import DeploymentIntent
 
 
@@ -26,6 +26,15 @@ class CABApproval(TimeStampedModel):
     conditions = models.JSONField(default=list, help_text='Conditional approval conditions')
     submitted_at = models.DateTimeField(auto_now_add=True)
     reviewed_at = models.DateTimeField(null=True, blank=True)
+    external_change_request_id = models.CharField(
+        max_length=255,
+        null=True,
+        blank=True,
+        help_text='External change request ID (ServiceNow CR, Jira issue key, etc.)'
+    )
+    is_demo = models.BooleanField(default=False, db_index=True, help_text='Whether this is demo data')
+
+    objects = DemoQuerySet.as_manager()
     
     class Meta:
         verbose_name = 'CAB Approval'

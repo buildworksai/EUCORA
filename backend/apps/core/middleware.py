@@ -39,12 +39,17 @@ class CorrelationIdMiddleware(MiddlewareMixin):
         )
         
         # Log request with correlation ID
+        user = getattr(request, 'user', None)
+        username = 'anonymous'
+        if user is not None and getattr(user, 'is_authenticated', False):
+            username = user.username
+
         request.logger.info(
             f'{request.method} {request.path}',
             extra={
                 'method': request.method,
                 'path': request.path,
-                'user': request.user.username if request.user.is_authenticated else 'anonymous',
+                'user': username,
             }
         )
         

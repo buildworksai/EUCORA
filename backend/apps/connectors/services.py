@@ -104,7 +104,7 @@ class PowerShellConnectorService:
             logger.error(f'PowerShell health check timed out for {connector_type}')
             return {
                 'status': 'unhealthy',
-                'message': 'Health check timed out (30s)',
+                'message': 'Health check timed out (timeout 30s)',
                 'details': {}
             }
         except Exception as e:

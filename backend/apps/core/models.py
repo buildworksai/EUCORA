@@ -37,3 +37,25 @@ class CorrelationIdModel(models.Model):
 
     class Meta:
         abstract = True
+
+
+class DemoQuerySet(models.QuerySet):
+    """
+    QuerySet helpers for demo data filtering.
+    """
+    def demo(self):
+        return self.filter(is_demo=True)
+
+    def production(self):
+        return self.filter(is_demo=False)
+
+
+class DemoModeConfig(TimeStampedModel):
+    """
+    Global toggle for demo mode behavior.
+    """
+    is_enabled = models.BooleanField(default=False, help_text='Whether demo mode is enabled')
+
+    class Meta:
+        verbose_name = 'Demo Mode Config'
+        verbose_name_plural = 'Demo Mode Config'

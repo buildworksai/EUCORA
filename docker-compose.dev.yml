@@ -56,6 +56,7 @@ services:
       context: ./backend
       dockerfile: Dockerfile.dev
     container_name: eucora-control-plane
+    command: python manage.py runserver 0.0.0.0:8000
     volumes:
       - ./backend:/app
     ports:
@@ -94,10 +95,8 @@ services:
     volumes:
       - ./backend:/app
     depends_on:
-      db:
-        condition: service_healthy
-      redis:
-        condition: service_healthy
+      - db
+      - redis
     environment:
       - DJANGO_SETTINGS_MODULE=config.settings.development
       - POSTGRES_DB=eucora
@@ -121,10 +120,8 @@ services:
     volumes:
       - ./backend:/app
     depends_on:
-      db:
-        condition: service_healthy
-      redis:
-        condition: service_healthy
+      - db
+      - redis
     environment:
       - DJANGO_SETTINGS_MODULE=config.settings.development
       - POSTGRES_DB=eucora
