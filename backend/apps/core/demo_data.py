@@ -2,17 +2,26 @@
 # Copyright (c) 2026 BuildWorks.AI
 """
 Demo data seeding utilities.
+
+CRITICAL: These functions are designed for customer demos and must be resilient.
+- All operations use transactions for atomicity
+- Errors are caught and logged but don't crash the system
+- Idempotent operations ensure safe retries
 """
 from datetime import timedelta
 import random
 import uuid
+import logging
 from django.contrib.auth.models import User
 from django.utils import timezone
+from django.db import transaction, IntegrityError
 from apps.connectors.models import Asset, Application
 from apps.deployment_intents.models import DeploymentIntent, RingDeployment
 from apps.evidence_store.models import EvidencePack
 from apps.cab_workflow.models import CABApproval
 from apps.event_store.models import DeploymentEvent
+
+logger = logging.getLogger(__name__)
 
 
 def seed_demo_data(
@@ -26,19 +35,106 @@ def seed_demo_data(
 ) -> dict:
     """
     Seed demo data for assets, applications, deployments, approvals, and events.
+    
+    CRITICAL: This function is designed for customer demos - it must be resilient.
+    - Uses transactions for atomicity
+    - Catches and logs errors without crashing
+    - Idempotent operations ensure safe retries
+    
+    Args:
+        assets: Target number of assets (only creates if below this count)
+        applications: Target number of applications (only creates if below this count)
+        deployments: Target number of deployments (only creates if below this count)
+        users: Target number of demo users (only creates if below this count)
+        events: Target number of events (only creates if below this count)
+        clear_existing: If True, clear all demo data before seeding
+        batch_size: Batch size for bulk inserts
+    
+    Returns:
+        Dictionary with current demo data stats
     """
-    if clear_existing:
-        clear_demo_data()
+    try:
+        if clear_existing:
+            logger.info("Clearing existing demo data...")
+            clear_demo_data()
+            logger.info("Demo data cleared successfully")
 
-    demo_user = _get_or_create_demo_admin()
-    _seed_demo_users(users)
-
-    _seed_applications(applications, batch_size)
-    _seed_assets(assets, batch_size)
-    deployment_results = _seed_deployments(deployments, demo_user, batch_size)
-    _seed_additional_events(events, deployment_results['correlation_ids'], batch_size)
-
-    return demo_data_stats()
+        demo_user = _get_or_create_demo_admin()
+        logger.info(f"Demo admin user: {demo_user.username}")
+        
+        # Only seed if target count not reached (idempotent seeding)
+        current_stats = demo_data_stats()
+        logger.info(f"Current demo data stats: {current_stats}")
+        
+        # Seed users (safe - uses get_or_create pattern)
+        if current_stats['users'] < users:
+            logger.info(f"Seeding users: target={users}, current={current_stats['users']}")
+            try:
+                _seed_demo_users(users)
+            except Exception as e:
+                logger.error(f"Error seeding users: {e}", exc_info=True)
+        
+        # Seed applications (safe - uses ignore_conflicts)
+        if current_stats['applications'] < applications:
+            logger.info(f"Seeding applications: target={applications}, current={current_stats['applications']}")
+            try:
+                _seed_applications(applications, batch_size)
+            except Exception as e:
+                logger.error(f"Error seeding applications: {e}", exc_info=True)
+        
+        # Seed assets (safe - uses ignore_conflicts)
+        if current_stats['assets'] < assets:
+            logger.info(f"Seeding assets: target={assets}, current={current_stats['assets']}")
+            try:
+                _seed_assets(assets, batch_size)
+            except Exception as e:
+                logger.error(f"Error seeding assets: {e}", exc_info=True)
+        
+        # CRITICAL FIX: Re-check stats AFTER seeding applications/assets to get accurate counts
+        updated_stats = demo_data_stats()
+        
+        # For deployments, we need applications to exist first
+        # Use updated_stats instead of current_stats to ensure we have the latest counts
+        applications_count = updated_stats['applications']
+        if updated_stats['deployments'] < deployments and applications_count > 0:
+            logger.info(f"Seeding deployments: target={deployments}, current={updated_stats['deployments']}, applications available={applications_count}")
+            try:
+                deployment_results = _seed_deployments(deployments, demo_user, batch_size)
+                logger.info(f"Deployment seeding results: deployments={deployment_results.get('deployments', 0)}, cab_approvals={deployment_results.get('cab_approvals', 0)}, events={deployment_results.get('events', 0)}")
+                # Re-check events count after deployment seeding
+                final_events_count = DeploymentEvent.objects.filter(is_demo=True).count()
+                if final_events_count < events and deployment_results.get('correlation_ids'):
+                    logger.info(f"Seeding additional events: target={events}, current={final_events_count}, correlation_ids={len(deployment_results.get('correlation_ids', []))}")
+                    try:
+                        _seed_additional_events(events, deployment_results['correlation_ids'], batch_size)
+                    except Exception as e:
+                        logger.error(f"Error seeding events: {e}", exc_info=True)
+            except Exception as e:
+                logger.error(f"Error seeding deployments: {e}", exc_info=True)
+        elif applications_count == 0:
+            logger.warning(f"Cannot seed deployments: no applications available (target={deployments}, current={updated_stats['deployments']})")
+        
+        final_stats = demo_data_stats()
+        logger.info(f"Demo data seeding completed. Final stats: {final_stats}")
+        return final_stats
+        
+    except Exception as e:
+        logger.error(f"Critical error in seed_demo_data: {e}", exc_info=True)
+        # Return current stats even if seeding failed partially
+        try:
+            return demo_data_stats()
+        except Exception:
+            # If even stats fail, return empty dict
+            return {
+                'assets': 0,
+                'applications': 0,
+                'deployments': 0,
+                'ring_deployments': 0,
+                'cab_approvals': 0,
+                'evidence_packs': 0,
+                'events': 0,
+                'users': 0,
+            }
 
 
 def clear_demo_data() -> dict:
@@ -87,20 +183,51 @@ def demo_data_stats() -> dict:
 
 
 def _get_or_create_demo_admin() -> User:
-    demo_user, created = User.objects.get_or_create(
-        username='demo',
-        defaults={
-            'email': 'demo@eucora.com',
-            'first_name': 'Demo',
-            'last_name': 'User',
-            'is_staff': False,
-            'is_superuser': False,
-        }
-    )
-    if created:
-        demo_user.set_password('admin@134')
-        demo_user.save(update_fields=['password'])
-    return demo_user
+    """
+    Get or create demo admin user (resilient - handles race conditions).
+    """
+    try:
+        demo_user = User.objects.get(username='demo')
+        return demo_user
+    except User.DoesNotExist:
+        try:
+            with transaction.atomic():
+                demo_user = User.objects.create_user(
+                    username='demo',
+                    email='demo@eucora.com',
+                    password='admin@134',
+                    first_name='Demo',
+                    last_name='User',
+                    is_staff=False,
+                    is_superuser=False,
+                )
+                logger.info("Created demo admin user")
+                return demo_user
+        except IntegrityError:
+            # Race condition - another process created it
+            logger.warning("Demo user already exists (race condition), fetching...")
+            return User.objects.get(username='demo')
+    except Exception as e:
+        logger.error(f"Error getting/creating demo admin: {e}", exc_info=True)
+        # Fallback: try to get any user or create a minimal one
+        try:
+            fallback = User.objects.filter(is_staff=True).first() or User.objects.first()
+            if fallback:
+                logger.warning(f"Using fallback user: {fallback.username}")
+                return fallback
+        except Exception:
+            pass
+        # Last resort: create without password (will need to be set manually)
+        try:
+            return User.objects.create(
+                username='demo_fallback',
+                email='demo@eucora.com',
+                is_staff=False,
+                is_superuser=False,
+            )
+        except Exception as final_error:
+            logger.critical(f"Failed to create even fallback user: {final_error}")
+            raise
 
 
 def _seed_demo_users(count: int) -> None:
@@ -130,6 +257,15 @@ def _delete_demo_users() -> int:
 
 
 def _seed_applications(count: int, batch_size: int) -> int:
+    """
+    Seed applications up to target count (idempotent - only creates if below target).
+    """
+    existing = Application.objects.filter(is_demo=True).count()
+    remaining = max(0, count - existing)
+    
+    if remaining == 0:
+        return existing
+    
     applications_data = [
         ('Microsoft 365', 'Microsoft', 'Productivity', 'Multi-Platform'),
         ('Adobe Acrobat', 'Adobe', 'Productivity', 'Multi-Platform'),
@@ -150,7 +286,7 @@ def _seed_applications(count: int, batch_size: int) -> int:
 
     created = 0
     buffer = []
-    for i in range(count):
+    for i in range(remaining):
         if i < len(applications_data):
             name, vendor, category, platform = applications_data[i]
         else:
@@ -172,16 +308,41 @@ def _seed_applications(count: int, batch_size: int) -> int:
         ))
 
         if len(buffer) >= batch_size:
-            created += len(Application.objects.bulk_create(buffer, ignore_conflicts=True))
+            try:
+                with transaction.atomic():
+                    created += len(Application.objects.bulk_create(buffer, ignore_conflicts=True))
+            except Exception as e:
+                logger.error(f"Error bulk creating applications (batch): {e}", exc_info=True)
             buffer = []
 
     if buffer:
-        created += len(Application.objects.bulk_create(buffer, ignore_conflicts=True))
+        try:
+            with transaction.atomic():
+                created += len(Application.objects.bulk_create(buffer, ignore_conflicts=True))
+        except Exception as e:
+            logger.error(f"Error bulk creating applications (final): {e}", exc_info=True)
 
-    return created or Application.objects.filter(is_demo=True).count()
+    try:
+        return Application.objects.filter(is_demo=True).count()
+    except Exception:
+        return created
 
 
 def _seed_assets(count: int, batch_size: int) -> int:
+    """
+    Seed assets up to target count (idempotent - only creates if below target).
+    Uses transactions for safety.
+    """
+    try:
+        existing = Asset.objects.filter(is_demo=True).count()
+        remaining = max(0, count - existing)
+        
+        if remaining == 0:
+            return existing
+    except Exception as e:
+        logger.error(f"Error checking existing assets: {e}", exc_info=True)
+        return 0
+    
     asset_types = ['Laptop', 'Desktop', 'Virtual Machine', 'Mobile', 'Server']
     os_versions = {
         'Laptop': ['Windows 11', 'Windows 10', 'macOS Sonoma', 'macOS Ventura', 'Ubuntu 22.04'],
@@ -200,7 +361,7 @@ def _seed_assets(count: int, batch_size: int) -> int:
 
     created = 0
     buffer = []
-    for i in range(count):
+    for i in range(remaining):
         asset_type = random.choice(asset_types)
         os = random.choice(os_versions.get(asset_type, ['Windows 11']))
         status = random.choice(statuses)
@@ -234,8 +395,8 @@ def _seed_assets(count: int, batch_size: int) -> int:
         firewall = random.choice([True, True, True, False]) if status == 'Active' else random.choice([True, False])
         
         buffer.append(Asset(
-            name=f"{asset_type[:3].upper()}-{random.randint(1000, 9999)}-{i:06d}",
-            asset_id=f"DEMO-AST-{i:07d}",
+            name=f"{asset_type[:3].upper()}-{random.randint(1000, 9999)}-{existing + i:06d}",
+            asset_id=f"DEMO-AST-{existing + i:07d}",
             serial_number=f"SN{random.randint(100000, 999999)}",
             type=asset_type,
             os=os,
@@ -257,16 +418,44 @@ def _seed_assets(count: int, batch_size: int) -> int:
         ))
 
         if len(buffer) >= batch_size:
-            created += len(Asset.objects.bulk_create(buffer, ignore_conflicts=True))
+            try:
+                with transaction.atomic():
+                    created += len(Asset.objects.bulk_create(buffer, ignore_conflicts=True))
+            except Exception as e:
+                logger.error(f"Error bulk creating assets (batch): {e}", exc_info=True)
             buffer = []
 
     if buffer:
-        created += len(Asset.objects.bulk_create(buffer, ignore_conflicts=True))
+        try:
+            with transaction.atomic():
+                created += len(Asset.objects.bulk_create(buffer, ignore_conflicts=True))
+        except Exception as e:
+            logger.error(f"Error bulk creating assets (final): {e}", exc_info=True)
 
-    return created or Asset.objects.filter(is_demo=True).count()
+    try:
+        return Asset.objects.filter(is_demo=True).count()
+    except Exception:
+        return created
 
 
 def _seed_deployments(count: int, demo_user: User, batch_size: int) -> dict:
+    """
+    Seed deployments up to target count (idempotent - only creates if below target).
+    """
+    existing = DeploymentIntent.objects.filter(is_demo=True).count()
+    remaining = max(0, count - existing)
+    
+    if remaining == 0:
+        # Return existing stats without creating new deployments
+        return {
+            'deployments': existing,
+            'ring_deployments': RingDeployment.objects.filter(is_demo=True).count(),
+            'cab_approvals': CABApproval.objects.filter(is_demo=True).count(),
+            'evidence_packs': EvidencePack.objects.filter(is_demo=True).count(),
+            'events': DeploymentEvent.objects.filter(is_demo=True).count(),
+            'correlation_ids': [],
+        }
+    
     # Weight status pool to ensure more AWAITING_CAB and APPROVED for CAB Portal visibility
     status_pool = [
         DeploymentIntent.Status.PENDING,
@@ -296,11 +485,11 @@ def _seed_deployments(count: int, demo_user: User, batch_size: int) -> dict:
     applications = list(Application.objects.filter(is_demo=True)[:5000])
     if not applications:
         return {
-            'deployments': 0,
-            'ring_deployments': 0,
-            'cab_approvals': 0,
-            'evidence_packs': 0,
-            'events': 0,
+            'deployments': existing,
+            'ring_deployments': RingDeployment.objects.filter(is_demo=True).count(),
+            'cab_approvals': CABApproval.objects.filter(is_demo=True).count(),
+            'evidence_packs': EvidencePack.objects.filter(is_demo=True).count(),
+            'events': DeploymentEvent.objects.filter(is_demo=True).count(),
             'correlation_ids': [],
         }
 
@@ -317,12 +506,13 @@ def _seed_deployments(count: int, demo_user: User, batch_size: int) -> dict:
     ring_batch = []
     events_batch = []
 
-    for i in range(count):
+    for i in range(remaining):
         app = random.choice(applications)
         status = random.choice(status_pool)
         ring = random.choice(rings)
-        evidence_id = uuid.uuid4()
         deployment_id = uuid.uuid4()
+        # Use the same correlation_id for both evidence pack and deployment intent
+        evidence_id = deployment_id
 
         risk_score = max(0, min(100, app.default_risk_score + random.randint(-10, 25)))
         requires_cab = risk_score > 50
@@ -335,7 +525,7 @@ def _seed_deployments(count: int, demo_user: User, batch_size: int) -> dict:
                 risk_score = random.randint(51, 95)
 
         evidence_batch.append(EvidencePack(
-            correlation_id=evidence_id,
+            correlation_id=deployment_id,  # Use deployment_id so it matches deployment intent's correlation_id
             app_name=app.name,
             version=app.version,
             artifact_hash=''.join(random.choices('0123456789abcdef', k=64)),
@@ -372,20 +562,22 @@ def _seed_deployments(count: int, demo_user: User, batch_size: int) -> dict:
         if requires_cab:
             if status == DeploymentIntent.Status.AWAITING_CAB:
                 # Distribute between New, Assessing, and CAB Review
+                # Target: 8+ New Requests, 8+ Technical Assessment, balanced CAB Review
+                # Use more aggressive distribution to ensure we get enough of each type
                 rand_val = random.random()
-                if rand_val < 0.3:  # 30% - New requests (no review yet)
+                if rand_val < 0.45:  # 45% - New requests (no review yet) - prioritize to get 8+
                     decision = CABApproval.Decision.PENDING
                     approver = None
                     reviewed_at = None
                     comments = f"New change request for {app.name} {app.version}. Risk score: {risk_score}."
                     conditions = []
-                elif rand_val < 0.6:  # 30% - Technical Assessment (reviewed but still pending)
+                elif rand_val < 0.75:  # 30% - Technical Assessment (reviewed but still pending)
                     decision = CABApproval.Decision.PENDING
                     approver = demo_user
                     reviewed_at = timezone.now() - timedelta(hours=random.randint(1, 24))
                     comments = f"Under technical assessment for {app.name} {app.version}. Security team reviewing vulnerability scan results. Risk score: {risk_score}."
                     conditions = []
-                else:  # 40% - CAB Review (explicitly in CAB review)
+                else:  # 25% - CAB Review (explicitly in CAB review)
                     decision = CABApproval.Decision.PENDING
                     approver = None
                     reviewed_at = None
@@ -510,49 +702,56 @@ def _seed_deployments(count: int, demo_user: User, batch_size: int) -> dict:
 
             deployments_batch = []
 
-    if evidence_batch:
-        evidence_packs_created += len(EvidencePack.objects.bulk_create(evidence_batch, ignore_conflicts=True))
-    if deployments_batch:
-        DeploymentIntent.objects.bulk_create(deployments_batch, ignore_conflicts=True)
-        deployments_created += len(deployments_batch)
-        saved = {d.correlation_id: d for d in DeploymentIntent.objects.filter(correlation_id__in=[d.correlation_id for d in deployments_batch])}
+    # CRITICAL FIX: Final batch must also use transaction
+    if evidence_batch or deployments_batch:
+        with transaction.atomic():
+            if evidence_batch:
+                evidence_packs_created += len(EvidencePack.objects.bulk_create(evidence_batch, ignore_conflicts=True))
+            if deployments_batch:
+                DeploymentIntent.objects.bulk_create(deployments_batch, ignore_conflicts=True)
+                deployments_created += len(deployments_batch)
+                # Force refresh from database
+                saved = {d.correlation_id: d for d in DeploymentIntent.objects.filter(
+                    correlation_id__in=[d.correlation_id for d in deployments_batch]
+                )}
 
-        if cab_batch:
-            cab_objects = []
-            for cab in cab_batch:
-                deployment = saved.get(cab['deployment_id'])
-                if deployment:
-                    cab_objects.append(CABApproval(
-                        deployment_intent=deployment,
-                        decision=cab['decision'],
-                        approver=cab['approver'],
-                        comments=cab['comments'],
-                        reviewed_at=cab['reviewed_at'],
-                        is_demo=True,
-                    ))
-            cab_approvals_created += len(CABApproval.objects.bulk_create(cab_objects, ignore_conflicts=True))
+                cab_objects = []
+                for cab in cab_batch:
+                    deployment = saved.get(cab['deployment_id'])
+                    if deployment:
+                        cab_objects.append(CABApproval(
+                            deployment_intent=deployment,
+                            decision=cab['decision'],
+                            approver=cab['approver'],
+                            comments=cab['comments'],
+                            reviewed_at=cab['reviewed_at'],
+                            is_demo=True,
+                        ))
+                if cab_objects:
+                    cab_approvals_created += len(CABApproval.objects.bulk_create(cab_objects, ignore_conflicts=True))
 
-        if ring_batch:
-            ring_objects = []
-            for ring_entry in ring_batch:
-                deployment = saved.get(ring_entry['deployment_id'])
-                if deployment:
-                    success_count = random.randint(50, 500) if ring_entry['status'] == DeploymentIntent.Status.COMPLETED else random.randint(0, 50)
-                    failure_count = random.randint(0, 25) if ring_entry['status'] in [DeploymentIntent.Status.FAILED, DeploymentIntent.Status.ROLLED_BACK] else random.randint(0, 10)
-                    total = max(1, success_count + failure_count)
-                    ring_objects.append(RingDeployment(
-                        deployment_intent=deployment,
-                        ring=ring_entry['ring'],
-                        connector_type=random.choice(['intune', 'jamf', 'sccm', 'landscape', 'ansible']),
-                        connector_object_id=f"DEMO-{uuid.uuid4()}",
-                        success_count=success_count,
-                        failure_count=failure_count,
-                        success_rate=success_count / total,
-                        promoted_at=timezone.now() - timedelta(days=random.randint(0, 30)),
-                        promotion_gate_passed=ring_entry['status'] == DeploymentIntent.Status.COMPLETED,
-                        is_demo=True,
-                    ))
-            ring_deployments_created += len(RingDeployment.objects.bulk_create(ring_objects, ignore_conflicts=True))
+            if ring_batch:
+                ring_objects = []
+                for ring_entry in ring_batch:
+                    deployment = saved.get(ring_entry['deployment_id'])
+                    if deployment:
+                        success_count = random.randint(50, 500) if ring_entry['status'] == DeploymentIntent.Status.COMPLETED else random.randint(0, 50)
+                        failure_count = random.randint(0, 25) if ring_entry['status'] in [DeploymentIntent.Status.FAILED, DeploymentIntent.Status.ROLLED_BACK] else random.randint(0, 10)
+                        total = max(1, success_count + failure_count)
+                        ring_objects.append(RingDeployment(
+                            deployment_intent=deployment,
+                            ring=ring_entry['ring'],
+                            connector_type=random.choice(['intune', 'jamf', 'sccm', 'landscape', 'ansible']),
+                            connector_object_id=f"DEMO-{uuid.uuid4()}",
+                            success_count=success_count,
+                            failure_count=failure_count,
+                            success_rate=success_count / total,
+                            promoted_at=timezone.now() - timedelta(days=random.randint(0, 30)),
+                            promotion_gate_passed=ring_entry['status'] == DeploymentIntent.Status.COMPLETED,
+                            is_demo=True,
+                        ))
+                if ring_objects:
+                    ring_deployments_created += len(RingDeployment.objects.bulk_create(ring_objects, ignore_conflicts=True))
 
     if events_batch:
         events_created += len(DeploymentEvent.objects.bulk_create(events_batch, ignore_conflicts=True))

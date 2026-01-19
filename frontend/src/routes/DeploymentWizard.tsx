@@ -5,7 +5,6 @@ import { z } from 'zod';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
 import { LoadingButton } from '@/components/ui/loading-button';
@@ -28,7 +27,7 @@ const deploymentSchema = z.object({
     appName: z.string().min(1, 'Application name is required').max(100, 'Application name must be less than 100 characters'),
     version: z.string().regex(/^\d+\.\d+\.\d+/, 'Version must be in semver format (e.g., 1.0.0)'),
     targetRing: z.enum(['LAB', 'CANARY', 'PILOT'], {
-        required_error: 'Target ring is required',
+        message: 'Target ring is required',
     }),
     evidenceFile: z.instanceof(File).optional(),
 });

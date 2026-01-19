@@ -5,8 +5,8 @@
  */
 import { create } from 'zustand';
 import { persist, createJSONStorage } from 'zustand/middleware';
-import type { User, LoginCredentials, MOCK_USERS } from '@/types/auth';
-import { MOCK_USERS as mockUsers, DEFAULT_PERMISSIONS } from '@/types/auth';
+import type { User, LoginCredentials } from '@/types/auth';
+import { DEFAULT_PERMISSIONS, MOCK_USERS } from '@/types/auth';
 
 interface AuthStore {
   user: User | null;
@@ -43,9 +43,10 @@ export const useAuthStore = create<AuthStore>()(
           
           if (isMock) {
             // Mock authentication
-            const mockUser = mockUsers[credentials.email];
+            const mockUser = MOCK_USERS[credentials.email];
             
             if (mockUser && mockUser.password === credentials.password) {
+              // eslint-disable-next-line @typescript-eslint/no-unused-vars
               const { password, ...user } = mockUser;
               const expiresAt = new Date();
               expiresAt.setHours(expiresAt.getHours() + 24);
@@ -143,8 +144,9 @@ export const useAuthStore = create<AuthStore>()(
       },
 
       checkSession: async () => {
-        const { sessionExpiresAt } = get();
+        const { sessionExpiresAt, isAuthenticated } = get();
         
+        // Check local expiration first
         if (sessionExpiresAt) {
           const expiresAt = new Date(sessionExpiresAt);
           if (expiresAt < new Date()) {
@@ -153,19 +155,49 @@ export const useAuthStore = create<AuthStore>()(
           }
         }
         
-        // Optionally validate session with backend
-        const isMock = import.meta.env.VITE_USE_MOCK_AUTH === 'true';
-        if (!isMock && get().isAuthenticated) {
+        // Always validate session with backend if authenticated
+        // This ensures we catch expired sessions even if local expiration hasn't passed
+        if (isAuthenticated) {
+          const isMock = import.meta.env.VITE_USE_MOCK_AUTH === 'true';
+          
+          if (isMock) {
+            // In mock mode, just check local expiration
+            return;
+          }
+          
           try {
             const response = await fetch(`${API_BASE_URL}/api/v1/auth/me`, {
               credentials: 'include',
             });
             
             if (!response.ok) {
+              // Session invalid - logout
+              await get().logout();
+              return;
+            }
+            
+            // Update user data from backend
+            const data = await response.json();
+            const user: User = {
+              id: data.user.id?.toString() || '1',
+              email: data.user.email || data.user.username,
+              firstName: data.user.first_name || 'User',
+              lastName: data.user.last_name || '',
+              role: data.user.is_superuser ? 'admin' : (data.user.is_staff ? 'operator' : 'viewer'),
+              isActive: true,
+              permissions: data.user.is_superuser 
+                ? DEFAULT_PERMISSIONS.admin 
+                : (data.user.is_staff ? DEFAULT_PERMISSIONS.operator : DEFAULT_PERMISSIONS.viewer),
+              lastLogin: new Date(),
+            };
+            
+            set({ user });
+          } catch (error) {
+            // Network error - keep session for offline support
+            // But if it's a 401, logout
+            if (error instanceof Error && error.message.includes('401')) {
               await get().logout();
             }
-          } catch {
-            // Keep session if network error (offline support)
           }
         }
       },

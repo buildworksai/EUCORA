@@ -71,6 +71,7 @@ export function MockAuthProvider({ children }: { children: ReactNode }) {
     return <MockAuthContext.Provider value={value}>{children}</MockAuthContext.Provider>;
 }
 
+// eslint-disable-next-line react-refresh/only-export-components
 export function useMockAuth() {
     const context = useContext(MockAuthContext);
     if (context === undefined) {

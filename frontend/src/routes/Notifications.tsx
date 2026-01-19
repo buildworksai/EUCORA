@@ -2,10 +2,9 @@
 // Copyright (c) 2026 BuildWorks.AI
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Separator } from '@/components/ui/separator';
-import { Bell, Clock, CheckCircle2, AlertCircle, XCircle, ExternalLink } from 'lucide-react';
+import { Bell, Clock, CheckCircle2, AlertCircle, ExternalLink } from 'lucide-react';
 import { usePendingApprovals } from '@/lib/api/hooks/useCAB';
 import { useDeployments } from '@/lib/api/hooks/useDeployments';
 import { formatDistanceToNow } from 'date-fns';
@@ -20,10 +19,11 @@ export default function Notifications() {
     const isLoading = approvalsLoading || deploymentsLoading;
     
     // Get all notifications
+    // CRITICAL FIX: Use unique keys by combining type and correlation_id to prevent duplicate key warnings
     const allNotifications = [
         // Pending CAB Approvals
         ...pendingApprovals.map(approval => ({
-            id: approval.correlation_id,
+            id: `cab_approval_${approval.correlation_id}`, // Unique key: type + correlation_id
             type: 'cab_approval' as const,
             title: `CAB Review: ${approval.app_name} ${approval.version}`,
             description: `Risk Score: ${approval.risk_score} • Requires CAB approval`,
@@ -34,11 +34,15 @@ export default function Notifications() {
             badgeColor: 'bg-eucora-gold/10 text-eucora-gold border-eucora-gold/30',
             onClick: () => navigate('/cab'),
         })),
-        // Deployments awaiting CAB
+        // Deployments awaiting CAB (exclude those already in pendingApprovals to avoid duplicates)
         ...deployments
-            .filter(d => d.status === 'AWAITING_CAB')
+            .filter(d => {
+                // Only include if not already in pendingApprovals (avoid duplicate notifications)
+                const hasPendingApproval = pendingApprovals.some(pa => pa.correlation_id === d.correlation_id);
+                return d.status === 'AWAITING_CAB' && !hasPendingApproval;
+            })
             .map(deployment => ({
-                id: deployment.correlation_id,
+                id: `deployment_awaiting_cab_${deployment.correlation_id}`, // Unique key: type + correlation_id
                 type: 'deployment_awaiting_cab' as const,
                 title: `Awaiting CAB: ${deployment.app_name} ${deployment.version}`,
                 description: `Ring: ${deployment.target_ring} • Risk: ${deployment.risk_score || 'N/A'}`,
@@ -53,7 +57,7 @@ export default function Notifications() {
         ...deployments
             .filter(d => d.status === 'DEPLOYING')
             .map(deployment => ({
-                id: deployment.correlation_id,
+                id: `deployment_in_progress_${deployment.correlation_id}`, // Unique key: type + correlation_id
                 type: 'deployment_in_progress' as const,
                 title: `Deploying: ${deployment.app_name} ${deployment.version}`,
                 description: `Ring: ${deployment.target_ring} • Deployment in progress`,

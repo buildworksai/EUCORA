@@ -37,11 +37,14 @@ class Command(BaseCommand):
                     )
                 )
             else:
-                self.stdout.write(
-                    self.style.WARNING(
-                        f'User "devadmin" already exists (email: {user.email})'
+                # User already exists - this is expected and not an error
+                # Only log in verbose mode to reduce log noise
+                if options.get('verbosity', 1) >= 2:
+                    self.stdout.write(
+                        self.style.WARNING(
+                            f'User "devadmin" already exists (email: {user.email})'
+                        )
                     )
-                )
                 
         except IntegrityError as e:
             self.stdout.write(self.style.ERROR(f'Error creating user: {e}'))

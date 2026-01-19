@@ -38,20 +38,36 @@ class CorrelationIdMiddleware(MiddlewareMixin):
             {'correlation_id': correlation_id}
         )
         
-        # Log request with correlation ID
-        user = getattr(request, 'user', None)
-        username = 'anonymous'
-        if user is not None and getattr(user, 'is_authenticated', False):
-            username = user.username
+        # Log request with correlation ID (only in DEBUG mode or for non-health endpoints)
+        # Skip health check endpoints to reduce log noise
+        from django.conf import settings
+        if request.path not in ['/api/v1/health/', '/health/', '/api/v1/health']:
+            user = getattr(request, 'user', None)
+            username = 'anonymous'
+            if user is not None and getattr(user, 'is_authenticated', False):
+                username = user.username
 
-        request.logger.info(
-            f'{request.method} {request.path}',
-            extra={
-                'method': request.method,
-                'path': request.path,
-                'user': username,
-            }
-        )
+            # Use DEBUG level for normal requests to reduce log volume
+            # Only log at INFO level in DEBUG mode for development
+            if settings.DEBUG:
+                request.logger.info(
+                    f'{request.method} {request.path}',
+                    extra={
+                        'method': request.method,
+                        'path': request.path,
+                        'user': username,
+                    }
+                )
+            else:
+                # In production, only log at DEBUG level (won't show unless DEBUG logging enabled)
+                request.logger.debug(
+                    f'{request.method} {request.path}',
+                    extra={
+                        'method': request.method,
+                        'path': request.path,
+                        'user': username,
+                    }
+                )
         
     def process_response(self, request, response):
         """Add correlation ID to response headers."""

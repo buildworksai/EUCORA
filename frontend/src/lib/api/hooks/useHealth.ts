@@ -22,8 +22,8 @@ export function useHealth() {
     queryFn: async () => {
       return api.get<HealthCheck>('/health/');
     },
-    staleTime: 10000, // 10 seconds
-    refetchInterval: 30000, // Poll every 30 seconds
+    staleTime: 120000, // 2 minutes
+    refetchInterval: 180000, // Poll every 3 minutes
     retry: 1, // Don't retry health checks aggressively
   });
 }

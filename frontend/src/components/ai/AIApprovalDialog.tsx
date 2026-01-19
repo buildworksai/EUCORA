@@ -90,9 +90,14 @@ export function AIApprovalDialog({
                     onOpenChange(false);
                     onApproved?.(task);
                 },
-                onError: (error: any) => {
+                onError: (error: unknown) => {
+                    const errorMessage = error instanceof Error 
+                        ? error.message 
+                        : (error && typeof error === 'object' && 'response' in error && error.response && typeof error.response === 'object' && 'data' in error.response && error.response.data && typeof error.response.data === 'object' && 'error' in error.response.data && typeof error.response.data.error === 'string'
+                            ? error.response.data.error
+                            : 'An error occurred');
                     toast.error('Failed to approve task', {
-                        description: error?.response?.data?.error || 'An error occurred',
+                        description: errorMessage,
                     });
                 },
             }
@@ -117,9 +122,14 @@ export function AIApprovalDialog({
                     onOpenChange(false);
                     onRejected?.(task);
                 },
-                onError: (error: any) => {
+                onError: (error: unknown) => {
+                    const errorMessage = error instanceof Error 
+                        ? error.message 
+                        : (error && typeof error === 'object' && 'response' in error && error.response && typeof error.response === 'object' && 'data' in error.response && error.response.data && typeof error.response.data === 'object' && 'error' in error.response.data && typeof error.response.data.error === 'string'
+                            ? error.response.data.error
+                            : 'An error occurred');
                     toast.error('Failed to reject task', {
-                        description: error?.response?.data?.error || 'An error occurred',
+                        description: errorMessage,
                     });
                 },
             }
@@ -152,9 +162,14 @@ export function AIApprovalDialog({
                     // Keep dialog open to show the revised recommendation
                     // onOpenChange(false);
                 },
-                onError: (error: any) => {
+                onError: (error: unknown) => {
+                    const errorMessage = error instanceof Error 
+                        ? error.message 
+                        : (error && typeof error === 'object' && 'response' in error && error.response && typeof error.response === 'object' && 'data' in error.response && error.response.data && typeof error.response.data === 'object' && 'error' in error.response.data && typeof error.response.data.error === 'string'
+                            ? error.response.data.error
+                            : 'An error occurred');
                     toast.error('Failed to request revision', {
-                        description: error?.response?.data?.error || 'An error occurred',
+                        description: errorMessage,
                     });
                 },
             }
@@ -185,6 +200,17 @@ export function AIApprovalDialog({
     const statusDisplay = task.status ? task.status.replace('_', ' ') : 'pending';
     const agentDisplay = task.agent_type_display || task.agent_type || 'AI Agent';
     const taskTypeDisplay = task.task_type ? task.task_type.replace('_', ' ') : 'recommendation';
+    
+    // Type guards for conditional rendering
+    const hasInputData: boolean = !!(task.input_data && typeof task.input_data === 'object' && task.input_data !== null && Object.keys(task.input_data).length > 0);
+    const hasOutputData: boolean = !!(task.output_data && typeof task.output_data === 'object' && task.output_data !== null && Object.keys(task.output_data).length > 0 && !('approval' in task.output_data) && !('rejection' in task.output_data));
+    
+    // Extract revision data with proper typing
+    type RevisionType = { feedback?: string; revised_recommendation?: string; timestamp?: string; requested_by?: string; ai_response?: string; revision_number?: number; requested_at?: string };
+    const revisionsRaw: unknown = task.output_data?.revisions;
+    const isRevisionsArray: boolean = Array.isArray(revisionsRaw);
+    const revisions: RevisionType[] = isRevisionsArray ? (revisionsRaw as RevisionType[]) : [];
+    const hasRevisions: boolean = revisions.length > 0;
     
     return (
         <Dialog open={open} onOpenChange={resetAndClose}>
@@ -232,20 +258,19 @@ export function AIApprovalDialog({
                                 <Clock className="h-4 w-4" />
                                 <span>{task.created_at ? new Date(task.created_at).toLocaleString() : 'Just now'}</span>
                             </div>
-                            {task.initiated_by && (
+                            {task.initiated_by ? (
                                 <div className="flex items-center gap-2 text-muted-foreground">
                                     <User className="h-4 w-4" />
                                     <span>Requested by: {task.initiated_by.name || task.initiated_by.username}</span>
                                 </div>
-                            )}
+                            ) : null}
                             <div className="flex items-center gap-2 text-muted-foreground">
                                 <Shield className="h-4 w-4" />
                                 <span>Type: {taskTypeDisplay}</span>
                             </div>
                         </div>
                         
-                        {/* Input Data Preview (if any) */}
-                        {task.input_data && Object.keys(task.input_data).length > 0 && (
+                        {hasInputData ? (
                             <>
                                 <Separator />
                                 <div className="space-y-2">
@@ -254,15 +279,14 @@ export function AIApprovalDialog({
                                     </Label>
                                     <div className="p-3 rounded-lg bg-background/50 border border-border/50 font-mono text-xs">
                                         <pre className="whitespace-pre-wrap overflow-x-auto">
-                                            {JSON.stringify(task.input_data, null, 2)}
+                                            {String(JSON.stringify(task.input_data, null, 2) ?? '{}')}
                                         </pre>
                                     </div>
                                 </div>
                             </>
-                        )}
+                        ) : null}
                         
-                        {/* Output/Recommendation Preview (if any) */}
-                        {task.output_data && Object.keys(task.output_data).length > 0 && !task.output_data.approval && !task.output_data.rejection && (
+                        {hasOutputData ? (
                             <>
                                 <Separator />
                                 <div className="space-y-2">
@@ -271,12 +295,12 @@ export function AIApprovalDialog({
                                     </Label>
                                     <div className="p-3 rounded-lg bg-background/50 border border-border/50 font-mono text-xs">
                                         <pre className="whitespace-pre-wrap overflow-x-auto">
-                                            {JSON.stringify(task.output_data, null, 2)}
+                                            {String(JSON.stringify(task.output_data, null, 2) ?? '{}')}
                                         </pre>
                                     </div>
                                 </div>
                             </>
-                        )}
+                        ) : null}
                         
                         <Separator />
                         
@@ -295,16 +319,16 @@ export function AIApprovalDialog({
                         </div>
                         
                         {/* Revision History */}
-                        {task.output_data?.revisions && task.output_data.revisions.length > 0 && (
+                        {hasRevisions ? (
                             <>
                                 <Separator />
                                 <div className="space-y-3">
                                     <div className="flex items-center gap-2 text-sm font-medium">
                                         <History className="h-4 w-4 text-purple-500" />
-                                        <span>Revision History ({task.output_data.revisions.length})</span>
+                                        <span>Revision History ({revisions.length})</span>
                                     </div>
                                     <div className="space-y-2 max-h-[200px] overflow-y-auto">
-                                        {task.output_data.revisions.map((revision: any, index: number) => (
+                                        {revisions.map((revision, index: number) => (
                                             <div 
                                                 key={index} 
                                                 className="p-3 rounded-lg bg-purple-500/10 border border-purple-500/30 text-sm"
@@ -314,7 +338,7 @@ export function AIApprovalDialog({
                                                         Revision #{revision.revision_number}
                                                     </Badge>
                                                     <span className="text-xs text-muted-foreground">
-                                                        {new Date(revision.requested_at).toLocaleString()}
+                                                        {revision.requested_at ? new Date(revision.requested_at).toLocaleString() : 'N/A'}
                                                     </span>
                                                 </div>
                                                 <p className="text-xs text-muted-foreground mb-1">
@@ -336,12 +360,12 @@ export function AIApprovalDialog({
                                     </div>
                                 </div>
                             </>
-                        )}
+                        ) : null}
                         
                         {/* Approve/Reject/Feedback Inputs */}
-                        {(task.status === 'awaiting_approval' || task.status === 'revision_requested') && canApprove && (
+                        {((task.status === 'awaiting_approval' || task.status === 'revision_requested') && canApprove) ? (
                             <>
-                                {mode === 'approve' && (
+                                {mode === 'approve' ? (
                                     <div className="space-y-2">
                                         <Label htmlFor="approval-comment">Approval Comment (Optional)</Label>
                                         <Textarea
@@ -352,9 +376,9 @@ export function AIApprovalDialog({
                                             className="min-h-[80px] bg-background/50"
                                         />
                                     </div>
-                                )}
+                                ) : null}
                                 
-                                {mode === 'reject' && (
+                                {mode === 'reject' ? (
                                     <div className="space-y-2">
                                         <Label htmlFor="rejection-reason" className="text-destructive">
                                             Rejection Reason (Required)
@@ -368,9 +392,9 @@ export function AIApprovalDialog({
                                             required
                                         />
                                     </div>
-                                )}
+                                ) : null}
                                 
-                                {mode === 'feedback' && (
+                                {mode === 'feedback' ? (
                                     <div className="space-y-3 p-4 rounded-lg bg-purple-500/10 border border-purple-500/30">
                                         <div className="flex items-center gap-2">
                                             <MessageSquare className="h-4 w-4 text-purple-500" />
@@ -395,44 +419,48 @@ export function AIApprovalDialog({
                                             <span>AI will generate a revised recommendation based on your feedback</span>
                                         </div>
                                     </div>
-                                )}
+                                ) : null}
                             </>
-                        )}
+                        ) : null}
                         
                         {/* Already Processed Info */}
-                        {task.output_data?.approval && (
+                        {task.output_data?.approval ? (
                             <div className="p-4 rounded-lg bg-eucora-green/10 border border-eucora-green/30">
                                 <div className="flex items-center gap-2 text-eucora-green font-medium">
                                     <CheckCircle2 className="h-5 w-5" />
                                     Approved
                                 </div>
                                 <p className="text-sm text-muted-foreground mt-1">
-                                    Approved by {task.output_data.approval.approved_by} on{' '}
-                                    {new Date(task.output_data.approval.approved_at).toLocaleString()}
+                                    {task.output_data.approval && typeof task.output_data.approval === 'object' && 'approved_by' in task.output_data.approval && typeof task.output_data.approval.approved_by === 'string' && 'approved_at' in task.output_data.approval && typeof task.output_data.approval.approved_at === 'string' && (
+                                        <>Approved by {task.output_data.approval.approved_by} on {new Date(task.output_data.approval.approved_at).toLocaleString()}</>
+                                    )}
                                 </p>
-                                {task.output_data.approval.comment && (
+                                {task.output_data.approval && typeof task.output_data.approval === 'object' && 'comment' in task.output_data.approval && typeof task.output_data.approval.comment === 'string' && task.output_data.approval.comment && (
                                     <p className="text-sm mt-2 italic">
                                         "{task.output_data.approval.comment}"
                                     </p>
                                 )}
                             </div>
-                        )}
+                        ) : null}
                         
-                        {task.output_data?.rejection && (
+                        {task.output_data?.rejection ? (
                             <div className="p-4 rounded-lg bg-destructive/10 border border-destructive/30">
                                 <div className="flex items-center gap-2 text-destructive font-medium">
                                     <XCircle className="h-5 w-5" />
                                     Rejected
                                 </div>
                                 <p className="text-sm text-muted-foreground mt-1">
-                                    Rejected by {task.output_data.rejection.rejected_by} on{' '}
-                                    {new Date(task.output_data.rejection.rejected_at).toLocaleString()}
+                                    {task.output_data.rejection && typeof task.output_data.rejection === 'object' && 'rejected_by' in task.output_data.rejection && typeof task.output_data.rejection.rejected_by === 'string' && 'rejected_at' in task.output_data.rejection && typeof task.output_data.rejection.rejected_at === 'string' && (
+                                        <>Rejected by {task.output_data.rejection.rejected_by} on {new Date(task.output_data.rejection.rejected_at).toLocaleString()}</>
+                                    )}
                                 </p>
                                 <p className="text-sm mt-2">
-                                    Reason: {task.output_data.rejection.reason}
+                                    {task.output_data.rejection && typeof task.output_data.rejection === 'object' && 'reason' in task.output_data.rejection && typeof task.output_data.rejection.reason === 'string' && (
+                                        <>Reason: {task.output_data.rejection.reason}</>
+                                    )}
                                 </p>
                             </div>
-                        )}
+                        ) : null}
                         
                         {/* No permission message */}
                         {task.status === 'awaiting_approval' && !canApprove && (

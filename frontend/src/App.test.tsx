@@ -23,7 +23,7 @@ vi.mock('./routes/settings', () => ({ default: () => <div>Settings</div> }));
 const authState = { isAuthenticated: false };
 
 vi.mock('./lib/stores/authStore', () => ({
-  useAuthStore: (selector: any) => (selector ? selector(authState) : authState),
+  useAuthStore: (selector?: (state: typeof authState) => unknown) => (selector ? selector(authState) : authState),
 }));
 
 describe('App', () => {

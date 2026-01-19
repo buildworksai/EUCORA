@@ -1,7 +1,7 @@
 /**
  * Error Boundary component for catching React errors.
  */
-import React, { Component, ErrorInfo, ReactNode } from 'react';
+import { Component, ErrorInfo, ReactNode } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from './card';
 import { Button } from './button';
 import { AlertCircle, RefreshCw } from 'lucide-react';

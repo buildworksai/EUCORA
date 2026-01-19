@@ -9,9 +9,9 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { 
-    Bot, Package, FileCheck, AlertTriangle, Rocket, Shield, 
-    Activity, Clock, CheckCircle, XCircle, Play, Pause,
-    Sparkles, Brain, Zap, Loader2
+    Package, FileCheck, AlertTriangle, Rocket, Shield, 
+    Activity, Clock, CheckCircle, XCircle, Play,
+    Sparkles, Brain, Loader2
 } from 'lucide-react';
 import { useAIAgentTasks, useAIAgentStats } from '@/lib/api/hooks/useAI';
 
@@ -86,7 +86,7 @@ const AGENT_TYPES = [
 export default function AIAgentHub() {
     const { data: stats, isLoading: statsLoading } = useAIAgentStats();
     const { data: tasksData, isLoading: tasksLoading } = useAIAgentTasks();
-    const [selectedAgent, setSelectedAgent] = useState<string | null>(null);
+    const [, setSelectedAgent] = useState<string | null>(null); // Reserved for future use
     
     const tasks = tasksData?.tasks || [];
     
@@ -238,7 +238,7 @@ export default function AIAgentHub() {
                                     </div>
                                 ) : (
                                     <div className="space-y-4">
-                                        {tasks.map((task: any) => (
+                                        {tasks.map((task) => (
                                             <div key={task.id} className="flex items-center justify-between p-4 rounded-lg bg-white/5 hover:bg-white/10 transition-colors">
                                                 <div className="flex items-center gap-3">
                                                     <Badge variant={

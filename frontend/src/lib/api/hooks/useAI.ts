@@ -42,6 +42,7 @@ export interface AIConversationResponse {
     message_id: string;
     response: string;
     requires_action: boolean;
+    error?: string;
 }
 
 export interface AIAgentTask {
@@ -51,8 +52,8 @@ export interface AIAgentTask {
     title: string;
     description: string;
     task_type: string;
-    input_data: Record<string, any>;
-    output_data: Record<string, any>;
+    input_data: Record<string, unknown>;
+    output_data: Record<string, unknown>;
     status: 'pending' | 'in_progress' | 'awaiting_approval' | 'revision_requested' | 'approved' | 'rejected' | 'executing' | 'completed' | 'failed';
     created_at: string;
     updated_at?: string;
@@ -145,7 +146,7 @@ export function useAmaniChat() {
         mutationFn: async (data: {
             message: string;
             conversation_id?: string;
-            context?: Record<string, any>;
+            context?: Record<string, unknown>;
         }) => {
             return await api.post(`${API_BASE}/amani/ask/`, data) as AIConversationResponse;
         },
@@ -210,7 +211,7 @@ export function usePendingApprovals() {
         queryFn: async () => {
             return await api.get(`${API_BASE}/tasks/pending/`);
         },
-        refetchInterval: 30000, // Refresh every 30 seconds
+        refetchInterval: 180000, // Refresh every 3 minutes
     });
 }
 
@@ -294,20 +295,25 @@ export function useRequestRevision() {
 }
 
 // Create task from message (for AI recommendations needing approval)
+export interface CreateTaskResponse {
+    task: AIAgentTask;
+    message?: string;
+}
+
 export function useCreateTaskFromMessage() {
     const queryClient = useQueryClient();
     
-    return useMutation({
-        mutationFn: async (data: {
-            title: string;
-            description: string;
-            agent_type?: string;
-            task_type?: string;
-            input_data?: Record<string, any>;
-            output_data?: Record<string, any>;
-            conversation_id?: string;
-        }) => {
-            return await api.post(`${API_BASE}/tasks/create/`, data);
+    return useMutation<CreateTaskResponse, Error, {
+        title: string;
+        description: string;
+        agent_type?: string;
+        task_type?: string;
+        input_data?: Record<string, unknown>;
+        output_data?: Record<string, unknown>;
+        conversation_id?: string;
+    }>({
+        mutationFn: async (data) => {
+            return await api.post<CreateTaskResponse>(`${API_BASE}/tasks/create/`, data);
         },
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: ['ai', 'pending-approvals'] });
@@ -322,7 +328,7 @@ export function useSendMessage() {
     const { mutateAsync: askAmani } = useAmaniChat();
     
     return {
-        sendMessage: async (message: string, conversationId?: string, context?: Record<string, any>) => {
+        sendMessage: async (message: string, conversationId?: string, context?: Record<string, unknown>) => {
             return await askAmani({ message, conversation_id: conversationId, context });
         },
     };

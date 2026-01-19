@@ -89,13 +89,13 @@ export default function ComplianceDashboard() {
                         <CardDescription>Historical compliance over time.</CardDescription>
                     </CardHeader>
                     <CardContent>
-                        <div className="h-[300px] w-full">
+                        <div className="h-[300px] w-full min-w-0">
                             {isLoading ? (
                                 <div className="flex items-center justify-center h-full">
                                     <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
                                 </div>
                             ) : complianceTrend.length > 0 ? (
-                                <ResponsiveContainer width="100%" height="100%">
+                                <ResponsiveContainer width="100%" height="100%" minWidth={0} minHeight={0}>
                                     <AreaChart data={complianceTrend}>
                                         <defs>
                                             <linearGradient id="colorScore" x1="0" y1="0" x2="0" y2="1">
@@ -125,13 +125,13 @@ export default function ComplianceDashboard() {
                         <CardDescription>Active vulnerabilities by severity.</CardDescription>
                     </CardHeader>
                     <CardContent>
-                        <div className="h-[300px] w-full">
+                        <div className="h-[300px] w-full min-w-0">
                             {isLoading ? (
                                 <div className="flex items-center justify-center h-full">
                                     <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
                                 </div>
                             ) : vulnerabilityData.length > 0 ? (
-                                <ResponsiveContainer width="100%" height="100%">
+                                <ResponsiveContainer width="100%" height="100%" minWidth={0} minHeight={0}>
                                     <PieChart>
                                         <Pie
                                             data={vulnerabilityData}

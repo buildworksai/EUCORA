@@ -23,17 +23,84 @@ Key Principles:
 ## Development Workflow
 
 1.  **Fork and Clone**: Fork the repository and clone it locally.
-2.  **Branching**: Create a feature branch (`feature/description`) or fix branch (`fix/issue-id`).
+2.  **Branching**: Create a feature branch using the naming convention:
+    - `feature/<description>` — New features
+    - `bugfix/<description>` — Bug fixes
+    - `hotfix/<description>` — Critical production fixes
+    - `release/v<semver>` — Release branches
 3.  **Pre-Commit Hooks**: Ensure pre-commit hooks are installed and passing.
     ```bash
     pip install pre-commit
     pre-commit install
     ```
-4.  **Commits**: Use conventional commits (e.g., `feat: add new connector`, `fix: resolve race condition`).
+    
+    **MANDATORY**: All commits MUST pass pre-commit hooks. Zero bypasses allowed.
+4.  **Commits**: Use conventional commit message format (see Commit Message Format below).
 5.  **Pull Requests**:
     - Link to related issues.
     - Provide a clear description of changes.
-    - confirm that all quality gates passed.
+    - Confirm that all quality gates passed.
+    - All PRs must pass CI/CD checks (linting, tests, build).
+
+## Commit Message Format
+
+**MANDATORY**: All commit messages must follow this format:
+
+```
+<type>(<scope>): <subject>
+
+<body>
+
+<footer>
+```
+
+### Types
+
+| Type | Usage |
+|------|-------|
+| feat | New feature |
+| fix | Bug fix |
+| docs | Documentation |
+| style | Formatting (no code change) |
+| refactor | Code restructure |
+| test | Adding tests |
+| chore | Maintenance |
+
+### Examples
+
+```
+feat(deployments): add ring-based rollout orchestration
+
+- Add DeploymentIntent model with ring state machine
+- Implement promotion gate evaluation
+- Add rollback strategy validation
+
+Closes #123
+```
+
+```
+fix(connectors): resolve Intune rate limit handling
+
+- Add exponential backoff for Graph API throttling
+- Improve error classification for transient failures
+- Add retry logic with idempotent keys
+
+Fixes #456
+```
+
+## Branch Protection
+
+**Main Branch Protection:**
+- No direct pushes; PRs only
+- Require status checks: TypeScript, ESLint, Tests, Quality Gates
+- All checks must pass before merge
+
+**Quality Gates Required:**
+- TypeScript compilation (zero errors)
+- ESLint (zero warnings)
+- Test coverage ≥90%
+- Security scan (zero vulnerabilities)
+- Pre-commit hooks (all passing)
 
 ## Pull Request Process
 

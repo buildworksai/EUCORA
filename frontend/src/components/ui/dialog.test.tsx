@@ -7,7 +7,6 @@ import { Dialog, DialogTrigger, DialogContent, DialogTitle, DialogDescription } 
 
 describe('Dialog', () => {
   it('renders dialog when opened', async () => {
-    const user = userEvent.setup();
     render(
       <Dialog open>
         <DialogContent>

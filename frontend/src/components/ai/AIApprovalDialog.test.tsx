@@ -4,6 +4,7 @@ import { describe, it, expect, vi } from 'vitest';
 import { render, screen } from '@/test/utils';
 import userEvent from '@testing-library/user-event';
 import { AIApprovalDialog } from './AIApprovalDialog';
+import type { AIAgentTask } from '@/lib/api/hooks/useAI';
 
 const approveMock = vi.fn((_, options) => options?.onSuccess?.());
 const rejectMock = vi.fn((_, options) => options?.onSuccess?.());
@@ -31,7 +32,7 @@ vi.mock('sonner', () => ({
   },
 }));
 
-const task = {
+const task: AIAgentTask = {
   id: 't1',
   title: 'Task One',
   description: 'Do something',
@@ -39,13 +40,15 @@ const task = {
   task_type: 'ai_recommendation',
   status: 'awaiting_approval',
   created_at: new Date().toISOString(),
+  input_data: {},
   output_data: {},
+  correlation_id: 'corr-1',
 };
 
 describe('AIApprovalDialog', () => {
   it('approves a task', async () => {
     const user = userEvent.setup();
-    render(<AIApprovalDialog task={task as any} open onOpenChange={vi.fn()} />);
+    render(<AIApprovalDialog task={task} open onOpenChange={vi.fn()} />);
 
     await user.click(screen.getByText('Approve'));
     await user.click(screen.getByText('Confirm Approval'));
@@ -54,7 +57,7 @@ describe('AIApprovalDialog', () => {
 
   it('rejects a task with reason', async () => {
     const user = userEvent.setup();
-    render(<AIApprovalDialog task={task as any} open onOpenChange={vi.fn()} />);
+    render(<AIApprovalDialog task={task} open onOpenChange={vi.fn()} />);
 
     await user.click(screen.getByText('Reject'));
     await user.type(screen.getByLabelText('Rejection Reason (Required)'), 'Not ok');

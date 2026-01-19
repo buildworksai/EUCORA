@@ -1,5 +1,4 @@
 import { useState } from 'react';
-import { useQuery } from '@tanstack/react-query';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -9,11 +8,10 @@ import { LoadingButton } from '@/components/ui/loading-button';
 import { SkeletonList } from '@/components/ui/skeleton';
 import { EmptyState } from '@/components/ui/empty-state';
 import { Plus, AlertOctagon, CheckCircle2, Clock, FileText } from 'lucide-react';
-import { Separator } from '@/components/ui/separator';
-import { usePendingApprovals, useCABApprovals, useApproveDeployment, useRejectDeployment } from '@/lib/api/hooks/useCAB';
+import { useCABApprovals, useApproveDeployment, useRejectDeployment } from '@/lib/api/hooks/useCAB';
 import { useEvidencePack } from '@/lib/api/hooks/useEvidence';
 import { useNavigate } from 'react-router-dom';
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 
 const STATUS_COLUMNS = [
     { id: 'New', label: 'New Requests', color: 'border-blue-500/50' },
@@ -24,7 +22,7 @@ const STATUS_COLUMNS = [
 
 export default function CABPortal() {
     const navigate = useNavigate();
-    const [selectedApproval, setSelectedApproval] = useState<string | null>(null);
+    const [selectedApproval, setSelectedApproval] = useState<CABApproval | null>(null);
     const [comments, setComments] = useState('');
     const [conditions, setConditions] = useState<string[]>([]);
 
@@ -108,8 +106,8 @@ export default function CABPortal() {
                                                 <ChangeCard
                                                     key={approval.correlation_id}
                                                     approval={approval}
-                                                    isSelected={selectedApproval === approval.correlation_id}
-                                                    onSelect={() => setSelectedApproval(approval.correlation_id)}
+                                                    isSelected={selectedApproval?.correlation_id === approval.correlation_id}
+                                                    onSelect={() => setSelectedApproval(approval)}
                                                 />
                                             ))}
                                             {columnItems.length === 0 && (
@@ -137,11 +135,11 @@ export default function CABPortal() {
                             </DialogDescription>
                         </DialogHeader>
                         <ApprovalDetail
-                            correlationId={selectedApproval}
+                            correlationId={selectedApproval.evidence_pack_correlation_id || selectedApproval.correlation_id}
                             comments={comments}
                             setComments={setComments}
-                            onApprove={() => handleApprove(selectedApproval)}
-                            onReject={() => handleReject(selectedApproval)}
+                            onApprove={() => handleApprove(selectedApproval.correlation_id)}
+                            onReject={() => handleReject(selectedApproval.correlation_id)}
                             approveLoading={approveMutation.isPending}
                             rejectLoading={rejectMutation.isPending}
                         />
@@ -152,7 +150,9 @@ export default function CABPortal() {
     );
 }
 
-function ChangeCard({ approval, isSelected, onSelect }: { approval: any; isSelected: boolean; onSelect: () => void }) {
+import type { CABApproval } from '@/lib/api/hooks/useCAB';
+
+function ChangeCard({ approval, isSelected, onSelect }: { approval: CABApproval; isSelected: boolean; onSelect: () => void }) {
     return (
         <Card
             className={`glass cursor-pointer hover:border-primary/50 transition-colors group ${

@@ -6,7 +6,7 @@ import { isAdmin, isDemo, hasPermission } from '@/types/auth';
 import { cn } from '@/lib/utils';
 import { 
     LayoutDashboard, Box, ShieldCheck, Settings, Database, Activity, 
-    HeartPulse, Sparkles, Shield, Users, Link2, Bell
+    HeartPulse, Sparkles, Shield, Users, Bell
 } from 'lucide-react';
 import { NavLink } from 'react-router-dom';
 

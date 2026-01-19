@@ -3,12 +3,13 @@
 """
 Evidence Store views for artifact management.
 """
+from django.conf import settings
 from rest_framework.decorators import api_view, permission_classes
-from rest_framework.permissions import IsAuthenticated
+from rest_framework.permissions import IsAuthenticated, AllowAny
 from rest_framework.response import Response
 from rest_framework import status
 from .models import EvidencePack
-from apps.core.utils import apply_demo_filter, get_demo_mode_enabled
+from apps.core.utils import apply_demo_filter, get_demo_mode_enabled, exempt_csrf_in_debug
 import logging
 
 logger = logging.getLogger(__name__)
@@ -152,7 +153,8 @@ def _validate_evidence_pack(sbom_data: dict, vulnerability_scan_results: dict, r
 
 
 @api_view(['GET'])
-@permission_classes([IsAuthenticated])
+@exempt_csrf_in_debug
+@permission_classes([AllowAny if settings.DEBUG else IsAuthenticated])
 def get_evidence_pack(request, correlation_id):
     """
     Get evidence pack details.

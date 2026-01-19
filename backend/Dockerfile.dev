@@ -23,21 +23,22 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 # Set work directory
 WORKDIR /app
 
-# Copy requirements directory (for Docker layer caching)
-COPY requirements/ /app/requirements/
+# Copy pyproject.toml (BuildWorks.AI Compliance: pyproject.toml is MANDATORY, requirements.txt is FORBIDDEN)
+COPY pyproject.toml /app/
 
-# Install Python dependencies
+# Install Python dependencies using pyproject.toml
 # Debian Slim has pre-built wheels for all packages
-RUN pip install --upgrade pip && \
-    pip install -r requirements/development.txt && \
+# Extract and install dependencies from pyproject.toml (package source not needed yet)
+RUN pip install --upgrade pip setuptools wheel && \
+    python3 -c "import tomllib; f=open('pyproject.toml','rb'); d=tomllib.load(f); deps = d['project']['dependencies'] + d['project']['optional-dependencies']['dev']; [print(dep) for dep in deps]" | \
+    pip install -r /dev/stdin && \
     rm -rf /root/.cache/pip
 
 # Copy project
 COPY . /app/
 
-# Make entrypoint script executable and install psycopg2 for connection testing
-RUN chmod +x /app/entrypoint.sh && \
-    pip install psycopg2-binary
+# Make entrypoint script executable
+RUN chmod +x /app/entrypoint.sh
 
 # Set entrypoint to handle migrations automatically
 ENTRYPOINT ["/bin/bash", "/app/entrypoint.sh"]

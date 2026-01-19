@@ -40,8 +40,8 @@ export function useDeployments(filters?: DeploymentFilters) {
       );
       return response.deployments;
     },
-    staleTime: 30000, // 30 seconds
-    refetchInterval: 60000, // Poll every minute for real-time updates
+    staleTime: 180000, // 3 minutes
+    refetchInterval: 300000, // Poll every 5 minutes for updates
     refetchOnWindowFocus: true,
   });
 }
@@ -56,8 +56,8 @@ export function useDeployment(correlationId: string) {
       return api.get<DeploymentIntent>(`/deployments/${correlationId}/`);
     },
     enabled: !!correlationId,
-    staleTime: 30000,
-    refetchInterval: 30000, // Poll every 30 seconds for status updates
+    staleTime: 120000, // 2 minutes
+    refetchInterval: 180000, // Poll every 3 minutes for status updates
   });
 }
 

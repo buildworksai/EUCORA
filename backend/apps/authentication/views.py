@@ -15,12 +15,14 @@ from rest_framework import status
 from django.contrib.auth import login, logout, authenticate
 from django.contrib.auth.models import User
 from django.conf import settings
+from apps.core.utils import exempt_csrf_in_debug
 import requests
 import logging
 
 logger = logging.getLogger(__name__)
 
 
+@exempt_csrf_in_debug
 @api_view(['POST'])
 @permission_classes([AllowAny])
 def entra_id_login(request):
@@ -159,6 +161,7 @@ def entra_id_login(request):
     })
 
 
+@exempt_csrf_in_debug
 @api_view(['POST'])
 @permission_classes([AllowAny])  # Allow unauthenticated logout for session cleanup
 def auth_logout(request):

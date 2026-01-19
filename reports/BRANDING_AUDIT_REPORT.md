@@ -99,7 +99,7 @@ The following uses of "Packaging Factory" are **ACCEPTABLE** and align with EUCO
 
 ## Color Palette Compliance
 
-✅ **Color palette adopted** from BuildWorks.AI / SARAISE standards:
+✅ **Color palette adopted** from BuildWorks.AI standards (SARAISE reference application):
 - Deep Blue (Primary): `#1565C0` / `#0D47A1`
 - Gold (Warning): `#FF8F00` / `#F57C00`
 - Teal (Info): `#00ACC1` / `#0097A7`

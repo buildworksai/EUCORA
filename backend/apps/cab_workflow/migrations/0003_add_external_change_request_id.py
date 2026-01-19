@@ -48,6 +48,18 @@ class Migration(migrations.Migration):
     ]
 
     operations = [
+        # Add field to Django's state tracking
+        migrations.AddField(
+            model_name='cabapproval',
+            name='external_change_request_id',
+            field=models.CharField(
+                blank=True,
+                help_text='External change request ID (ServiceNow CR, Jira issue key, etc.)',
+                max_length=255,
+                null=True,
+            ),
+        ),
+        # Ensure field exists in database (idempotent for existing databases)
         migrations.RunPython(
             add_external_change_request_id_if_not_exists,
             reverse_code=remove_external_change_request_id_if_exists,

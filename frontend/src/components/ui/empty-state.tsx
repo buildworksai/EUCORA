@@ -1,7 +1,7 @@
 /**
  * Empty state components for when there's no data.
  */
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from './card';
+import { Card, CardContent } from './card';
 import { Button } from './button';
 import { LucideIcon } from 'lucide-react';
 

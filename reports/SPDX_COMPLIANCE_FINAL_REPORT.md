@@ -9,7 +9,7 @@
 
 ## Executive Summary
 
-Successfully implemented SPDX license identifiers across the entire EUCORA codebase following Apache License 2.0 standards learned from the `saraise` project.
+Successfully implemented SPDX license identifiers across the entire EUCORA codebase following Apache License 2.0 standards learned from the SARAISE reference application (BuildWorks.AI).
 
 **Compliance Status**: 100% for all source files
 

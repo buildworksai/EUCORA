@@ -4,12 +4,14 @@
 API views for AI Agents.
 """
 import logging
+from django.conf import settings
 from rest_framework.decorators import api_view, permission_classes
 from rest_framework.permissions import IsAuthenticated, AllowAny
 from rest_framework.response import Response
 from rest_framework import status
 from django.utils import timezone
 
+from apps.core.utils import exempt_csrf_in_debug
 from .models import AIModelProvider, AIConversation, AIMessage, AIAgentTask, AIAgentType
 from .services import get_ai_agent_service
 
@@ -45,42 +47,63 @@ def list_providers(request):
     })
 
 
+@exempt_csrf_in_debug
 @api_view(['POST'])
-@permission_classes([IsAuthenticated])
+@permission_classes([AllowAny if settings.DEBUG else IsAuthenticated])
 def configure_provider(request):
     """Configure an AI model provider (Platform Admin only)."""
     # TODO: Add proper permission check: request.user.has_perm('ai_agents.change_aimodelprovider')
     
     provider_type = request.data.get('provider_type')
-    api_key = request.data.get('api_key')
+    api_key = request.data.get('api_key', '')
     model_name = request.data.get('model_name')
     display_name = request.data.get('display_name', provider_type)
     
-    if not provider_type or not api_key or not model_name:
+    if not provider_type or not model_name:
         return Response(
-            {'error': 'provider_type, api_key, and model_name are required'},
+            {'error': 'provider_type and model_name are required'},
             status=status.HTTP_400_BAD_REQUEST
         )
+    
+    # Check if provider already exists
+    existing_provider = AIModelProvider.objects.filter(
+        provider_type=provider_type,
+        model_name=model_name
+    ).first()
     
     # If setting as default, unset other defaults
     is_default = request.data.get('is_default', False)
     if is_default:
         AIModelProvider.objects.filter(is_default=True).update(is_default=False)
     
+    # Prepare update defaults - only update api_key if provided (non-empty)
+    update_defaults = {
+        'display_name': display_name,
+        'is_active': True,
+        'is_default': is_default,
+        'endpoint_url': request.data.get('endpoint_url'),
+        'max_tokens': request.data.get('max_tokens', 4096),
+        'temperature': request.data.get('temperature', 0.7)
+    }
+    
+    # Only update API key if a new one is provided (non-empty)
+    # If empty and provider exists, keep existing key
+    if api_key:
+        update_defaults['api_key_dev'] = api_key  # DEV ONLY: Store key directly in DB
+    elif not existing_provider:
+        # New provider requires API key
+        return Response(
+            {'error': 'api_key is required for new provider configurations'},
+            status=status.HTTP_400_BAD_REQUEST
+        )
+    # If existing_provider and api_key is empty, we keep the existing key (don't update it)
+    
     # Store API key directly in database (DEV ONLY)
     # In production: use key_vault_ref with proper secrets management
     provider, created = AIModelProvider.objects.update_or_create(
         provider_type=provider_type,
         model_name=model_name,
-        defaults={
-            'api_key_dev': api_key,  # DEV ONLY: Store key directly in DB
-            'display_name': display_name,
-            'is_active': True,
-            'is_default': is_default,
-            'endpoint_url': request.data.get('endpoint_url'),
-            'max_tokens': request.data.get('max_tokens', 4096),
-            'temperature': request.data.get('temperature', 0.7)
-        }
+        defaults=update_defaults
     )
     
     # Clear provider cache to pick up new key
@@ -100,13 +123,19 @@ def configure_provider(request):
             'provider_type': provider.provider_type,
             'display_name': provider.display_name,
             'model_name': provider.model_name,
+            'is_active': provider.is_active,
             'is_default': provider.is_default,
+            'key_configured': bool(provider.api_key_dev or provider.key_vault_ref),
+            'endpoint_url': provider.endpoint_url,
+            'max_tokens': provider.max_tokens,
+            'temperature': provider.temperature,
         }
     })
 
 
+@exempt_csrf_in_debug
 @api_view(['DELETE'])
-@permission_classes([IsAuthenticated])
+@permission_classes([AllowAny if settings.DEBUG else IsAuthenticated])
 def delete_provider(request, provider_id):
     """Delete an AI model provider configuration."""
     try:
@@ -141,8 +170,9 @@ def delete_provider(request, provider_id):
         )
 
 
+@exempt_csrf_in_debug
 @api_view(['DELETE'])
-@permission_classes([IsAuthenticated])
+@permission_classes([AllowAny if settings.DEBUG else IsAuthenticated])
 def delete_provider_by_type(request, provider_type):
     """Delete all AI model providers of a specific type."""
     try:
@@ -179,8 +209,9 @@ def delete_provider_by_type(request, provider_type):
         )
 
 
+@exempt_csrf_in_debug
 @api_view(['POST'])
-@permission_classes([IsAuthenticated])
+@permission_classes([AllowAny if settings.DEBUG else IsAuthenticated])
 def ask_amani(request):
     """Ask Amani - General AI assistant endpoint."""
     user_message = request.data.get('message')
@@ -193,6 +224,22 @@ def ask_amani(request):
             status=status.HTTP_400_BAD_REQUEST
         )
     
+    # In DEBUG mode, allow unauthenticated users (for demo/testing)
+    # Use a default demo user if not authenticated
+    user = request.user if request.user.is_authenticated else None
+    if not user and settings.DEBUG:
+        from django.contrib.auth.models import User
+        user, _ = User.objects.get_or_create(
+            username='demo',
+            defaults={'email': 'demo@eucora.com', 'is_staff': True}
+        )
+    
+    if not user:
+        return Response(
+            {'error': 'Authentication required'},
+            status=status.HTTP_401_UNAUTHORIZED
+        )
+    
     try:
         service = get_ai_agent_service()
         # Call sync method (handles async internally)
@@ -200,7 +247,7 @@ def ask_amani(request):
             user_message=user_message,
             conversation_id=conversation_id,
             context=context,
-            user=request.user
+            user=user
         )
         
         if 'error' in result:
@@ -220,13 +267,30 @@ def ask_amani(request):
         )
 
 
+@exempt_csrf_in_debug
 @api_view(['GET'])
-@permission_classes([IsAuthenticated])
+@permission_classes([AllowAny if settings.DEBUG else IsAuthenticated])
 def get_conversation(request, conversation_id):
     """Get conversation history."""
     try:
+        # In DEBUG mode, allow unauthenticated users (for demo/testing)
+        # Use a default demo user if not authenticated
+        user = request.user if request.user.is_authenticated else None
+        if not user and settings.DEBUG:
+            from django.contrib.auth.models import User
+            user, _ = User.objects.get_or_create(
+                username='demo',
+                defaults={'email': 'demo@eucora.com', 'is_staff': True}
+            )
+        
+        if not user:
+            return Response(
+                {'error': 'Authentication required'},
+                status=status.HTTP_401_UNAUTHORIZED
+            )
+        
         service = get_ai_agent_service()
-        messages = service.get_conversation_history(conversation_id, request.user)
+        messages = service.get_conversation_history(conversation_id, user)
         
         return Response({
             'conversation_id': conversation_id,
@@ -240,15 +304,32 @@ def get_conversation(request, conversation_id):
         )
 
 
+@exempt_csrf_in_debug
 @api_view(['GET'])
-@permission_classes([IsAuthenticated])
+@permission_classes([AllowAny if settings.DEBUG else IsAuthenticated])
 def list_conversations(request):
     """List user's conversations."""
     agent_type = request.query_params.get('agent_type')
     
     try:
+        # In DEBUG mode, allow unauthenticated users (for demo/testing)
+        # Use a default demo user if not authenticated
+        user = request.user if request.user.is_authenticated else None
+        if not user and settings.DEBUG:
+            from django.contrib.auth.models import User
+            user, _ = User.objects.get_or_create(
+                username='demo',
+                defaults={'email': 'demo@eucora.com', 'is_staff': True}
+            )
+        
+        if not user:
+            return Response(
+                {'error': 'Authentication required'},
+                status=status.HTTP_401_UNAUTHORIZED
+            )
+        
         service = get_ai_agent_service()
-        conversations = service.list_user_conversations(request.user, agent_type)
+        conversations = service.list_user_conversations(user, agent_type)
         
         return Response({
             'conversations': conversations

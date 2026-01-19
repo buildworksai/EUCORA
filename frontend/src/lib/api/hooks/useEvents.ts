@@ -45,8 +45,8 @@ export function useEvents(filters?: EventFilters) {
       );
       return response.events;
     },
-    staleTime: 30000, // 30 seconds
-    refetchInterval: 60000, // Poll every minute for new events
+    staleTime: 180000, // 3 minutes
+    refetchInterval: 300000, // Poll every 5 minutes for new events
   });
 }
 

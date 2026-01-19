@@ -5,7 +5,7 @@ import { Badge } from '@/components/ui/badge';
 import { useUIStore } from '@/lib/stores/uiStore';
 import { useAuthStore } from '@/lib/stores/authStore';
 import { isAdmin, isDemo } from '@/types/auth';
-import { Moon, Sun, Menu, Bell, LogOut, User, Shield, Sparkles, CheckCircle2, XCircle, Clock, AlertCircle } from 'lucide-react';
+import { Moon, Sun, Menu, Bell, LogOut, User, Shield, Sparkles, CheckCircle2, Clock, AlertCircle } from 'lucide-react';
 import {
     DropdownMenu,
     DropdownMenuContent,

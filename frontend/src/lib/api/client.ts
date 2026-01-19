@@ -25,7 +25,9 @@ async function getCsrfToken(): Promise<string | null> {
   
   // Try to fetch from API endpoint (for development/mock auth scenarios)
   try {
-    const response = await fetch(`${API_BASE_URL}/api/v1/admin/csrf-token`, {
+    // API_BASE_URL already includes /api/v1, so use it directly
+    const csrfEndpoint = `${API_BASE_URL}/admin/csrf-token`;
+    const response = await fetch(csrfEndpoint, {
       method: 'GET',
       credentials: 'include',
     });
@@ -77,8 +79,27 @@ async function apiRequest<T>(
   const csrfToken = await getCsrfToken();
   const isMutation = options.method && options.method !== 'GET';
 
+  // Normalize endpoint - ensure it starts with / and handle API_BASE_URL properly
+  let normalizedEndpoint = endpoint.startsWith('/') ? endpoint : `/${endpoint}`;
+  
+  // If API_BASE_URL already includes /api/v1, don't add it again
+  let fullUrl: string;
+  if (API_BASE_URL.includes('/api/v1')) {
+    // Remove /api/v1 from endpoint if present
+    if (normalizedEndpoint.startsWith('/api/v1')) {
+      normalizedEndpoint = normalizedEndpoint.replace('/api/v1', '');
+    }
+    fullUrl = `${API_BASE_URL}${normalizedEndpoint}`;
+  } else {
+    // API_BASE_URL doesn't have /api/v1, add it if endpoint doesn't have it
+    if (!normalizedEndpoint.startsWith('/api/v1')) {
+      normalizedEndpoint = `/api/v1${normalizedEndpoint}`;
+    }
+    fullUrl = `${API_BASE_URL}${normalizedEndpoint}`;
+  }
+
   try {
-    const response = await fetch(`${API_BASE_URL}${endpoint}`, {
+    const response = await fetch(fullUrl, {
       ...options,
       credentials: 'include', // Send session cookies
       headers: {
@@ -109,19 +130,32 @@ async function apiRequest<T>(
         errorMessage = response.statusText || errorMessage;
       }
 
-      // Suppress authentication errors for demo/testing (401, 403, 404)
-      // These are handled by components or are expected in demo mode
-      const suppressError = response.status === 401 || response.status === 403 || response.status === 404;
+      // Handle authentication errors properly
+      if (response.status === 401) {
+        // Unauthorized - session expired or invalid
+        // Clear auth state and redirect to login
+        try {
+          const { useAuthStore } = await import('@/lib/stores/authStore');
+          const store = useAuthStore.getState();
+          if (store.isAuthenticated) {
+            await store.logout();
+            // Redirect to login
+            if (typeof window !== 'undefined' && window.location.pathname !== '/login') {
+              window.location.href = '/login';
+            }
+          }
+        } catch (error) {
+          console.error('Failed to handle 401 error:', error);
+        }
+        // Don't show toast for 401 - handled by redirect
+        throw new Error('Session expired. Please log in again.');
+      }
       
-      if (!suppressError) {
+      // Don't show toast for 404 (handled by components)
+      if (response.status !== 404) {
         toast.error(errorMessage, {
           description: errorDetail && errorDetail !== errorMessage ? errorDetail : undefined,
         });
-      } else {
-        // Silently log to console in development only
-        if (import.meta.env.DEV) {
-          console.debug(`Suppressed ${response.status} error for ${endpoint}:`, errorMessage);
-        }
       }
 
       throw new Error(errorMessage);

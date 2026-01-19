@@ -1,5 +1,6 @@
 // SPDX-License-Identifier: Apache-2.0
 // Copyright (c) 2026 BuildWorks.AI
+import React from 'react';
 import { Routes, Route, Navigate } from 'react-router-dom';
 import { QueryClientProvider } from '@tanstack/react-query';
 import { Toaster } from 'sonner';
@@ -23,6 +24,20 @@ import Login from './routes/Login';
 
 function App() {
   const isAuthenticated = useAuthStore((state) => state.isAuthenticated);
+  const checkSession = useAuthStore((state) => state.checkSession);
+
+  // Check session on mount and periodically
+  React.useEffect(() => {
+    // Check immediately
+    checkSession();
+    
+    // Check every 5 minutes
+    const interval = setInterval(() => {
+      checkSession();
+    }, 5 * 60 * 1000);
+    
+    return () => clearInterval(interval);
+  }, [checkSession]);
 
   return (
     <ErrorBoundary>

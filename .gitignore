@@ -189,6 +189,9 @@ reports/*.csv
 *.backup
 *.bak
 *~
+# Note: demo_db_backup.sql.gz is NOT ignored - needed for customer demo restore
+# backend/data/demo_db_backup.sql.gz
+# backend/data/*.sql.gz
 
 # Python virtual environments
 venv/

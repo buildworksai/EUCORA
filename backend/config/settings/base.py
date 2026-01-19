@@ -223,12 +223,22 @@ LOGGING = {
     'loggers': {
         'django': {
             'handlers': ['console'],
-            'level': config('DJANGO_LOG_LEVEL', default='INFO'),
+            'level': config('DJANGO_LOG_LEVEL', default='WARNING'),  # Only log warnings and errors
+            'propagate': False,
+        },
+        'django.server': {
+            'handlers': ['console'],
+            'level': 'WARNING',  # Suppress HTTP request/response logs
+            'propagate': False,
+        },
+        'django.request': {
+            'handlers': ['console'],
+            'level': 'WARNING',  # Only log request errors
             'propagate': False,
         },
         'apps': {
             'handlers': ['console'],
-            'level': config('APP_LOG_LEVEL', default='DEBUG'),
+            'level': config('APP_LOG_LEVEL', default='INFO' if not DEBUG else 'DEBUG'),
             'propagate': False,
         },
     },

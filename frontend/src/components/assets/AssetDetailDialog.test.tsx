@@ -10,12 +10,13 @@ const mockAsset: Asset = {
   id: '1',
   name: 'Test Laptop',
   type: 'Laptop',
+  os: 'Windows 11',
+  location: 'Office',
+  status: 'Active',
+  compliance_score: 95,
+  last_checkin: '2026-01-06T10:00:00Z',
+  owner: 'test@example.com',
   serial_number: 'SN123456',
-  status: 'active',
-  os_version: 'Windows 11',
-  last_seen: '2026-01-06T10:00:00Z',
-  compliance_status: 'compliant',
-  risk_score: 25,
 };
 
 describe('AssetDetailDialog', () => {

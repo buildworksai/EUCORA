@@ -19,12 +19,16 @@ class BaseAgent(ABC):
         """Get system prompt for this agent."""
         pass
     
-    def requires_human_action(self, response: str) -> bool:
+    def requires_human_action(self, response: str, user_message: str = None) -> bool:
         """
         Determine if AI response requires human action.
         Override in subclasses for agent-specific logic.
+        
+        Args:
+            response: The AI assistant's response text
+            user_message: Optional user's original message to determine intent
         """
-        # Default: check for action keywords
+        # Default: check for explicit approval language only
         action_keywords = [
             'requires approval',
             'needs human review',

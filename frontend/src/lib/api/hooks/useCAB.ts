@@ -9,6 +9,7 @@ export interface CABApproval {
   id: number;
   deployment_intent: string;
   correlation_id: string;
+  evidence_pack_correlation_id?: string;  // Evidence pack correlation_id (may differ from deployment intent's)
   decision: 'PENDING' | 'APPROVED' | 'REJECTED' | 'CONDITIONAL';
   approver: string | null;
   comments: string;
@@ -39,8 +40,8 @@ export function usePendingApprovals() {
       const response = await api.get<CABApprovalListResponse>('/cab/pending/');
       return response.approvals;
     },
-    staleTime: 15000, // 15 seconds
-    refetchInterval: 30000, // Poll every 30 seconds for new approvals
+    staleTime: 120000, // 2 minutes
+    refetchInterval: 180000, // Poll every 3 minutes for new approvals
     refetchOnWindowFocus: true,
   });
 }
@@ -89,9 +90,9 @@ export function useApproveDeployment() {
       });
     },
     onError: (error) => {
-      // Suppress authentication errors for demo/testing
       const errorMessage = error instanceof Error ? error.message : 'Unknown error';
-      if (!errorMessage.includes('401') && !errorMessage.includes('403') && !errorMessage.includes('Unauthorized')) {
+      // Don't show toast for session expired (handled by redirect)
+      if (!errorMessage.includes('Session expired')) {
         toast.error('Failed to approve deployment', {
           description: errorMessage,
         });
@@ -124,9 +125,9 @@ export function useRejectDeployment() {
       });
     },
     onError: (error) => {
-      // Suppress authentication errors for demo/testing
       const errorMessage = error instanceof Error ? error.message : 'Unknown error';
-      if (!errorMessage.includes('401') && !errorMessage.includes('403') && !errorMessage.includes('Unauthorized')) {
+      // Don't show toast for session expired (handled by redirect)
+      if (!errorMessage.includes('Session expired')) {
         toast.error('Failed to reject deployment', {
           description: errorMessage,
         });

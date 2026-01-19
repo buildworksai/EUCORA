@@ -59,6 +59,7 @@ export function SessionAuthProvider({ children }: { children: ReactNode }) {
   );
 }
 
+// eslint-disable-next-line react-refresh/only-export-components
 export function useSessionAuth() {
   const context = useContext(SessionAuthContext);
   if (context === undefined) {

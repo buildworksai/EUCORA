@@ -48,7 +48,7 @@ All documents adhere to:
 | 11 | `11-testing-quality-rules.md` | Medium | ✅ Complete | ≥90% coverage + pre-commit hooks |
 | 12 | `12-documentation-rules.md` | Short | ✅ Complete | Folder structure + versioning |
 
-**Assessment**: All agent rules follow SARAISE pattern (short, enforcement-focused, ✅/❌ examples).
+**Assessment**: All agent rules follow BuildWorks.AI compliance pattern (from SARAISE reference application) - short, enforcement-focused, ✅/❌ examples.
 
 ---
 

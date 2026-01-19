@@ -7,8 +7,8 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Check, Eye, EyeOff, Save, Sparkles } from 'lucide-react';
-import { useConfigureProvider, useModelProviders } from '@/lib/api/hooks/useAI';
+import { Check, Eye, EyeOff, Save, Sparkles, Trash2 } from 'lucide-react';
+import { useConfigureProvider, useModelProviders, useDeleteProvider } from '@/lib/api/hooks/useAI';
 import { toast } from 'sonner';
 import { PROVIDERS } from './data';
 import { useAuthStore } from '@/lib/stores/authStore';
@@ -29,9 +29,10 @@ export default function AIProvidersTab() {
   const [showKey, setShowKey] = useState<Record<string, boolean>>({});
   const [providerConfigs, setProviderConfigs] = useState<Record<string, ProviderConfigState>>({});
 
-  const { data } = useModelProviders();
+  const { data, refetch: refetchProviders } = useModelProviders();
   const providers = data?.providers ?? [];
   const { mutate: configureProvider, isPending: isSaving } = useConfigureProvider();
+  const { mutate: deleteProvider, isPending: isDeleting } = useDeleteProvider();
 
   const providersKey = useMemo(() => JSON.stringify(providers.map((provider) => provider.id)), [providers]);
 
@@ -77,18 +78,61 @@ export default function AIProvidersTab() {
         is_default: config.is_default,
       },
       {
-        onSuccess: () => {
+        onSuccess: (data) => {
+          console.log('Provider configured successfully:', data);
           toast.success(`${providerConfig.name} configuration saved`);
           setProviderConfigs((prev) => ({
             ...prev,
             [providerId]: { ...prev[providerId], api_key: '' },
           }));
         },
-        onError: () => {
-          toast.error(`Failed to save ${providerConfig.name} configuration`);
+        onError: (error: unknown) => {
+          const getErrorMessage = (err: unknown): string => {
+            if (err instanceof Error) return err.message;
+            if (err && typeof err === 'object' && 'response' in err) {
+              const response = (err as { response?: { data?: { error?: string } } }).response;
+              if (response?.data?.error) return response.data.error;
+            }
+            return 'Failed to save configuration';
+          };
+          console.error('Failed to save provider:', error);
+          const errorMessage = getErrorMessage(error);
+          toast.error(`${providerConfig.name}: ${errorMessage}`);
         },
       }
     );
+  };
+
+  const handleDeleteProvider = (providerId: string) => {
+    const existingProvider = providers.find((item) => item.id === providerId);
+    if (!existingProvider) return;
+    
+    if (userIsDemo) {
+      toast.info('Configuration changes are disabled in demo mode');
+      return;
+    }
+
+    if (!confirm(`Are you sure you want to delete the ${existingProvider.display_name} (${existingProvider.model_name}) configuration?`)) {
+      return;
+    }
+
+    deleteProvider(providerId, {
+      onSuccess: () => {
+        toast.success(`${existingProvider.display_name} configuration deleted`);
+      },
+      onError: (error: unknown) => {
+        const getErrorMessage = (err: unknown): string => {
+          if (err instanceof Error) return err.message;
+          if (err && typeof err === 'object' && 'response' in err) {
+            const response = (err as { response?: { data?: { error?: string } } }).response;
+            if (response?.data?.error) return response.data.error;
+          }
+          return 'Failed to delete configuration';
+        };
+        const errorMessage = getErrorMessage(error);
+        toast.error(`Failed to delete: ${errorMessage}`);
+      },
+    });
   };
 
   return (
@@ -117,13 +161,29 @@ export default function AIProvidersTab() {
                 configureProvider(
                   {
                     provider_type: provider.provider_type,
-                    api_key: '',
+                    api_key: '', // Empty to keep existing key
                     model_name: provider.model_name,
                     display_name: provider.display_name,
                     is_default: true,
                   },
                   {
-                    onSuccess: () => toast.success('Default provider updated'),
+                    onSuccess: () => {
+                      toast.success('Default provider updated');
+                      // Refetch providers to update UI
+                      refetchProviders();
+                    },
+                    onError: (error: unknown) => {
+                        const getErrorMessage = (err: unknown): string => {
+                            if (err instanceof Error) return err.message;
+                            if (err && typeof err === 'object' && 'response' in err) {
+                                const response = (err as { response?: { data?: { error?: string } } }).response;
+                                if (response?.data?.error) return response.data.error;
+                            }
+                            return 'Failed to update default provider';
+                        };
+                        const errorMessage = getErrorMessage(error);
+                        toast.error(`Failed to update default provider: ${errorMessage}`);
+                    },
                   }
                 );
               }}
@@ -174,11 +234,25 @@ export default function AIProvidersTab() {
                     <provider.icon className="h-5 w-5 text-eucora-teal" />
                     <CardTitle className="text-base">{provider.name}</CardTitle>
                   </div>
-                  {isConfigured && (
-                    <Badge variant="outline" className="text-green-500 border-green-500">
-                      <Check className="h-3 w-3 mr-1" /> Configured
-                    </Badge>
-                  )}
+                  <div className="flex items-center gap-2">
+                    {isConfigured && (
+                      <Badge variant="outline" className="text-green-500 border-green-500">
+                        <Check className="h-3 w-3 mr-1" /> Configured
+                      </Badge>
+                    )}
+                    {isConfigured && existingProvider && (
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="h-8 w-8 text-destructive hover:text-destructive hover:bg-destructive/10"
+                        onClick={() => handleDeleteProvider(existingProvider.id)}
+                        disabled={isDeleting}
+                        title="Delete provider configuration"
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
+                    )}
+                  </div>
                 </div>
               </CardHeader>
               <CardContent className="space-y-4">

@@ -4,7 +4,35 @@
 Core utility functions.
 """
 import uuid
-from typing import Optional
+from typing import Optional, Callable
+from django.conf import settings
+from django.views.decorators.csrf import csrf_exempt
+
+
+def exempt_csrf_in_debug(view_func: Callable) -> Callable:
+    """
+    Exempt view from CSRF protection in DEBUG mode only.
+    
+    This is needed because DRF's SessionAuthentication enforces CSRF protection
+    for state-changing operations (POST/PUT/DELETE) even when AllowAny permission
+    is used. In development with mock authentication, this causes 403 errors.
+    
+    Usage:
+        @exempt_csrf_in_debug
+        @api_view(['POST'])
+        @permission_classes([AllowAny if settings.DEBUG else IsAuthenticated])
+        def my_view(request):
+            ...
+    
+    Args:
+        view_func: The view function to conditionally exempt from CSRF
+        
+    Returns:
+        The view function, wrapped with csrf_exempt if DEBUG=True, otherwise unchanged
+    """
+    if settings.DEBUG:
+        return csrf_exempt(view_func)
+    return view_func
 
 
 def generate_correlation_id(prefix: Optional[str] = None) -> str:

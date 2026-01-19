@@ -8,7 +8,7 @@
 
 ## SPDX Standard Analysis
 
-Based on analysis of the `saraise` codebase, SPDX headers follow this pattern:
+Based on analysis of the SARAISE reference application (BuildWorks.AI), SPDX headers follow this pattern:
 
 ### For Source Code Files
 ```

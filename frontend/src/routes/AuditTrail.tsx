@@ -5,13 +5,13 @@ import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { SkeletonTable } from '@/components/ui/skeleton';
 import { EmptyState } from '@/components/ui/empty-state';
-import { Search, Filter, ShieldAlert, User, Terminal, Calendar, Download } from 'lucide-react';
-import { useEvents, type DeploymentEvent } from '@/lib/api/hooks/useEvents';
+import { Search, Filter, ShieldAlert, User, Terminal, Download } from 'lucide-react';
+import { useEvents } from '@/lib/api/hooks/useEvents';
 import { format } from 'date-fns';
 
 export default function AuditTrail() {
     const [filter, setFilter] = useState('');
-    const [dateRange, setDateRange] = useState<{ start?: string; end?: string }>({});
+    const [dateRange] = useState<{ start?: string; end?: string }>({});
 
     const { data: events = [], isLoading, error } = useEvents({
         ...(filter ? { actor: filter } : {}),

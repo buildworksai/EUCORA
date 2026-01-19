@@ -87,9 +87,9 @@ export function useUploadEvidencePack() {
       }
     },
     onError: (error) => {
-      // Suppress authentication errors for demo/testing
       const errorMessage = error instanceof Error ? error.message : 'Unknown error';
-      if (!errorMessage.includes('401') && !errorMessage.includes('403') && !errorMessage.includes('Unauthorized')) {
+      // Don't show toast for session expired (handled by redirect)
+      if (!errorMessage.includes('Session expired')) {
         toast.error('Failed to upload evidence pack', {
           description: errorMessage,
         });

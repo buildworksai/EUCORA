@@ -65,11 +65,38 @@ def list_assets(request):
     end = start + page_size
     assets_queryset = queryset[start:end]
     
-    # Serialize assets
+    # Serialize assets - match frontend contracts.ts structure
     assets = []
     for asset in assets_queryset:
+        # Map platform from OS
+        platform_map = {
+            'Windows': 'WINDOWS',
+            'macOS': 'MACOS',
+            'Linux': 'LINUX',
+            'Ubuntu': 'LINUX',
+            'RHEL': 'LINUX',
+            'iOS': 'MOBILE',
+            'Android': 'MOBILE',
+        }
+        platform = 'WINDOWS'  # default
+        for os_key, plat_value in platform_map.items():
+            if os_key in asset.os:
+                platform = plat_value
+                break
+        
         assets.append({
-            'id': asset.asset_id,
+            'id': asset.id,  # Use database ID (number) not asset_id (string)
+            'hostname': asset.name,  # Frontend expects 'hostname' not 'name'
+            'platform': platform,  # Frontend expects platform enum
+            'device_type': asset.type,  # Frontend expects 'device_type' not 'type'
+            'os_version': asset.os,  # Frontend expects 'os_version' not 'os'
+            'user_sentiment': asset.user_sentiment,  # Optional
+            'dex_score': asset.dex_score,  # Optional
+            'boot_time': asset.boot_time,  # Optional
+            'carbon_footprint': asset.carbon_footprint,  # Optional
+            'last_seen': asset.last_checkin.isoformat() if asset.last_checkin else asset.created_at.isoformat(),  # Frontend expects 'last_seen'
+            'created_at': asset.created_at.isoformat(),
+            # Additional fields for backward compatibility (if needed by other pages)
             'name': asset.name,
             'type': asset.type,
             'os': asset.os,
@@ -82,10 +109,6 @@ def list_assets(request):
             'ip_address': str(asset.ip_address) if asset.ip_address else None,
             'disk_encryption': asset.disk_encryption,
             'firewall_enabled': asset.firewall_enabled,
-            'dex_score': asset.dex_score,
-            'boot_time': asset.boot_time,
-            'carbon_footprint': asset.carbon_footprint,
-            'user_sentiment': asset.user_sentiment,
         })
     
     return Response({

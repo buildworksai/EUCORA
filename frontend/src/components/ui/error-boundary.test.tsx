@@ -3,7 +3,6 @@
 import { describe, it, expect, vi } from 'vitest';
 import { render, screen } from '@/test/utils';
 import { ErrorBoundary } from './error-boundary';
-import React from 'react';
 
 // Component that throws an error
 const ThrowError = ({ shouldThrow }: { shouldThrow: boolean }) => {

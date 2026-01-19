@@ -338,14 +338,17 @@ export function AmaniChatBubble() {
     // Load conversation history when conversationId changes
     useEffect(() => {
         if (conversationData?.messages) {
-            const loadedMessages: Message[] = conversationData.messages.map((msg: any) => ({
+            const loadedMessages: Message[] = conversationData.messages.map((msg) => ({
                 id: msg.id,
                 role: msg.role as 'user' | 'assistant',
                 content: msg.content,
                 timestamp: new Date(msg.timestamp),
                 requiresAction: msg.requires_action,
             }));
-            setMessages(loadedMessages);
+            // Use setTimeout to avoid setState in effect
+            setTimeout(() => {
+                setMessages(loadedMessages);
+            }, 0);
         }
     }, [conversationData]);
     
@@ -402,8 +405,13 @@ export function AmaniChatBubble() {
             };
             
             setMessages(prev => [...prev, assistantMessage]);
-        } catch (error: any) {
-            toast.error(error?.response?.data?.error || 'Failed to send message');
+        } catch (error: unknown) {
+            const errorMessage = error instanceof Error 
+                ? error.message 
+                : (error && typeof error === 'object' && 'response' in error && error.response && typeof error.response === 'object' && 'data' in error.response && error.response.data && typeof error.response.data === 'object' && 'error' in error.response.data && typeof error.response.data.error === 'string'
+                    ? error.response.data.error
+                    : 'Failed to send message');
+            toast.error(errorMessage);
             // Remove the user message on error
             setMessages(prev => prev.filter(m => m.id !== userMessage.id));
         }
@@ -479,9 +487,14 @@ export function AmaniChatBubble() {
                     description: 'This recommendation has been submitted for human approval.',
                 });
             }
-        } catch (error: any) {
+        } catch (error: unknown) {
+            const errorMessage = error instanceof Error 
+                ? error.message 
+                : (error && typeof error === 'object' && 'response' in error && error.response && typeof error.response === 'object' && 'data' in error.response && error.response.data && typeof error.response.data === 'object' && 'error' in error.response.data && typeof error.response.data.error === 'string'
+                    ? error.response.data.error
+                    : 'An error occurred');
             toast.error('Failed to create approval task', {
-                description: error?.response?.data?.error || 'An error occurred',
+                description: errorMessage,
             });
         }
     };

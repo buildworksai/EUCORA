@@ -259,6 +259,21 @@ RiskScore = clamp(0..100, Σ(weight_i * normalized_factor_i))
 
 ## Development & Quality Standards
 
+### Quality Gates (MANDATORY — NO EXCEPTIONS)
+
+**All quality gates are NON-NEGOTIABLE. Zero tolerance for failures.**
+
+See [docs/standards/quality-gates.md](docs/standards/quality-gates.md) for complete specifications.
+
+**Key Requirements:**
+- **Test Coverage**: ≥90% enforced by CI (EUCORA-01002)
+- **Security Rating**: A (zero vulnerabilities) (EUCORA-01003)
+- **Zero Vulnerabilities**: Code + dependencies must report 0 vulnerabilities (EUCORA-01004)
+- **Technical Debt**: ≤5 min/file (EUCORA-01005)
+- **Cognitive Complexity**: ≤15/function (EUCORA-01006)
+- **TypeScript Cleanliness**: Zero errors per domain (EUCORA-01007)
+- **Dirty Domain Freeze**: Only refactor/remediation allowed in domains with TS errors (EUCORA-01008)
+
 ### Pre-Commit Hooks (MANDATORY — NO EXCEPTIONS)
 
 All commits MUST pass pre-commit checks. Install: `pip install pre-commit && pre-commit install` or equivalent for the stack in use.
@@ -273,14 +288,54 @@ All commits MUST pass pre-commit checks. Install: `pip install pre-commit && pre
 
 **Enforcement**: Pre-commit hooks **block commits** that fail checks. Do NOT suggest workarounds, bypasses, or "temporary" fixes. The codebase remains clean at all times.
 
+**NO BYPASSES ALLOWED** for:
+- Test coverage < 90%
+- Type errors
+- Linting warnings
+- Hardcoded secrets
+- Missing evidence packs
+
 ### Testing Requirements
 
-- **Coverage**: ≥90% enforced by CI
+- **Coverage**: ≥90% enforced by CI (EUCORA-01002)
 - **Unit Tests**: Per module/component
 - **Integration Tests**: Per execution plane connector
 - **End-to-End Tests**: Per ring rollout scenario (lab → canary → pilot)
 - **Idempotency Tests**: Verify safe retries for all connector operations
 - **Rollback Tests**: Validate rollback strategies per plane
+- **Correlation ID Isolation Tests**: MANDATORY for all Django apps (verify correlation ID filtering)
+
+**Test Structure (Backend):**
+- `test_models.py` — Model tests
+- `test_api.py` — API endpoint tests
+- `test_services.py` — Service layer tests
+- `test_correlation_isolation.py` — **MANDATORY** for correlation ID isolation
+
+**Test Structure (Frontend):**
+- `*.test.tsx` — Component tests
+- `*.test.ts` — Utility/hook tests
+- Integration tests in `__tests__/` directory
+
+### Coding Standards
+
+**MANDATORY**: All code must comply with [docs/standards/coding-standards.md](docs/standards/coding-standards.md).
+
+**Python Standards:**
+- **Type hints MANDATORY** for all functions and methods
+- **Docstrings REQUIRED** for all public functions, classes, and modules
+- **Import order**: Standard library → Third-party → Local application
+- **Black formatting**: `line-length = 120`
+- **isort**: `profile = black`
+- **Flake8**: `max-line-length = 120`
+- **pyproject.toml MANDATORY** (requirements.txt is FORBIDDEN)
+
+**TypeScript Standards:**
+- **NO `any` type allowed** — use explicit types
+- **Strict mode** enabled
+- **Explicit types** for all functions
+- **Prefer Interface over Type Alias** for objects
+- **React Hooks Rules**: All hooks MUST be called before any conditional early returns
+- **Module Contracts**: Every frontend app/domain MUST have a `contracts.ts` file
 
 ### Documentation Requirements
 
@@ -294,6 +349,11 @@ All commits MUST pass pre-commit checks. Install: `pip install pre-commit && pre
 - Secrets management (vault, rotation policies)
 - Key ownership (Windows code-signing, macOS signing/notarization, APT repo signing keys)
 - SIEM integration for privileged actions and policy violations
+
+**Standards Documentation** (`docs/standards/`):
+- Coding standards (Python + TypeScript)
+- Quality gates specifications
+- Testing standards
 
 **Module/Component Documentation** (`docs/modules/` or `docs/components/`):
 - Per-module manifests (dependencies, versions, health checks)

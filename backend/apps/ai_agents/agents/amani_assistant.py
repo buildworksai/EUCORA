@@ -154,33 +154,69 @@ Provide helpful, accurate responses relevant to the user's current context.
         
         return base_prompt
     
-    def requires_human_action(self, response: str) -> bool:
+    def requires_human_action(self, response: str, user_message: str = None) -> bool:
         """
         Check if response requires human action.
-        Enhanced detection for various action types.
+        Only triggers for actual write operations, not read-only queries.
+        
+        Args:
+            response: The AI assistant's response text
+            user_message: Optional user's original message to determine intent
         """
+        # Read-only operation keywords - if user is asking for information, don't require approval
+        read_only_keywords = [
+            'show', 'display', 'list', 'what', 'how', 'explain', 'describe',
+            'check', 'view', 'get', 'fetch', 'retrieve', 'see', 'find',
+            'tell', 'inform', 'provide', 'give', 'share', 'look', 'search',
+            'query', 'status', 'current', 'existing', 'summary', 'overview'
+        ]
+        
+        # Check user intent first - if it's clearly a read operation, don't require approval
+        if user_message:
+            user_lower = user_message.lower()
+            # If user is asking a question or requesting information, it's read-only
+            if any(keyword in user_lower for keyword in read_only_keywords):
+                # Even if response contains action words, if user asked for info, it's informational
+                return False
+        
+        # Actual write/action operation indicators - these require approval
         action_indicators = [
-            # CRUD operations
+            # CRUD operations (state-changing)
             'create', 'generate', 'build', 'package',
             'update', 'modify', 'change', 'edit',
             'delete', 'remove', 'rollback',
-            # Workflow operations
+            # Workflow operations (state-changing)
             'deploy', 'promote', 'publish', 'release',
             'approve', 'reject', 'submit',
-            # CAB and governance
+            # Explicit approval language
             'requires approval', 'needs review', 'must be approved',
             'cab required', 'cab approval', 'evidence pack',
             'human action required', 'manual intervention',
-            # Risk and compliance
-            'high risk', 'critical', 'exception required',
-            'compensating control', 'remediation needed',
-            # Execution suggestions
-            'should', 'recommend', 'suggest',
-            'execute', 'run', 'trigger',
+            # Execution commands (not suggestions)
+            'execute', 'run', 'trigger', 'perform', 'carry out',
         ]
         
         response_lower = response.lower()
-        return any(indicator in response_lower for indicator in action_indicators)
+        
+        # Check for explicit action indicators
+        has_action_indicator = any(indicator in response_lower for indicator in action_indicators)
+        
+        # Only require approval if there's an actual action indicator
+        # AND it's not just informational language
+        if has_action_indicator:
+            # Double-check: if response is just explaining or describing, don't require approval
+            informational_phrases = [
+                'i can help you', 'you can', 'to create', 'to deploy', 'to update',
+                'would need to', 'would require', 'in order to', 'if you want to',
+                'the process involves', 'this involves', 'this requires',
+            ]
+            # If it's just explaining how to do something, not actually doing it
+            if any(phrase in response_lower for phrase in informational_phrases):
+                return False
+            
+            return True
+        
+        return False
     
     def get_contextual_suggestions(self, page: str) -> list:
         """

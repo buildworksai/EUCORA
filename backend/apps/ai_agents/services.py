@@ -193,7 +193,8 @@ class AIAgentService:
             }
         
         # Determine if human action is required
-        requires_action = assistant.requires_human_action(response_text)
+        # Pass user message to help determine if it's a read-only query
+        requires_action = assistant.requires_human_action(response_text, user_message=user_message)
         
         # Store messages (immutable audit trail) - sync Django ORM
         AIMessage.objects.create(

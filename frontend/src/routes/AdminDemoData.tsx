@@ -33,8 +33,8 @@ export default function AdminDemoData() {
   const { user } = useAuthStore();
   const userIsAdmin = isAdmin(user);
 
-  const { data: statsData, isLoading: statsLoading } = useDemoDataStats();
-  const { data: demoModeData } = useDemoMode();
+  const { data: statsData, isLoading: statsLoading, refetch: refetchStats } = useDemoDataStats();
+  const { data: demoModeData, refetch: refetchDemoMode } = useDemoMode();
   const seedMutation = useSeedDemoData();
   const clearMutation = useClearDemoData();
   const setDemoModeMutation = useSetDemoMode();
@@ -53,15 +53,26 @@ export default function AdminDemoData() {
     return <Navigate to="/dashboard" replace />;
   }
 
+  // api.get returns the response directly, not wrapped in data
   const counts = statsData?.counts;
   const demoModeEnabled = demoModeData?.demo_mode_enabled ?? false;
 
   const handleSeed = async () => {
     try {
-      await seedMutation.mutateAsync(formState);
-      toast.success('Demo data seeding completed');
+      const result = await seedMutation.mutateAsync(formState);
+      // Refetch stats to show updated counts
+      await refetchStats();
+      if (result.status === 'queued') {
+        toast.success('Demo data seeding started in background. Check stats for progress.');
+      } else {
+        toast.success('Demo data seeding completed');
+      }
     } catch (error) {
-      toast.error(error instanceof Error ? error.message : 'Failed to seed demo data');
+      console.error('Seeding error:', error);
+      const errorMessage = error instanceof Error ? error.message : 'Failed to seed demo data';
+      toast.error(errorMessage);
+      // Refetch anyway to show current state
+      await refetchStats();
     }
   };
 
@@ -76,10 +87,23 @@ export default function AdminDemoData() {
 
   const handleDemoModeToggle = async (enabled: boolean) => {
     try {
-      await setDemoModeMutation.mutateAsync(enabled);
-      toast.success(`Demo mode ${enabled ? 'enabled' : 'disabled'}`);
+      const result = await setDemoModeMutation.mutateAsync(enabled);
+      // Verify the result matches what we sent
+      if (result?.demo_mode_enabled === enabled) {
+        // Manually refetch to ensure UI updates
+        await Promise.all([refetchDemoMode(), refetchStats()]);
+        toast.success(`Demo mode ${enabled ? 'enabled' : 'disabled'}`);
+      } else {
+        // Still refetch even if result doesn't match
+        await Promise.all([refetchDemoMode(), refetchStats()]);
+        toast.warning(`Demo mode toggle may not have applied. Current state: ${result?.demo_mode_enabled}`);
+      }
     } catch (error) {
-      toast.error(error instanceof Error ? error.message : 'Failed to update demo mode');
+      console.error('Demo mode toggle error:', error);
+      const errorMessage = error instanceof Error ? error.message : 'Failed to update demo mode';
+      toast.error(errorMessage);
+      // Refetch anyway to get current state
+      await Promise.all([refetchDemoMode(), refetchStats()]);
     }
   };
 
@@ -207,7 +231,7 @@ export default function AdminDemoData() {
                 id={field.key}
                 type="number"
                 min={1}
-                value={formState[field.key as keyof typeof formState]}
+                value={String(formState[field.key as keyof typeof formState] ?? '')}
                 onChange={(event) =>
                   setFormState((prev) => ({
                     ...prev,

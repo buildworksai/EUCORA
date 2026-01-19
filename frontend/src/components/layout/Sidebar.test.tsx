@@ -1,14 +1,14 @@
 // SPDX-License-Identifier: Apache-2.0
 // Copyright (c) 2026 BuildWorks.AI
-import { describe, it, expect, vi } from 'vitest';
+import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen } from '@/test/utils';
 import { Sidebar } from './Sidebar';
-import { useAuthStore, useUIStore } from '@/lib/stores/authStore';
+import { useAuthStore } from '@/lib/stores/authStore';
+import { useUIStore } from '@/lib/stores/uiStore';
 
 // Mock stores
 vi.mock('@/lib/stores/authStore', () => ({
   useAuthStore: vi.fn(),
-  useUIStore: vi.fn(),
 }));
 
 vi.mock('@/lib/stores/uiStore', () => ({
@@ -21,12 +21,12 @@ describe('Sidebar', () => {
   });
 
   it('renders navigation items', () => {
-    (useAuthStore as any).mockReturnValue({
+    vi.mocked(useAuthStore).mockReturnValue({
       user: { role: 'admin' },
-    });
-    (useUIStore as any).mockReturnValue({
+    } as ReturnType<typeof useAuthStore>);
+    vi.mocked(useUIStore).mockReturnValue({
       sidebarOpen: true,
-    });
+    } as ReturnType<typeof useUIStore>);
 
     render(<Sidebar />);
     
@@ -36,12 +36,12 @@ describe('Sidebar', () => {
   });
 
   it('filters nav items based on user permissions', () => {
-    (useAuthStore as any).mockReturnValue({
+    vi.mocked(useAuthStore).mockReturnValue({
       user: { role: 'viewer', permissions: ['dashboard:read'] },
-    });
-    (useUIStore as any).mockReturnValue({
+    } as ReturnType<typeof useAuthStore>);
+    vi.mocked(useUIStore).mockReturnValue({
       sidebarOpen: true,
-    });
+    } as ReturnType<typeof useUIStore>);
 
     render(<Sidebar />);
     

@@ -18,7 +18,6 @@ import {
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { toast } from 'sonner';
-import { RiskScoreBadge } from '@/components/deployment/RiskScoreBadge';
 
 export default function EvidenceViewer() {
     const { id } = useParams<{ id: string }>();
@@ -60,10 +59,17 @@ export default function EvidenceViewer() {
 
     // Parse vulnerability scan results
     const vulnResults = evidencePack.vulnerability_scan_results || {};
-    const criticalVulns = vulnResults.critical || 0;
-    const highVulns = vulnResults.high || 0;
-    const mediumVulns = vulnResults.medium || 0;
-    const lowVulns = vulnResults.low || 0;
+    const getVulnCount = (key: string): number => {
+        if (typeof vulnResults === 'object' && vulnResults !== null && key in vulnResults) {
+            const value = vulnResults[key];
+            return typeof value === 'number' ? value : 0;
+        }
+        return 0;
+    };
+    const criticalVulns = getVulnCount('critical');
+    const highVulns = getVulnCount('high');
+    const mediumVulns = getVulnCount('medium');
+    const lowVulns = getVulnCount('low');
 
     // Parse SBOM data
     const sbomData = evidencePack.sbom_data || {};
