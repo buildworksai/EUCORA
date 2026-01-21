@@ -441,6 +441,11 @@ def _seed_assets(count: int, batch_size: int) -> int:
 def _seed_deployments(count: int, demo_user: User, batch_size: int) -> dict:
     """
     Seed deployments up to target count (idempotent - only creates if below target).
+    
+    Creates realistic deployment data for application stack sidebar:
+    - Multiple versions per application (e.g., "Microsoft Teams 1.5.0", "1.6.0", "1.7.0")
+    - Multiple deployments per version with different rings/statuses
+    - Ensures diverse risk scores and CAB approval states
     """
     existing = DeploymentIntent.objects.filter(is_demo=True).count()
     remaining = max(0, count - existing)
@@ -481,6 +486,21 @@ def _seed_deployments(count: int, demo_user: User, batch_size: int) -> dict:
         DeploymentIntent.Ring.DEPARTMENT,
         DeploymentIntent.Ring.GLOBAL,
     ]
+    
+    # Define realistic application names with multiple versions for application stack sidebar
+    # Each app will have 2-4 versions, with 1-3 deployments per version
+    application_definitions = [
+        {'name': 'Microsoft Teams', 'vendor': 'Microsoft', 'base_risk': 45, 'versions': ['1.5.00.12345', '1.6.00.23456', '1.7.00.34567']},
+        {'name': 'Adobe Acrobat Reader', 'vendor': 'Adobe', 'base_risk': 55, 'versions': ['23.001.20143', '23.002.20191', '23.003.20244']},
+        {'name': 'Google Chrome', 'vendor': 'Google', 'base_risk': 40, 'versions': ['119.0.6045.105', '120.0.6099.109', '121.0.6167.85']},
+        {'name': 'Slack', 'vendor': 'Slack Technologies', 'base_risk': 35, 'versions': ['4.35.121', '4.36.134', '4.37.141']},
+        {'name': 'Zoom Client', 'vendor': 'Zoom Video', 'base_risk': 50, 'versions': ['5.16.0.24010', '5.17.0.24080', '5.17.5.24100']},
+        {'name': 'Visual Studio Code', 'vendor': 'Microsoft', 'base_risk': 30, 'versions': ['1.84.2', '1.85.1', '1.86.0']},
+        {'name': 'CrowdStrike Falcon', 'vendor': 'CrowdStrike', 'base_risk': 70, 'versions': ['7.10.16808', '7.11.16903', '7.12.17005']},
+        {'name': 'Microsoft Defender', 'vendor': 'Microsoft', 'base_risk': 65, 'versions': ['4.18.23110.2', '4.18.24010.7', '4.18.24020.4']},
+        {'name': 'VPN Client', 'vendor': 'Cisco', 'base_risk': 60, 'versions': ['5.0.03072', '5.0.04032', '5.1.00001']},
+        {'name': 'SAP GUI', 'vendor': 'SAP', 'base_risk': 55, 'versions': ['7.70.1', '7.70.2', '8.00.1']},
+    ]
 
     applications = list(Application.objects.filter(is_demo=True)[:5000])
     if not applications:
@@ -506,201 +526,218 @@ def _seed_deployments(count: int, demo_user: User, batch_size: int) -> dict:
     ring_batch = []
     events_batch = []
 
-    for i in range(remaining):
-        app = random.choice(applications)
-        status = random.choice(status_pool)
-        ring = random.choice(rings)
-        deployment_id = uuid.uuid4()
-        # Use the same correlation_id for both evidence pack and deployment intent
-        evidence_id = deployment_id
-
-        risk_score = max(0, min(100, app.default_risk_score + random.randint(-10, 25)))
-        requires_cab = risk_score > 50
+    # Generate deployments from application definitions for realistic application stack
+    # Each app gets 2-4 versions, each version gets 1-3 deployments with different rings/statuses
+    deployment_count = 0
+    for app_def in application_definitions:
+        if deployment_count >= remaining:
+            break
         
-        # If status is AWAITING_CAB or APPROVED, ensure it requires CAB approval
-        if status in [DeploymentIntent.Status.AWAITING_CAB, DeploymentIntent.Status.APPROVED]:
-            requires_cab = True
-            # Ensure risk score is high enough to require CAB
-            if risk_score <= 50:
-                risk_score = random.randint(51, 95)
-
-        evidence_batch.append(EvidencePack(
-            correlation_id=deployment_id,  # Use deployment_id so it matches deployment intent's correlation_id
-            app_name=app.name,
-            version=app.version,
-            artifact_hash=''.join(random.choices('0123456789abcdef', k=64)),
-            artifact_path=f"demo/artifacts/{app.name.replace(' ', '-')}/{app.version}/{evidence_id}.pkg",
-            sbom_data=_generate_realistic_sbom(app.name, app.version),
-            vulnerability_scan_results=_generate_realistic_vulnerabilities(app.name, app.version),
-            rollback_plan=_generate_rollback_plan(app.name, app.version),
-            is_validated=status not in [DeploymentIntent.Status.PENDING, DeploymentIntent.Status.AWAITING_CAB],
-            is_demo=True,
-        ))
-
-        deployment = DeploymentIntent(
-            correlation_id=deployment_id,
-            app_name=app.name,
-            version=app.version,
-            target_ring=ring,
-            status=status,
-            evidence_pack_id=evidence_id,
-            risk_score=risk_score,
-            requires_cab_approval=requires_cab,
-            submitter=demo_user,
-            is_demo=True,
-        )
-        deployments_batch.append(deployment)
-        correlation_ids.append(deployment_id)
-
-        ring_batch.append({
-            'deployment_id': deployment_id,
-            'ring': ring,
-            'status': status,
-        })
-
-        # Create CAB approvals for all deployments that require CAB approval
-        if requires_cab:
-            if status == DeploymentIntent.Status.AWAITING_CAB:
-                # Distribute between New, Assessing, and CAB Review
-                # Target: 8+ New Requests, 8+ Technical Assessment, balanced CAB Review
-                # Use more aggressive distribution to ensure we get enough of each type
-                rand_val = random.random()
-                if rand_val < 0.45:  # 45% - New requests (no review yet) - prioritize to get 8+
-                    decision = CABApproval.Decision.PENDING
-                    approver = None
-                    reviewed_at = None
-                    comments = f"New change request for {app.name} {app.version}. Risk score: {risk_score}."
-                    conditions = []
-                elif rand_val < 0.75:  # 30% - Technical Assessment (reviewed but still pending)
-                    decision = CABApproval.Decision.PENDING
-                    approver = demo_user
-                    reviewed_at = timezone.now() - timedelta(hours=random.randint(1, 24))
-                    comments = f"Under technical assessment for {app.name} {app.version}. Security team reviewing vulnerability scan results. Risk score: {risk_score}."
-                    conditions = []
-                else:  # 25% - CAB Review (explicitly in CAB review)
-                    decision = CABApproval.Decision.PENDING
-                    approver = None
-                    reviewed_at = None
-                    comments = f"Awaiting CAB review for {app.name} {app.version}. Risk score: {risk_score}."
-                    conditions = []
-            elif status == DeploymentIntent.Status.APPROVED:
-                # Approved - could be conditional or full approval
-                if random.random() < 0.25:  # 25% are conditional approvals
-                    decision = CABApproval.Decision.CONDITIONAL
-                    conditions = [
-                        "Deploy only during maintenance window",
-                        "Monitor for 48 hours post-deployment",
-                        "Rollback plan must be tested before deployment",
-                        "Require additional security scan before production deployment",
-                    ][:random.randint(1, 3)]
-                    comments = f"Conditionally approved {app.name} {app.version} with {len(conditions)} conditions. Risk score: {risk_score}."
-                else:
-                    decision = CABApproval.Decision.APPROVED
-                    conditions = []
-                    comments = f"Approved {app.name} {app.version} for deployment to {ring} ring. Risk assessment completed successfully."
-                approver = demo_user
-                reviewed_at = timezone.now() - timedelta(hours=random.randint(1, 72))
-            elif status == DeploymentIntent.Status.REJECTED:
-                # Rejected
-                decision = CABApproval.Decision.REJECTED
-                approver = demo_user
-                reviewed_at = timezone.now() - timedelta(hours=random.randint(1, 48))
-                comments = random.choice([
-                    f"Rejected {app.name} {app.version}: Risk score too high ({risk_score}). Requires additional security review.",
-                    f"Rejected {app.name} {app.version}: Insufficient evidence pack. Missing vulnerability scan results.",
-                    f"Rejected {app.name} {app.version}: Rollback plan incomplete. Please resubmit with detailed rollback procedures.",
-                    f"Rejected {app.name} {app.version}: Policy violation detected. Application does not meet enterprise security standards.",
-                ])
-                conditions = []
-            else:
-                # Other statuses - create pending approval
-                decision = CABApproval.Decision.PENDING
-                approver = None
-                reviewed_at = None
-                comments = f"Pending CAB review for {app.name} {app.version}."
-                conditions = []
+        for version in app_def['versions']:
+            if deployment_count >= remaining:
+                break
             
-            cab_batch.append({
-                'deployment_id': deployment_id,
-                'decision': decision,
-                'approver': approver,
-                'comments': comments,
-                'conditions': conditions,
-                'reviewed_at': reviewed_at,
-            })
+            # Create 1-3 deployments per version with different rings/statuses
+            num_deployments_for_version = random.randint(1, 3)
+            for _ in range(num_deployments_for_version):
+                if deployment_count >= remaining:
+                    break
+                
+                status = random.choice(status_pool)
+                ring = random.choice(rings)
+                deployment_id = uuid.uuid4()
+                # Use the same correlation_id for both evidence pack and deployment intent
+                evidence_id = deployment_id
 
-        event_type = {
-            DeploymentIntent.Status.PENDING: DeploymentEvent.EventType.DEPLOYMENT_CREATED,
-            DeploymentIntent.Status.AWAITING_CAB: DeploymentEvent.EventType.CAB_SUBMITTED,
-            DeploymentIntent.Status.APPROVED: DeploymentEvent.EventType.CAB_APPROVED,
-            DeploymentIntent.Status.REJECTED: DeploymentEvent.EventType.CAB_REJECTED,
-            DeploymentIntent.Status.DEPLOYING: DeploymentEvent.EventType.DEPLOYMENT_STARTED,
-            DeploymentIntent.Status.COMPLETED: DeploymentEvent.EventType.DEPLOYMENT_COMPLETED,
-            DeploymentIntent.Status.FAILED: DeploymentEvent.EventType.DEPLOYMENT_FAILED,
-            DeploymentIntent.Status.ROLLED_BACK: DeploymentEvent.EventType.ROLLBACK_COMPLETED,
-        }.get(status, DeploymentEvent.EventType.DEPLOYMENT_CREATED)
+                risk_score = max(0, min(100, app_def['base_risk'] + random.randint(-10, 25)))
+                requires_cab = risk_score > 50
+                
+                # If status is AWAITING_CAB or APPROVED, ensure it requires CAB approval
+                if status in [DeploymentIntent.Status.AWAITING_CAB, DeploymentIntent.Status.APPROVED]:
+                    requires_cab = True
+                    # Ensure risk score is high enough to require CAB
+                    if risk_score <= 50:
+                        risk_score = random.randint(51, 95)
 
-        events_batch.append(DeploymentEvent(
-            correlation_id=deployment_id,
-            event_type=event_type,
-            event_data={'app_name': app.name, 'version': app.version, 'ring': ring},
-            actor='demo-system',
-            is_demo=True,
-        ))
+                evidence_batch.append(EvidencePack(
+                    correlation_id=deployment_id,  # Use deployment_id so it matches deployment intent's correlation_id
+                    app_name=app_def['name'],
+                    version=version,
+                    artifact_hash=''.join(random.choices('0123456789abcdef', k=64)),
+                    artifact_path=f"demo/artifacts/{app_def['name'].replace(' ', '-')}/{version}/{evidence_id}.pkg",
+                    sbom_data=_generate_realistic_sbom(app_def['name'], version),
+                    vulnerability_scan_results=_generate_realistic_vulnerabilities(app_def['name'], version),
+                    rollback_plan=_generate_rollback_plan(app_def['name'], version),
+                    is_validated=status not in [DeploymentIntent.Status.PENDING, DeploymentIntent.Status.AWAITING_CAB],
+                    is_demo=True,
+                ))
 
-        if len(deployments_batch) >= batch_size:
-            evidence_packs_created += len(EvidencePack.objects.bulk_create(evidence_batch, ignore_conflicts=True))
-            evidence_batch = []
+                deployment = DeploymentIntent(
+                    correlation_id=deployment_id,
+                    app_name=app_def['name'],
+                    version=version,
+                    target_ring=ring,
+                    status=status,
+                    evidence_pack_id=evidence_id,
+                    risk_score=risk_score,
+                    requires_cab_approval=requires_cab,
+                    submitter=demo_user,
+                    is_demo=True,
+                )
+                deployments_batch.append(deployment)
+                correlation_ids.append(deployment_id)
 
-            DeploymentIntent.objects.bulk_create(deployments_batch, ignore_conflicts=True)
-            deployments_created += len(deployments_batch)
+                ring_batch.append({
+                    'deployment_id': deployment_id,
+                    'ring': ring,
+                    'status': status,
+                })
+                
+                deployment_count += 1
 
-            saved = {d.correlation_id: d for d in DeploymentIntent.objects.filter(correlation_id__in=[d.correlation_id for d in deployments_batch])}
+                # Create CAB approvals for all deployments that require CAB approval
+                if requires_cab:
+                    if status == DeploymentIntent.Status.AWAITING_CAB:
+                        # Distribute between New, Assessing, and CAB Review
+                        # Target: 8+ New Requests, 8+ Technical Assessment, balanced CAB Review
+                        # Use more aggressive distribution to ensure we get enough of each type
+                        rand_val = random.random()
+                        if rand_val < 0.45:  # 45% - New requests (no review yet) - prioritize to get 8+
+                            decision = CABApproval.Decision.PENDING
+                            approver = None
+                            reviewed_at = None
+                            comments = f"New change request for {app_def['name']} {version}. Risk score: {risk_score}."
+                            conditions = []
+                        elif rand_val < 0.75:  # 30% - Technical Assessment (reviewed but still pending)
+                            decision = CABApproval.Decision.PENDING
+                            approver = demo_user
+                            reviewed_at = timezone.now() - timedelta(hours=random.randint(1, 24))
+                            comments = f"Under technical assessment for {app_def['name']} {version}. Security team reviewing vulnerability scan results. Risk score: {risk_score}."
+                            conditions = []
+                        else:  # 25% - CAB Review (explicitly in CAB review)
+                            decision = CABApproval.Decision.PENDING
+                            approver = None
+                            reviewed_at = None
+                            comments = f"Awaiting CAB review for {app_def['name']} {version}. Risk score: {risk_score}."
+                            conditions = []
+                    elif status == DeploymentIntent.Status.APPROVED:
+                        # Approved - could be conditional or full approval
+                        if random.random() < 0.25:  # 25% are conditional approvals
+                            decision = CABApproval.Decision.CONDITIONAL
+                            conditions = [
+                                "Deploy only during maintenance window",
+                                "Monitor for 48 hours post-deployment",
+                                "Rollback plan must be tested before deployment",
+                                "Require additional security scan before production deployment",
+                            ][:random.randint(1, 3)]
+                            comments = f"Conditionally approved {app_def['name']} {version} with {len(conditions)} conditions. Risk score: {risk_score}."
+                        else:
+                            decision = CABApproval.Decision.APPROVED
+                            conditions = []
+                            comments = f"Approved {app_def['name']} {version} for deployment to {ring} ring. Risk assessment completed successfully."
+                        approver = demo_user
+                        reviewed_at = timezone.now() - timedelta(hours=random.randint(1, 72))
+                    elif status == DeploymentIntent.Status.REJECTED:
+                        # Rejected
+                        decision = CABApproval.Decision.REJECTED
+                        approver = demo_user
+                        reviewed_at = timezone.now() - timedelta(hours=random.randint(1, 48))
+                        comments = random.choice([
+                            f"Rejected {app_def['name']} {version}: Risk score too high ({risk_score}). Requires additional security review.",
+                            f"Rejected {app_def['name']} {version}: Insufficient evidence pack. Missing vulnerability scan results.",
+                            f"Rejected {app_def['name']} {version}: Rollback plan incomplete. Please resubmit with detailed rollback procedures.",
+                            f"Rejected {app_def['name']} {version}: Policy violation detected. Application does not meet enterprise security standards.",
+                        ])
+                        conditions = []
+                    else:
+                        # Other statuses - create pending approval
+                        decision = CABApproval.Decision.PENDING
+                        approver = None
+                        reviewed_at = None
+                        comments = f"Pending CAB review for {app_def['name']} {version}."
+                        conditions = []
+                    
+                    cab_batch.append({
+                        'deployment_id': deployment_id,
+                        'decision': decision,
+                        'approver': approver,
+                        'comments': comments,
+                        'conditions': conditions,
+                        'reviewed_at': reviewed_at,
+                    })
 
-            if cab_batch:
-                cab_objects = []
-                for cab in cab_batch:
-                    deployment = saved.get(cab['deployment_id'])
-                    if deployment:
-                        cab_objects.append(CABApproval(
-                            deployment_intent=deployment,
-                            decision=cab['decision'],
-                            approver=cab['approver'],
-                            comments=cab['comments'],
-                            reviewed_at=cab['reviewed_at'],
-                            is_demo=True,
-                        ))
-                cab_approvals_created += len(CABApproval.objects.bulk_create(cab_objects, ignore_conflicts=True))
-                cab_batch = []
+                event_type = {
+                    DeploymentIntent.Status.PENDING: DeploymentEvent.EventType.DEPLOYMENT_CREATED,
+                    DeploymentIntent.Status.AWAITING_CAB: DeploymentEvent.EventType.CAB_SUBMITTED,
+                    DeploymentIntent.Status.APPROVED: DeploymentEvent.EventType.CAB_APPROVED,
+                    DeploymentIntent.Status.REJECTED: DeploymentEvent.EventType.CAB_REJECTED,
+                    DeploymentIntent.Status.DEPLOYING: DeploymentEvent.EventType.DEPLOYMENT_STARTED,
+                    DeploymentIntent.Status.COMPLETED: DeploymentEvent.EventType.DEPLOYMENT_COMPLETED,
+                    DeploymentIntent.Status.FAILED: DeploymentEvent.EventType.DEPLOYMENT_FAILED,
+                    DeploymentIntent.Status.ROLLED_BACK: DeploymentEvent.EventType.ROLLBACK_COMPLETED,
+                }.get(status, DeploymentEvent.EventType.DEPLOYMENT_CREATED)
 
-            if ring_batch:
-                ring_objects = []
-                for ring_entry in ring_batch:
-                    deployment = saved.get(ring_entry['deployment_id'])
-                    if deployment:
-                        success_count = random.randint(50, 500) if ring_entry['status'] == DeploymentIntent.Status.COMPLETED else random.randint(0, 50)
-                        failure_count = random.randint(0, 25) if ring_entry['status'] in [DeploymentIntent.Status.FAILED, DeploymentIntent.Status.ROLLED_BACK] else random.randint(0, 10)
-                        total = max(1, success_count + failure_count)
-                        ring_objects.append(RingDeployment(
-                            deployment_intent=deployment,
-                            ring=ring_entry['ring'],
-                            connector_type=random.choice(['intune', 'jamf', 'sccm', 'landscape', 'ansible']),
-                            connector_object_id=f"DEMO-{uuid.uuid4()}",
-                            success_count=success_count,
-                            failure_count=failure_count,
-                            success_rate=success_count / total,
-                            promoted_at=timezone.now() - timedelta(days=random.randint(0, 30)),
-                            promotion_gate_passed=ring_entry['status'] == DeploymentIntent.Status.COMPLETED,
-                            is_demo=True,
-                        ))
-                ring_deployments_created += len(RingDeployment.objects.bulk_create(ring_objects, ignore_conflicts=True))
-                ring_batch = []
+                events_batch.append(DeploymentEvent(
+                    correlation_id=deployment_id,
+                    event_type=event_type,
+                    event_data={'app_name': app_def['name'], 'version': version, 'ring': ring},
+                    actor='demo-system',
+                    is_demo=True,
+                ))
 
-            if events_batch:
-                events_created += len(DeploymentEvent.objects.bulk_create(events_batch, ignore_conflicts=True))
-                events_batch = []
+                if len(deployments_batch) >= batch_size:
+                    evidence_packs_created += len(EvidencePack.objects.bulk_create(evidence_batch, ignore_conflicts=True))
+                    evidence_batch = []
 
-            deployments_batch = []
+                    DeploymentIntent.objects.bulk_create(deployments_batch, ignore_conflicts=True)
+                    deployments_created += len(deployments_batch)
+
+                    saved = {d.correlation_id: d for d in DeploymentIntent.objects.filter(correlation_id__in=[d.correlation_id for d in deployments_batch])}
+
+                    if cab_batch:
+                        cab_objects = []
+                        for cab in cab_batch:
+                            deployment = saved.get(cab['deployment_id'])
+                            if deployment:
+                                cab_objects.append(CABApproval(
+                                    deployment_intent=deployment,
+                                    decision=cab['decision'],
+                                    approver=cab['approver'],
+                                    comments=cab['comments'],
+                                    reviewed_at=cab['reviewed_at'],
+                                    is_demo=True,
+                                ))
+                        cab_approvals_created += len(CABApproval.objects.bulk_create(cab_objects, ignore_conflicts=True))
+                        cab_batch = []
+
+                    if ring_batch:
+                        ring_objects = []
+                        for ring_entry in ring_batch:
+                            deployment = saved.get(ring_entry['deployment_id'])
+                            if deployment:
+                                success_count = random.randint(50, 500) if ring_entry['status'] == DeploymentIntent.Status.COMPLETED else random.randint(0, 50)
+                                failure_count = random.randint(0, 25) if ring_entry['status'] in [DeploymentIntent.Status.FAILED, DeploymentIntent.Status.ROLLED_BACK] else random.randint(0, 10)
+                                total = max(1, success_count + failure_count)
+                                ring_objects.append(RingDeployment(
+                                    deployment_intent=deployment,
+                                    ring=ring_entry['ring'],
+                                    connector_type=random.choice(['intune', 'jamf', 'sccm', 'landscape', 'ansible']),
+                                    connector_object_id=f"DEMO-{uuid.uuid4()}",
+                                    success_count=success_count,
+                                    failure_count=failure_count,
+                                    success_rate=success_count / total,
+                                    promoted_at=timezone.now() - timedelta(days=random.randint(0, 30)),
+                                    promotion_gate_passed=ring_entry['status'] == DeploymentIntent.Status.COMPLETED,
+                                    is_demo=True,
+                                ))
+                        ring_deployments_created += len(RingDeployment.objects.bulk_create(ring_objects, ignore_conflicts=True))
+                        ring_batch = []
+
+                    if events_batch:
+                        events_created += len(DeploymentEvent.objects.bulk_create(events_batch, ignore_conflicts=True))
+                        events_batch = []
+
+                    deployments_batch = []
 
     # CRITICAL FIX: Final batch must also use transaction
     if evidence_batch or deployments_batch:

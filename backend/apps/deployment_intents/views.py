@@ -3,6 +3,7 @@
 """
 Deployment Intent views for orchestration.
 """
+from collections import defaultdict
 from rest_framework.decorators import api_view, permission_classes
 from rest_framework.permissions import IsAuthenticated, AllowAny
 from rest_framework.response import Response
@@ -102,6 +103,91 @@ def list_deployments(request):
     } for d in queryset[:100]]  # Limit to 100
     
     return Response({'deployments': deployments})
+
+
+@api_view(['GET'])
+@permission_classes([AllowAny])
+def list_applications_with_versions(request):
+    """
+    Return application-centric view of deployments grouped by version.
+
+    GET /api/v1/deployments/applications
+    Optional query params:
+      - app_name: case-insensitive contains filter
+      - status: filter by deployment status
+      - ring: filter by target ring
+    """
+    queryset = apply_demo_filter(DeploymentIntent.objects.all(), request)
+
+    status_filter = request.query_params.get('status')
+    ring_filter = request.query_params.get('ring')
+    app_filter = request.query_params.get('app_name')
+
+    if status_filter:
+        queryset = queryset.filter(status=status_filter)
+    if ring_filter:
+        queryset = queryset.filter(target_ring=ring_filter)
+    if app_filter:
+        queryset = queryset.filter(app_name__icontains=app_filter)
+
+    # Order newest-first within each app to compute latest version reliably
+    queryset = queryset.order_by('app_name', '-created_at')
+
+    applications = {}
+
+    for deployment in queryset:
+        app_entry = applications.get(deployment.app_name)
+        if not app_entry:
+            app_entry = {
+                'app_name': deployment.app_name,
+                'latest_version': deployment.version,
+                'deployment_count': 0,
+                'versions': {},
+            }
+            applications[deployment.app_name] = app_entry
+
+        version_entry = app_entry['versions'].get(deployment.version)
+        if not version_entry:
+            version_entry = {
+                'version': deployment.version,
+                'latest_created_at': deployment.created_at,
+                'deployments': [],
+            }
+            app_entry['versions'][deployment.version] = version_entry
+
+        version_entry['deployments'].append({
+            'correlation_id': str(deployment.correlation_id),
+            'target_ring': deployment.target_ring,
+            'status': deployment.status,
+            'risk_score': deployment.risk_score,
+            'requires_cab_approval': deployment.requires_cab_approval,
+            'created_at': deployment.created_at.isoformat(),
+        })
+
+        app_entry['deployment_count'] += 1
+
+    application_list = []
+    for app_data in applications.values():
+        versions = list(app_data['versions'].values())
+        versions.sort(key=lambda v: v['latest_created_at'], reverse=True)
+
+        application_list.append({
+            'app_name': app_data['app_name'],
+            'latest_version': app_data['latest_version'],
+            'deployment_count': app_data['deployment_count'],
+            'versions': [
+                {
+                    'version': version['version'],
+                    'latest_created_at': version['latest_created_at'].isoformat(),
+                    'deployments': version['deployments'],
+                }
+                for version in versions
+            ],
+        })
+
+    application_list.sort(key=lambda app: app['app_name'].lower())
+
+    return Response({'applications': application_list})
 
 
 @api_view(['GET'])

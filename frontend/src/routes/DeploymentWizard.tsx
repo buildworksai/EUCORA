@@ -189,8 +189,8 @@ export default function DeploymentWizard() {
                                                     <div className="border-2 border-dashed rounded-lg p-6 flex flex-col items-center justify-center text-muted-foreground hover:bg-muted/50 transition-colors cursor-pointer">
                                                         <UploadCloud className="h-10 w-10 mb-2" />
                                                         <span className="text-sm">Drag and drop package binaries (MSI, EXE, INTUNEWIN)</span>
-                                                        <Input
-                                                            {...field}
+                                                        <input
+                                                            {...(field as React.InputHTMLAttributes<HTMLInputElement>)}
                                                             type="file"
                                                             accept=".msi,.exe,.intunewin"
                                                             onChange={(e) => {

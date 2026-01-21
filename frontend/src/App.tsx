@@ -14,6 +14,7 @@ import DEXDashboard from './routes/DEXDashboard';
 import ComplianceDashboard from './routes/ComplianceDashboard';
 import CABPortal from './routes/CABPortal';
 import DeploymentWizard from './routes/DeploymentWizard';
+import DeploymentsSidebar from './routes/deployments/DeploymentsSidebar';
 import AuditTrail from './routes/AuditTrail';
 import EvidenceViewer from './routes/EvidenceViewer';
 import Settings from './routes/settings';
@@ -71,6 +72,7 @@ function App() {
             <Route path="/compliance" element={<ComplianceDashboard />} />
             <Route path="/cab" element={<CABPortal />} />
             <Route path="/deploy" element={<DeploymentWizard />} />
+            <Route path="/deployments/stack" element={<DeploymentsSidebar />} />
             <Route path="/audit" element={<AuditTrail />} />
             <Route path="/evidence/:id" element={<EvidenceViewer />} />
             <Route path="/ai-agents" element={<AIAgentHub />} />

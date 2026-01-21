@@ -6,7 +6,7 @@ import { isAdmin, isDemo, hasPermission } from '@/types/auth';
 import { cn } from '@/lib/utils';
 import { 
     LayoutDashboard, Box, ShieldCheck, Settings, Database, Activity, 
-    HeartPulse, Sparkles, Shield, Users, Bell
+    HeartPulse, Sparkles, Shield, Users, Bell, Package
 } from 'lucide-react';
 import { NavLink } from 'react-router-dom';
 
@@ -24,6 +24,7 @@ const navItems: NavItem[] = [
     { href: '/assets', label: 'Asset Inventory', icon: Database, resource: 'assets' },
     { href: '/compliance', label: 'Compliance', icon: ShieldCheck, resource: 'compliance' },
     { href: '/deploy', label: 'Deployments', icon: Box, resource: 'deployments' },
+    { href: '/deployments/stack', label: 'Application Stack', icon: Package, resource: 'deployments' },
     { href: '/cab', label: 'CAB Portal', icon: Activity, resource: 'cab' },
     { href: '/ai-agents', label: 'AI Agents', icon: Sparkles, resource: 'ai' },
     { href: '/audit', label: 'Audit Trail', icon: Database, resource: 'audit' },

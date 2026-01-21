@@ -269,7 +269,7 @@ export default function Login() {
           </Card>
 
           {/* Credential Hints */}
-          <div className={`mt-4 p-4 rounded-lg bg-eucora-teal/5 border border-eucora-teal/20 transition-all duration-500 ${mounted ? 'opacity-100' : 'opacity-0'}`} style={{ transitionDelay: '300ms' }}>
+          <div className="mt-4 p-4 rounded-lg bg-eucora-teal/5 border border-eucora-teal/20" style={{ transitionDelay: '300ms' }}>
             <p className="text-xs text-eucora-teal font-medium mb-2">Demo Credentials</p>
             <div className="grid grid-cols-2 gap-4 text-xs text-gray-400">
               <div>
