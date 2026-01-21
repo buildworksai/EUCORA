@@ -21,18 +21,22 @@ vi.mock('@tanstack/react-query', async () => {
   };
 });
 
-vi.mock('recharts', () => ({
-  BarChart: ({ children }: any) => <div>{children}</div>,
-  Bar: ({ children }: any) => <div>{children}</div>,
-  XAxis: () => <div />,
-  YAxis: () => <div />,
-  Tooltip: () => <div />,
-  ResponsiveContainer: ({ children }: any) => <div>{children}</div>,
-  PieChart: ({ children }: any) => <div>{children}</div>,
-  Pie: ({ children }: any) => <div>{children}</div>,
-  Cell: () => <div />,
-  Legend: () => <div />,
-}));
+vi.mock('recharts', () => {
+  const ChartStub = ({ children }: { children?: React.ReactNode }) => <div>{children}</div>;
+  const EmptyStub = () => <div />;
+  return {
+    BarChart: ChartStub,
+    Bar: ChartStub,
+    XAxis: EmptyStub,
+    YAxis: EmptyStub,
+    Tooltip: EmptyStub,
+    ResponsiveContainer: ChartStub,
+    PieChart: ChartStub,
+    Pie: ChartStub,
+    Cell: EmptyStub,
+    Legend: EmptyStub,
+  };
+});
 
 describe('DEXDashboard', () => {
   it('renders DEX metrics', () => {

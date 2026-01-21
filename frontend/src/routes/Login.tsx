@@ -28,7 +28,6 @@ export default function Login() {
   const navigate = useNavigate();
   const { login, isAuthenticated, isLoading, error, clearError } = useAuthStore();
   const [showPassword, setShowPassword] = useState(false);
-  const [mounted, setMounted] = useState(false);
 
   const {
     register,
@@ -43,11 +42,6 @@ export default function Login() {
       rememberMe: false,
     },
   });
-
-  // Animation mount effect
-  useEffect(() => {
-    setMounted(true);
-  }, []);
 
   // Redirect if already authenticated
   useEffect(() => {
@@ -115,7 +109,7 @@ export default function Login() {
         </div>
 
         {/* Login Card */}
-        <div className={`relative z-10 w-full max-w-md p-4 transition-all duration-700 ${mounted ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'}`}>
+        <div className="relative z-10 w-full max-w-md p-4 transition-all duration-700 opacity-100 translate-y-0">
           <Card className="border border-white/10 shadow-2xl bg-[#0d1526]/90 backdrop-blur-xl">
             <CardHeader className="text-center pb-2 space-y-4">
               {/* Logo */}

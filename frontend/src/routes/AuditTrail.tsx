@@ -73,13 +73,16 @@ export default function AuditTrail() {
             {/* Timeline / Volume Visualization */}
             <div className="h-32 rounded-xl bg-gradient-to-r from-blue-900/20 to-purple-900/20 border border-white/10 flex items-center justify-center relative overflow-hidden">
                 <div className="absolute inset-0 flex items-end justify-between px-4 opacity-50 pb-2">
-                    {Array.from({ length: Math.min(40, filteredEvents.length) }).map((_, i) => {
-                        const eventCount = Math.floor(Math.random() * filteredEvents.length);
+                    {Array.from({ length: Math.min(40, filteredEvents.length || 1) }).map((_, i) => {
+                        // Deterministic pseudo-volume based on index and event count to keep render pure
+                        const base = filteredEvents.length || 1;
+                        const normalized = (base - (i % base)) / base;
+                        const height = Math.max(8, Math.min(80, normalized * 100));
                         return (
                             <div
                                 key={i}
                                 className="w-2 bg-primary/40 rounded-t-sm transition-all hover:bg-primary/80"
-                                style={{ height: `${Math.min(80, (eventCount / filteredEvents.length) * 100)}%` }}
+                                style={{ height: `${height}%` }}
                             />
                         );
                     })}

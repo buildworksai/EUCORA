@@ -49,6 +49,8 @@ export default function DeploymentWizard() {
         mode: 'onChange',
     });
 
+    // React Hook Form exposes watch as a mutable API; lint rule needs explicit opt-out here.
+    // eslint-disable-next-line react-hooks/incompatible-library
     const watchedValues = form.watch();
     const appName = watchedValues.appName || '';
 
@@ -180,7 +182,7 @@ export default function DeploymentWizard() {
                                     <FormField
                                         control={form.control}
                                         name="evidenceFile"
-                                        render={({ field: { value, onChange, ...field } }) => (
+                                        render={({ field: { onChange, ...field } }) => (
                                             <FormItem>
                                                 <FormLabel>Artifact File (Optional)</FormLabel>
                                                 <FormControl>
