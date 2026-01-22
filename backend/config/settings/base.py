@@ -8,6 +8,7 @@ Environment-specific settings are in development.py, staging.py, and production.
 """
 from pathlib import Path
 from decouple import config
+from corsheaders.defaults import default_headers
 
 # Build paths
 BASE_DIR = Path(__file__).resolve().parent.parent.parent
@@ -190,16 +191,8 @@ CORS_ALLOWED_ORIGINS = config(
     cast=lambda v: [s.strip() for s in v.split(',')]
 )
 CORS_ALLOW_CREDENTIALS = True
-CORS_ALLOWED_HEADERS = [
-    'accept',
-    'accept-encoding',
-    'authorization',
-    'content-type',
-    'dnt',
-    'origin',
-    'user-agent',
-    'x-csrftoken',
-    'x-requested-with',
+CORS_ALLOW_HEADERS = [
+    *default_headers,
     'x-correlation-id',
 ]
 
