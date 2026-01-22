@@ -12,6 +12,7 @@ from datetime import timedelta
 import random
 import uuid
 import logging
+from decouple import config
 from django.contrib.auth.models import User
 from django.utils import timezone
 from django.db import transaction, IntegrityError
@@ -22,6 +23,10 @@ from apps.cab_workflow.models import CABApproval
 from apps.event_store.models import DeploymentEvent
 
 logger = logging.getLogger(__name__)
+
+# Demo credentials - MUST be configured via environment variable
+# Development-only default (NEVER use in production)
+DEMO_USER_PASSWORD = config('DEMO_USER_PASSWORD', default='change-me-in-production')
 
 
 def seed_demo_data(
@@ -195,7 +200,7 @@ def _get_or_create_demo_admin() -> User:
                 demo_user = User.objects.create_user(
                     username='demo',
                     email='demo@eucora.com',
-                    password='admin@134',
+                    password=DEMO_USER_PASSWORD,
                     first_name='Demo',
                     last_name='User',
                     is_staff=False,
@@ -241,7 +246,7 @@ def _seed_demo_users(count: int) -> None:
         user = User.objects.create_user(
             username=username,
             email=f'{username}@demo.eucora.com',
-            password='admin@134'
+            password=DEMO_USER_PASSWORD
         )
         user.first_name = f'Demo{existing + i + 1}'
         user.last_name = 'User'

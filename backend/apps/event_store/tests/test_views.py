@@ -4,7 +4,6 @@
 Tests for event_store views.
 """
 import pytest
-from django.urls import reverse
 from apps.event_store.models import DeploymentEvent
 import uuid
 
@@ -17,7 +16,7 @@ class TestEventStoreViews:
         """Test logging deployment event."""
         correlation_id = uuid.uuid4()
         
-        url = reverse('event_store:log')
+        url = '/api/v1/events/'
         response = authenticated_client.post(url, {
             'correlation_id': str(correlation_id),
             'event_type': 'DEPLOYMENT_CREATED',
@@ -32,19 +31,9 @@ class TestEventStoreViews:
         event = DeploymentEvent.objects.get(id=response.data['id'])
         assert event.correlation_id == correlation_id
     
-    def test_list_events(self, authenticated_client):
+    def test_list_events(self, authenticated_client, sample_event):
         """Test listing deployment events."""
-        correlation_id = uuid.uuid4()
-        
-        # Create test events
-        DeploymentEvent.objects.create(
-            correlation_id=correlation_id,
-            event_type=DeploymentEvent.EventType.DEPLOYMENT_CREATED,
-            event_data={},
-            actor='testuser',
-        )
-        
-        url = reverse('event_store:list')
+        url = '/api/v1/events/list'
         response = authenticated_client.get(url)
         
         assert response.status_code == 200
@@ -60,10 +49,11 @@ class TestEventStoreViews:
             event_type=DeploymentEvent.EventType.DEPLOYMENT_CREATED,
             event_data={},
             actor='testuser',
+            is_demo=True,
         )
         
-        url = reverse('event_store:list')
-        response = authenticated_client.get(url, {'correlation_id': str(correlation_id)})
+        url = f'/api/v1/events/list?correlation_id={correlation_id}'
+        response = authenticated_client.get(url)
         
         assert response.status_code == 200
         assert len(response.data['events']) > 0
@@ -76,10 +66,11 @@ class TestEventStoreViews:
             event_type=DeploymentEvent.EventType.DEPLOYMENT_COMPLETED,
             event_data={},
             actor='testuser',
+            is_demo=True,
         )
         
-        url = reverse('event_store:list')
-        response = authenticated_client.get(url, {'event_type': 'DEPLOYMENT_COMPLETED'})
+        url = '/api/v1/events/list?event_type=DEPLOYMENT_COMPLETED'
+        response = authenticated_client.get(url)
         
         assert response.status_code == 200
         assert len(response.data['events']) > 0

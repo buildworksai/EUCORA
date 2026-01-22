@@ -13,7 +13,8 @@ from decouple import config
 BASE_DIR = Path(__file__).resolve().parent.parent.parent
 
 # Security
-SECRET_KEY = config('DJANGO_SECRET_KEY', default='dev-secret-key-change-in-production')
+# CRITICAL: SECRET_KEY MUST be set in environment. No defaults.
+SECRET_KEY = config('DJANGO_SECRET_KEY')
 ALLOWED_HOSTS = config('DJANGO_ALLOWED_HOSTS', default='localhost,127.0.0.1').split(',')
 DEBUG = config('DEBUG', default=False, cast=bool)
 
@@ -83,11 +84,17 @@ DATABASES = {
         'ENGINE': 'django.db.backends.postgresql',
         'NAME': config('POSTGRES_DB', default='eucora'),
         'USER': config('POSTGRES_USER', default='eucora_user'),
-        'PASSWORD': config('POSTGRES_PASSWORD', default='eucora_dev_password'),
+        'PASSWORD': config('POSTGRES_PASSWORD'),  # CRITICAL: No default
         'HOST': config('POSTGRES_HOST', default='localhost'),
         'PORT': config('POSTGRES_PORT', default='5432', cast=int),
         'ATOMIC_REQUESTS': True,
         'CONN_MAX_AGE': 600,
+        # Resilience: connection health checks + timeouts
+        'CONN_HEALTH_CHECKS': True,
+        'OPTIONS': {
+            'connect_timeout': 10,  # Connection timeout
+            'options': '-c statement_timeout=30000',  # 30s statement timeout
+        },
     }
 }
 
@@ -144,9 +151,17 @@ REST_FRAMEWORK = {
     'DEFAULT_PERMISSION_CLASSES': [
         'rest_framework.permissions.IsAuthenticated',
     ],
+    'DEFAULT_THROTTLE_CLASSES': [
+        'apps.core.throttles.APIRateThrottle',
+    ],
+    'DEFAULT_THROTTLE_RATES': {
+        'login': '5/hour',
+        'api': '1000/hour',
+        'burst': '5000/hour',
+        'strict': '100/hour',
+    },
     'DEFAULT_SCHEMA_CLASS': 'drf_spectacular.openapi.AutoSchema',
-    'DEFAULT_PAGINATION_CLASS': 'rest_framework.pagination.PageNumberPagination',
-    'PAGE_SIZE': 100,
+    'DEFAULT_PAGINATION_CLASS': 'apps.core.pagination.StandardCursorPagination',
     'DEFAULT_RENDERER_CLASSES': [
         'rest_framework.renderers.JSONRenderer',
     ],
@@ -155,6 +170,7 @@ REST_FRAMEWORK = {
         'rest_framework.parsers.MultiPartParser',
         'rest_framework.parsers.FormParser',
     ],
+    'EXCEPTION_HANDLER': 'config.exception_handler.custom_exception_handler',
 }
 
 # DRF Spectacular (OpenAPI)
@@ -254,8 +270,8 @@ EUCORA_BRANDING = {
 
 # MinIO (S3-compatible object storage for artifacts)
 MINIO_ENDPOINT = config('MINIO_ENDPOINT', default='localhost:9000')
-MINIO_ACCESS_KEY = config('MINIO_ACCESS_KEY', default='minioadmin')
-MINIO_SECRET_KEY = config('MINIO_SECRET_KEY', default='minioadmin')
+MINIO_ACCESS_KEY = config('MINIO_ACCESS_KEY')  # CRITICAL: No default
+MINIO_SECRET_KEY = config('MINIO_SECRET_KEY')  # CRITICAL: No default
 MINIO_BUCKET_NAME = config('MINIO_BUCKET_NAME', default='eucora-artifacts')
 MINIO_USE_SSL = config('MINIO_USE_SSL', default=False, cast=bool)
 

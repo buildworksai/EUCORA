@@ -16,7 +16,7 @@ logger = logging.getLogger(__name__)
 
 
 @api_view(['GET'])
-@permission_classes([AllowAny])
+@permission_classes([IsAuthenticated])
 def list_assets(request):
     """
     List assets from CMDB (Asset Inventory).
@@ -120,7 +120,7 @@ def list_assets(request):
 
 
 @api_view(['GET'])
-@permission_classes([AllowAny])
+@permission_classes([IsAuthenticated])
 def get_asset(request, asset_id):
     """
     Get single asset details.

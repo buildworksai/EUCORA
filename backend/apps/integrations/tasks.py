@@ -96,8 +96,8 @@ def sync_external_system(self, system_id: str):
         try:
             service = get_integration_service(system.type)
             error_classification = service._classify_error(e)
-        except:
-            pass
+        except Exception as classification_error:
+            logger.warning(f'Failed to classify error for {system.name}: {classification_error}')
         
         sync_log.sync_completed_at = timezone.now()
         sync_log.status = IntegrationSyncLog.SyncStatus.FAILED

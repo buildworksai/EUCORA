@@ -14,6 +14,7 @@ from django.utils import timezone
 from apps.core.utils import exempt_csrf_in_debug
 from .models import AIModelProvider, AIConversation, AIMessage, AIAgentTask, AIAgentType
 from .services import get_ai_agent_service
+from .tasks import process_ai_conversation
 
 logger = logging.getLogger(__name__)
 
@@ -241,24 +242,20 @@ def ask_amani(request):
         )
     
     try:
-        service = get_ai_agent_service()
-        # Call sync method (handles async internally)
-        result = service.ask_amani_sync(
-            user_message=user_message,
-            conversation_id=conversation_id,
-            context=context,
-            user=user
+        # Queue async task for LLM processing
+        task_result = process_ai_conversation.delay(str(conversation_id), user_message)
+        
+        logger.info(
+            f'AI conversation task queued for processing',
+            extra={'conversation_id': str(conversation_id), 'task_id': task_result.id}
         )
         
-        if 'error' in result:
-            # Return 400 for client errors (like invalid API key), 503 for service errors
-            error_msg = result.get('error', '').lower()
-            if 'api key' in error_msg or 'invalid' in error_msg or 'not configured' in error_msg:
-                return Response(result, status=status.HTTP_400_BAD_REQUEST)
-            else:
-                return Response(result, status=status.HTTP_503_SERVICE_UNAVAILABLE)
-        
-        return Response(result)
+        return Response({
+            'status': 'processing',
+            'conversation_id': str(conversation_id),
+            'task_id': task_result.id,
+            'message': 'Your message is being processed. Check conversation history for response.',
+        })
     except Exception as e:
         logger.error(f"Error in ask_amani: {e}", exc_info=True)
         return Response(

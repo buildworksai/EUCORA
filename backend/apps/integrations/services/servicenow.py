@@ -4,19 +4,38 @@
 ServiceNow CMDB integration service.
 
 Syncs asset inventory from ServiceNow CMDB tables.
+Uses resilient HTTP client with circuit breaker protection.
 """
-import requests
+import base64
 import logging
-from typing import Dict, List, Any
+from typing import Dict, List, Any, Optional
+
 from apps.integrations.models import ExternalSystem
 from apps.integrations.services.base import IntegrationService
 from apps.connectors.models import Asset
+from apps.core.http import ResilientHTTPClient
+from apps.core.circuit_breaker import CircuitBreakerOpen
 
 logger = logging.getLogger(__name__)
 
 
 class ServiceNowCMDBService(IntegrationService):
-    """ServiceNow CMDB integration service."""
+    """
+    ServiceNow CMDB integration service.
+    
+    Uses circuit breaker protection and automatic retries for API calls.
+    """
+    
+    SERVICE_NAME = 'servicenow'
+    
+    def __init__(self):
+        """Initialize ServiceNow service with resilient HTTP client."""
+        super().__init__()
+        self.http_client = ResilientHTTPClient(
+            service_name=self.SERVICE_NAME,
+            timeout=30,
+            max_retries=3,
+        )
     
     def test_connection(self, config: Dict[str, Any]) -> Dict[str, Any]:
         """
@@ -36,8 +55,12 @@ class ServiceNowCMDBService(IntegrationService):
         params = {'sysparm_limit': 1}
         
         try:
-            response = requests.get(test_url, headers=headers, params=params, timeout=10)
-            response.raise_for_status()
+            response = self.http_client.get(
+                test_url,
+                headers=headers,
+                params=params,
+                timeout=10,
+            )
             
             return {
                 'status': 'success',
@@ -46,24 +69,42 @@ class ServiceNowCMDBService(IntegrationService):
                     'api_version': response.headers.get('X-Total-Count', 'unknown'),
                 }
             }
-        except requests.exceptions.RequestException as e:
+        except CircuitBreakerOpen as e:
+            logger.warning(f'ServiceNow circuit breaker open: {e}')
+            return {
+                'status': 'failed',
+                'message': 'ServiceNow service temporarily unavailable (circuit breaker open)',
+            }
+        except Exception as e:
             logger.error(f'ServiceNow connection test failed: {e}')
             return {
                 'status': 'failed',
                 'message': f'Connection failed: {str(e)}'
             }
     
-    def sync(self, system: ExternalSystem) -> Dict[str, Any]:
+    def sync(self, system: ExternalSystem, correlation_id: Optional[str] = None) -> Dict[str, Any]:
         """
         Sync assets from ServiceNow CMDB.
         
         Args:
             system: ExternalSystem instance
+            correlation_id: Optional correlation ID for audit trail
         
         Returns:
             Dict with sync results
         """
-        assets = self.fetch_assets(system)
+        try:
+            assets = self.fetch_assets(system, correlation_id=correlation_id)
+        except CircuitBreakerOpen:
+            logger.warning('ServiceNow sync aborted: circuit breaker open')
+            return {
+                'fetched': 0,
+                'created': 0,
+                'updated': 0,
+                'failed': 0,
+                'error': 'ServiceNow service temporarily unavailable',
+            }
+        
         created, updated, failed = 0, 0, 0
         
         for asset_data in assets:
@@ -99,15 +140,25 @@ class ServiceNowCMDBService(IntegrationService):
             'failed': failed,
         }
     
-    def fetch_assets(self, system: ExternalSystem) -> List[Dict[str, Any]]:
+    def fetch_assets(
+        self,
+        system: ExternalSystem,
+        correlation_id: Optional[str] = None,
+    ) -> List[Dict[str, Any]]:
         """
         Fetch computer CIs from ServiceNow CMDB.
         
+        Uses circuit breaker protection and automatic retries.
+        
         Args:
             system: ExternalSystem instance
+            correlation_id: Optional correlation ID for audit trail
         
         Returns:
             List of asset dictionaries
+        
+        Raises:
+            CircuitBreakerOpen: If ServiceNow service is unavailable
         """
         api_url = system.api_url
         headers = self._get_auth_headers_from_system(system)
@@ -123,23 +174,31 @@ class ServiceNowCMDBService(IntegrationService):
         all_assets = []
         
         while True:
-            try:
-                response = requests.get(url, headers=headers, params=params, timeout=30)
-                response.raise_for_status()
-                data = response.json()
-                
-                if 'result' in data:
-                    all_assets.extend(data['result'])
-                
-                # Check if there are more records
-                if len(data.get('result', [])) < params['sysparm_limit']:
-                    break
-                
-                params['sysparm_offset'] += params['sysparm_limit']
-                
-            except requests.exceptions.RequestException as e:
-                logger.error(f'Error fetching ServiceNow assets: {e}')
-                raise
+            response = self.http_client.get(
+                url,
+                headers=headers,
+                params=params,
+                correlation_id=correlation_id,
+            )
+            data = response.json()
+            
+            if 'result' in data:
+                all_assets.extend(data['result'])
+            
+            # Check if there are more records
+            if len(data.get('result', [])) < params['sysparm_limit']:
+                break
+            
+            params['sysparm_offset'] += params['sysparm_limit']
+        
+        logger.info(
+            f'Fetched {len(all_assets)} assets from ServiceNow',
+            extra={
+                'service': self.SERVICE_NAME,
+                'asset_count': len(all_assets),
+                'correlation_id': correlation_id,
+            }
+        )
         
         return all_assets
     
@@ -151,7 +210,6 @@ class ServiceNowCMDBService(IntegrationService):
         if auth_type == 'basic':
             username = credentials.get('username')
             password = credentials.get('password')
-            import base64
             auth_string = f'{username}:{password}'
             encoded = base64.b64encode(auth_string.encode()).decode()
             return {

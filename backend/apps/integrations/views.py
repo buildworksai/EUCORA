@@ -33,7 +33,7 @@ class ExternalSystemViewSet(viewsets.ModelViewSet):
     - logs: Get sync history
     """
     permission_classes = [IsAuthenticated]
-    queryset = ExternalSystem.objects.all()
+    queryset = ExternalSystem.objects.select_related('created_by').prefetch_related('sync_logs')
     
     def get_serializer_class(self):
         """Use different serializer for create/update."""
@@ -152,7 +152,7 @@ class IntegrationSyncLogViewSet(viewsets.ReadOnlyModelViewSet):
     Read-only - logs are created by sync tasks.
     """
     permission_classes = [IsAuthenticated]
-    queryset = IntegrationSyncLog.objects.all()
+    queryset = IntegrationSyncLog.objects.select_related('integration_system')
     serializer_class = IntegrationSyncLogSerializer
     
     def get_queryset(self):

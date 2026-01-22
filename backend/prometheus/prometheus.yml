@@ -1,0 +1,63 @@
+# SPDX-License-Identifier: Apache-2.0
+# Copyright (c) 2026 BuildWorks.AI
+# Prometheus configuration for EUCORA Control Plane
+# Scrapes metrics from: /api/v1/metrics/ on eucora-api container (every 15 seconds)
+# Evaluates rules: Alert rules from alert_rules.yaml (every 30 seconds)
+
+global:
+  scrape_interval: 15s
+  evaluation_interval: 30s
+  external_labels:
+    cluster: 'eucora-dev'
+    environment: 'development'
+
+# Alertmanager configuration
+alerting:
+  alertmanagers:
+    - static_configs:
+        - targets: []
+
+# Rule files
+rule_files:
+  - '/etc/prometheus/alert_rules.yaml'
+
+# Scrape configurations
+scrape_configs:
+  - job_name: 'prometheus'
+    # Scrape Prometheus metrics itself for debugging
+    static_configs:
+      - targets: ['localhost:9090']
+    scrape_interval: 30s
+
+  - job_name: 'eucora-control-plane'
+    # Scrape EUCORA Control Plane API metrics
+    scheme: http
+    static_configs:
+      - targets: ['eucora-api:8000']
+    metrics_path: '/api/v1/metrics/'
+    scrape_interval: 15s
+    scrape_timeout: 10s
+    relabel_configs:
+      # Add instance label for clarity
+      - source_labels: [__address__]
+        target_label: instance
+        replacement: 'eucora-api'
+      # Add service label
+      - target_label: service
+        replacement: 'eucora-control-plane'
+      # Add environment label
+      - target_label: environment
+        replacement: 'development'
+
+  # Celery metrics (if separate exporter added later)
+  # - job_name: 'celery-worker'
+  #   static_configs:
+  #     - targets: ['eucora-celery-worker:8001']
+  #   metrics_path: '/metrics/'
+  #   scrape_interval: 30s
+
+  # Database metrics (if PostgreSQL exporter added later)
+  # - job_name: 'postgres'
+  #   static_configs:
+  #     - targets: ['localhost:9187']
+  #   scrape_interval: 30s

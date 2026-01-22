@@ -4,6 +4,7 @@
 CAB Workflow views for approval workflows.
 """
 from django.conf import settings
+from django.db import transaction
 from rest_framework.decorators import api_view, permission_classes
 from rest_framework.permissions import IsAuthenticated, AllowAny
 from rest_framework.response import Response
@@ -20,6 +21,7 @@ logger = logging.getLogger(__name__)
 @exempt_csrf_in_debug
 @api_view(['POST'])
 @permission_classes([AllowAny if settings.DEBUG else IsAuthenticated])
+@transaction.atomic
 def approve_deployment(request, correlation_id):
     """
     Approve deployment intent.
@@ -87,6 +89,7 @@ def approve_deployment(request, correlation_id):
 @exempt_csrf_in_debug
 @api_view(['POST'])
 @permission_classes([AllowAny if settings.DEBUG else IsAuthenticated])
+@transaction.atomic
 def reject_deployment(request, correlation_id):
     """
     Reject deployment intent.

@@ -58,6 +58,12 @@ class DeploymentIntent(TimeStampedModel, CorrelationIdModel):
             models.Index(fields=['correlation_id']),
             models.Index(fields=['app_name', 'version']),
         ]
+        constraints = [
+            models.CheckConstraint(
+                check=models.Q(risk_score__gte=0) & models.Q(risk_score__lte=100),
+                name='risk_score_between_0_and_100'
+            ),
+        ]
         ordering = ['-created_at']
         verbose_name = 'Deployment Intent'
         verbose_name_plural = 'Deployment Intents'
@@ -92,6 +98,20 @@ class RingDeployment(TimeStampedModel):
     class Meta:
         indexes = [
             models.Index(fields=['deployment_intent', 'ring']),
+        ]
+        constraints = [
+            models.CheckConstraint(
+                check=models.Q(success_count__gte=0),
+                name='success_count_non_negative'
+            ),
+            models.CheckConstraint(
+                check=models.Q(failure_count__gte=0),
+                name='failure_count_non_negative'
+            ),
+            models.CheckConstraint(
+                check=models.Q(success_rate__gte=0.0) & models.Q(success_rate__lte=1.0),
+                name='success_rate_between_0_and_1'
+            ),
         ]
         verbose_name = 'Ring Deployment'
         verbose_name_plural = 'Ring Deployments'

@@ -37,6 +37,11 @@ class CABApproval(TimeStampedModel):
     objects = DemoQuerySet.as_manager()
     
     class Meta:
+        indexes = [
+            models.Index(fields=['decision', 'created_at']),
+            models.Index(fields=['approver', 'created_at']),
+            models.Index(fields=['deployment_intent']),
+        ]
         verbose_name = 'CAB Approval'
         verbose_name_plural = 'CAB Approvals'
     

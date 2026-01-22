@@ -14,34 +14,23 @@ import uuid
 class TestCABApproval:
     """Test CABApproval model."""
     
-    def setup_method(self):
-        """Set up test deployment intent."""
-        self.user = User.objects.create_user(username='testuser', password='testpass')
-        self.deployment = DeploymentIntent.objects.create(
-            app_name='TestApp',
-            version='1.0.0',
-            target_ring=DeploymentIntent.Ring.LAB,
-            evidence_pack_id=uuid.uuid4(),
-            submitter=self.user,
-        )
-    
-    def test_create_cab_approval(self):
+    def test_create_cab_approval(self, sample_cab_request, admin_user):
         """Test creating a CAB approval."""
         approval = CABApproval.objects.create(
-            deployment_intent=self.deployment,
+            cab_request=sample_cab_request,
             decision=CABApproval.Decision.APPROVED,
-            approver=self.user,
+            approver=admin_user,
             comments='Looks good',
         )
         assert approval.decision == CABApproval.Decision.APPROVED
-        assert approval.approver == self.user
+        assert approval.approver == admin_user
     
-    def test_conditional_approval(self):
+    def test_conditional_approval(self, sample_cab_request, admin_user):
         """Test conditional approval with conditions."""
         approval = CABApproval.objects.create(
-            deployment_intent=self.deployment,
+            cab_request=sample_cab_request,
             decision=CABApproval.Decision.CONDITIONAL,
-            approver=self.user,
+            approver=admin_user,
             comments='Approved with conditions',
             conditions=['Must deploy during maintenance window', 'Requires rollback plan review'],
         )

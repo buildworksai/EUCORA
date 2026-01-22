@@ -241,8 +241,8 @@ SET session_replication_role = 'origin';
                     # Clean up temp file
                     try:
                         os.unlink(tmp_sql_file)
-                    except:
-                        pass
+                    except OSError as cleanup_error:
+                        logger.warning(f'Failed to delete temporary SQL file {tmp_sql_file}: {cleanup_error}')
                 
                 # Log the output for debugging
                 stdout_str = stdout.decode('utf-8') if isinstance(stdout, bytes) else stdout

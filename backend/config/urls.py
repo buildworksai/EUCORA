@@ -8,13 +8,18 @@ API versioning via URL path: /api/v1/
 from django.contrib import admin
 from django.urls import path, include
 from drf_spectacular.views import SpectacularAPIView, SpectacularSwaggerView
-from apps.core.health import liveness_check, readiness_check, demo_readiness_check
+from apps.core.health import liveness_check, readiness_check, demo_readiness_check, comprehensive_health_check
+from apps.core.views_metrics import metrics_endpoint
 
 urlpatterns = [
     # Health checks (Kubernetes probes)
     path('health/live', liveness_check, name='liveness'),
     path('health/ready', readiness_check, name='readiness'),
     path('health/demo-ready', demo_readiness_check, name='demo-readiness'),
+    path('api/v1/health/', comprehensive_health_check, name='comprehensive-health'),
+    
+    # Metrics endpoint (Prometheus scraping)
+    path('api/v1/metrics/', metrics_endpoint, name='metrics'),
     
     # Admin
     path('admin/', admin.site.urls),

@@ -4,11 +4,13 @@
 Deployment Intent views for orchestration.
 """
 from collections import defaultdict
+from django.db import transaction
 from rest_framework.decorators import api_view, permission_classes
 from rest_framework.permissions import IsAuthenticated, AllowAny
 from rest_framework.response import Response
 from rest_framework import status
 from .models import DeploymentIntent, RingDeployment
+from .tasks import deploy_to_connector
 from apps.policy_engine.services import calculate_risk_score
 from apps.core.utils import apply_demo_filter, get_demo_mode_enabled
 import logging
@@ -18,6 +20,7 @@ logger = logging.getLogger(__name__)
 
 @api_view(['POST'])
 @permission_classes([IsAuthenticated])
+@transaction.atomic
 def create_deployment(request):
     """
     Create deployment intent with risk assessment.
@@ -60,6 +63,11 @@ def create_deployment(request):
         is_demo=get_demo_mode_enabled(),
     )
     
+    # Queue async deployment task if approved
+    if not risk_result['requires_cab_approval']:
+        connector_type = request.data.get('connector_type', 'intune')
+        deploy_to_connector.delay(str(deployment.id), connector_type)
+    
     logger.info(
         f'Deployment intent created: {deployment.correlation_id}',
         extra={'correlation_id': str(deployment.correlation_id), 'risk_score': risk_result['risk_score']}
@@ -74,14 +82,14 @@ def create_deployment(request):
 
 
 @api_view(['GET'])
-@permission_classes([AllowAny])
+@permission_classes([IsAuthenticated])
 def list_deployments(request):
     """
     List deployment intents with filters.
     
     GET /api/v1/deployments/?status=PENDING&ring=LAB
     """
-    queryset = apply_demo_filter(DeploymentIntent.objects.all(), request)
+    queryset = apply_demo_filter(DeploymentIntent.objects.select_related('submitter').all(), request)
     
     # Filters
     status_filter = request.query_params.get('status')
@@ -106,7 +114,7 @@ def list_deployments(request):
 
 
 @api_view(['GET'])
-@permission_classes([AllowAny])
+@permission_classes([IsAuthenticated])
 def list_applications_with_versions(request):
     """
     Return application-centric view of deployments grouped by version.
@@ -117,7 +125,7 @@ def list_applications_with_versions(request):
       - status: filter by deployment status
       - ring: filter by target ring
     """
-    queryset = apply_demo_filter(DeploymentIntent.objects.all(), request)
+    queryset = apply_demo_filter(DeploymentIntent.objects.select_related('submitter').all(), request)
 
     status_filter = request.query_params.get('status')
     ring_filter = request.query_params.get('ring')
@@ -199,7 +207,7 @@ def get_deployment(request, correlation_id):
     GET /api/v1/deployments/{correlation_id}/
     """
     try:
-        deployment = apply_demo_filter(DeploymentIntent.objects.all(), request).get(correlation_id=correlation_id)
+        deployment = apply_demo_filter(DeploymentIntent.objects.select_related('submitter').all(), request).get(correlation_id=correlation_id)
     except DeploymentIntent.DoesNotExist:
         return Response({'error': 'Deployment not found'}, status=status.HTTP_404_NOT_FOUND)
     

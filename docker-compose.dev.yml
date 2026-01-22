@@ -70,6 +70,9 @@ services:
         condition: service_healthy
     environment:
       - DJANGO_SETTINGS_MODULE=config.settings.development
+      - DJANGO_SECRET_KEY=dev-eucora-secret-key-2026-change-in-production
+      - DEMO_USER_PASSWORD=admin@134
+      - ENCRYPTION_KEY=6vaN8kBEdqBDWrlspdt6l7s9bvFa5OX3dvC25AFQcFU=
       - POSTGRES_DB=eucora
       - POSTGRES_USER=eucora_user
       - POSTGRES_PASSWORD=eucora_dev_password
@@ -99,6 +102,9 @@ services:
       - redis
     environment:
       - DJANGO_SETTINGS_MODULE=config.settings.development
+      - DJANGO_SECRET_KEY=dev-eucora-secret-key-2026-change-in-production
+      - DEMO_USER_PASSWORD=admin@134
+      - ENCRYPTION_KEY=6vaN8kBEdqBDWrlspdt6l7s9bvFa5OX3dvC25AFQcFU=
       - POSTGRES_DB=eucora
       - POSTGRES_USER=eucora_user
       - POSTGRES_PASSWORD=eucora_dev_password
@@ -107,6 +113,9 @@ services:
       - REDIS_URL=redis://redis:6379/0
       - CELERY_BROKER_URL=redis://redis:6379/1
       - CELERY_RESULT_BACKEND=redis://redis:6379/1
+      - MINIO_ENDPOINT=minio:9000
+      - MINIO_ACCESS_KEY=minioadmin
+      - MINIO_SECRET_KEY=minioadmin
       - DEBUG=True
     stdin_open: true
     tty: true
@@ -124,6 +133,9 @@ services:
       - redis
     environment:
       - DJANGO_SETTINGS_MODULE=config.settings.development
+      - DJANGO_SECRET_KEY=dev-eucora-secret-key-2026-change-in-production
+      - DEMO_USER_PASSWORD=admin@134
+      - ENCRYPTION_KEY=6vaN8kBEdqBDWrlspdt6l7s9bvFa5OX3dvC25AFQcFU=
       - POSTGRES_DB=eucora
       - POSTGRES_USER=eucora_user
       - POSTGRES_PASSWORD=eucora_dev_password
@@ -132,9 +144,56 @@ services:
       - REDIS_URL=redis://redis:6379/0
       - CELERY_BROKER_URL=redis://redis:6379/1
       - CELERY_RESULT_BACKEND=redis://redis:6379/1
+      - MINIO_ENDPOINT=minio:9000
+      - MINIO_ACCESS_KEY=minioadmin
+      - MINIO_SECRET_KEY=minioadmin
       - DEBUG=True
     stdin_open: true
     tty: true
+
+  prometheus:
+    image: prom/prometheus:latest
+    container_name: eucora-prometheus
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+      - '--storage.tsdb.path=/prometheus'
+      - '--web.console.libraries=/usr/share/prometheus/console_libraries'
+      - '--web.console.templates=/usr/share/prometheus/consoles'
+    ports:
+      - "9090:9090"
+    volumes:
+      - ./backend/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml
+      - ./backend/prometheus/alert_rules.yaml:/etc/prometheus/alert_rules.yaml
+      - prometheus_data:/prometheus
+    depends_on:
+      - eucora-api
+    healthcheck:
+      test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost:9090/-/healthy"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  grafana:
+    image: grafana/grafana:latest
+    container_name: eucora-grafana
+    ports:
+      - "3000:3000"
+    environment:
+      - GF_SECURITY_ADMIN_PASSWORD=admin
+      - GF_SECURITY_ADMIN_USER=admin
+      - GF_INSTALL_PLUGINS=grafana-piechart-panel
+    volumes:
+      - grafana_data:/var/lib/grafana
+      - ./backend/prometheus/grafana-dashboard.json:/etc/grafana/provisioning/dashboards/eucora-dashboard.json
+      - ./backend/prometheus/grafana-datasource.yaml:/etc/grafana/provisioning/datasources/prometheus.yaml
+      - ./backend/prometheus/grafana-dashboard-provider.yaml:/etc/grafana/provisioning/dashboards/dashboard-provider.yaml
+    depends_on:
+      - prometheus
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:3000/api/health || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
 
   eucora-web:
     build:
@@ -168,3 +227,5 @@ volumes:
   postgres_data:
   redis_data:
   minio_data:
+  prometheus_data:
+  grafana_data:

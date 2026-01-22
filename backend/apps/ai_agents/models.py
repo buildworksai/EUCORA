@@ -9,6 +9,7 @@ Immutable audit trail for all AI interactions.
 from django.db import models
 from django.contrib.auth.models import User
 from apps.core.models import TimeStampedModel
+from apps.core.encryption import EncryptedCharField
 import uuid
 
 
@@ -30,9 +31,10 @@ class AIModelProvider(TimeStampedModel):
     provider_type = models.CharField(max_length=32, choices=ProviderType.choices)
     display_name = models.CharField(max_length=128)
     key_vault_ref = models.CharField(max_length=256, blank=True)  # Reference to vault secret
-    # DEV ONLY: Direct API key storage (for development/demo purposes only)
+    # DEV ONLY: Encrypted API key storage (for development/demo purposes only)
     # In production, use key_vault_ref with proper secrets management
-    api_key_dev = models.CharField(max_length=512, blank=True, help_text="DEV ONLY: Direct API key storage")
+    # Data is encrypted at rest using AES-128 Fernet encryption
+    api_key_dev = EncryptedCharField(max_length=2048, blank=True, help_text="DEV ONLY: Encrypted API key storage")
     model_name = models.CharField(max_length=128)  # e.g., gpt-4o, claude-3-opus
     endpoint_url = models.URLField(blank=True, null=True)  # For Azure/self-hosted
     is_active = models.BooleanField(default=True)

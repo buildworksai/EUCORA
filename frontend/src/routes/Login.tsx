@@ -69,12 +69,12 @@ export default function Login() {
 
   const fillDemoCredentials = () => {
     setValue('email', 'demo@eucora.com');
-    setValue('password', 'admin@134');
+    setValue('password', import.meta.env.VITE_DEMO_PASSWORD || 'admin@134');
   };
 
   const fillAdminCredentials = () => {
     setValue('email', 'admin@eucora.com');
-    setValue('password', 'admin@134');
+    setValue('password', import.meta.env.VITE_DEMO_PASSWORD || 'admin@134');
   };
 
   return (
@@ -268,22 +268,24 @@ export default function Login() {
             </CardFooter>
           </Card>
 
-          {/* Credential Hints */}
-          <div className="mt-4 p-4 rounded-lg bg-eucora-teal/5 border border-eucora-teal/20" style={{ transitionDelay: '300ms' }}>
-            <p className="text-xs text-eucora-teal font-medium mb-2">Demo Credentials</p>
-            <div className="grid grid-cols-2 gap-4 text-xs text-gray-400">
-              <div>
-                <p className="font-medium text-gray-300">Admin Access</p>
-                <p>admin@eucora.com</p>
-                <p>admin@134</p>
-              </div>
-              <div>
-                <p className="font-medium text-gray-300">Demo Access</p>
-                <p>demo@eucora.com</p>
-                <p>admin@134</p>
+          {/* Credential Hints - Only shown in demo mode */}
+          {import.meta.env.VITE_DEMO_MODE === 'true' && (
+            <div className="mt-4 p-4 rounded-lg bg-eucora-teal/5 border border-eucora-teal/20" style={{ transitionDelay: '300ms' }}>
+              <p className="text-xs text-eucora-teal font-medium mb-2">Demo Credentials</p>
+              <div className="grid grid-cols-2 gap-4 text-xs text-gray-400">
+                <div>
+                  <p className="font-medium text-gray-300">Admin Access</p>
+                  <p>admin@eucora.com</p>
+                  <p>{import.meta.env.VITE_DEMO_PASSWORD || 'admin@134'}</p>
+                </div>
+                <div>
+                  <p className="font-medium text-gray-300">Demo Access</p>
+                  <p>demo@eucora.com</p>
+                  <p>{import.meta.env.VITE_DEMO_PASSWORD || 'admin@134'}</p>
+                </div>
               </div>
             </div>
-          </div>
+          )}
         </div>
       </div>
     </ThemeProvider>

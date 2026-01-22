@@ -4,19 +4,38 @@
 Jira Assets (formerly Insight) integration service.
 
 Syncs asset inventory from Jira Assets.
+Uses resilient HTTP client with circuit breaker protection.
 """
-import requests
+import base64
 import logging
-from typing import Dict, List, Any
+from typing import Dict, List, Any, Optional
+
 from apps.integrations.models import ExternalSystem
 from apps.integrations.services.base import IntegrationService
 from apps.connectors.models import Asset
+from apps.core.http import ResilientHTTPClient
+from apps.core.circuit_breaker import CircuitBreakerOpen
 
 logger = logging.getLogger(__name__)
 
 
 class JiraAssetsService(IntegrationService):
-    """Jira Assets integration service."""
+    """
+    Jira Assets integration service.
+    
+    Uses circuit breaker protection and automatic retries for API calls.
+    """
+    
+    SERVICE_NAME = 'jira'
+    
+    def __init__(self):
+        """Initialize Jira service with resilient HTTP client."""
+        super().__init__()
+        self.http_client = ResilientHTTPClient(
+            service_name=self.SERVICE_NAME,
+            timeout=30,
+            max_retries=3,
+        )
     
     def test_connection(self, config: Dict[str, Any]) -> Dict[str, Any]:
         """Test Jira Assets API connectivity."""
@@ -27,23 +46,52 @@ class JiraAssetsService(IntegrationService):
         test_url = f"{api_url}/rest/insight/1.0/objectschema/list"
         
         try:
-            response = requests.get(test_url, headers=headers, timeout=10)
-            response.raise_for_status()
+            response = self.http_client.get(
+                test_url,
+                headers=headers,
+                timeout=10,
+            )
             
             return {
                 'status': 'success',
                 'message': 'Connection successful',
             }
-        except requests.exceptions.RequestException as e:
+        except CircuitBreakerOpen as e:
+            logger.warning(f'Jira circuit breaker open: {e}')
+            return {
+                'status': 'failed',
+                'message': 'Jira service temporarily unavailable (circuit breaker open)',
+            }
+        except Exception as e:
             logger.error(f'Jira Assets connection test failed: {e}')
             return {
                 'status': 'failed',
                 'message': f'Connection failed: {str(e)}'
             }
     
-    def sync(self, system: ExternalSystem) -> Dict[str, Any]:
-        """Sync assets from Jira Assets."""
-        assets = self.fetch_assets(system)
+    def sync(self, system: ExternalSystem, correlation_id: Optional[str] = None) -> Dict[str, Any]:
+        """
+        Sync assets from Jira Assets.
+        
+        Args:
+            system: ExternalSystem instance
+            correlation_id: Optional correlation ID for audit trail
+        
+        Returns:
+            Dict with sync results
+        """
+        try:
+            assets = self.fetch_assets(system, correlation_id=correlation_id)
+        except CircuitBreakerOpen:
+            logger.warning('Jira sync aborted: circuit breaker open')
+            return {
+                'fetched': 0,
+                'created': 0,
+                'updated': 0,
+                'failed': 0,
+                'error': 'Jira service temporarily unavailable',
+            }
+        
         created, updated, failed = 0, 0, 0
         
         for asset_data in assets:
@@ -78,8 +126,26 @@ class JiraAssetsService(IntegrationService):
             'failed': failed,
         }
     
-    def fetch_assets(self, system: ExternalSystem) -> List[Dict[str, Any]]:
-        """Fetch assets from Jira Assets."""
+    def fetch_assets(
+        self,
+        system: ExternalSystem,
+        correlation_id: Optional[str] = None,
+    ) -> List[Dict[str, Any]]:
+        """
+        Fetch assets from Jira Assets.
+        
+        Uses circuit breaker protection and automatic retries.
+        
+        Args:
+            system: ExternalSystem instance
+            correlation_id: Optional correlation ID for audit trail
+        
+        Returns:
+            List of asset dictionaries
+        
+        Raises:
+            CircuitBreakerOpen: If Jira service is unavailable
+        """
         api_url = system.api_url
         headers = self._get_auth_headers_from_system(system)
         
@@ -88,11 +154,17 @@ class JiraAssetsService(IntegrationService):
         if not schema_id:
             # Query for computer schema
             schema_url = f"{api_url}/rest/insight/1.0/objectschema/list"
-            response = requests.get(schema_url, headers=headers, timeout=30)
-            response.raise_for_status()
+            response = self.http_client.get(
+                schema_url,
+                headers=headers,
+                correlation_id=correlation_id,
+            )
             schemas = response.json()
             # Find computer/device schema
-            schema_id = next((s['id'] for s in schemas if 'computer' in s['name'].lower() or 'device' in s['name'].lower()), None)
+            schema_id = next(
+                (s['id'] for s in schemas if 'computer' in s['name'].lower() or 'device' in s['name'].lower()),
+                None
+            )
         
         if not schema_id:
             raise ValueError('Could not find object schema for assets')
@@ -104,22 +176,30 @@ class JiraAssetsService(IntegrationService):
         all_assets = []
         
         while True:
-            try:
-                response = requests.get(url, headers=headers, params=params, timeout=30)
-                response.raise_for_status()
-                data = response.json()
-                
-                if 'objectEntries' in data:
-                    all_assets.extend(data['objectEntries'])
-                
-                if not data.get('hasMore', False):
-                    break
-                
-                params['page'] += 1
-                
-            except requests.exceptions.RequestException as e:
-                logger.error(f'Error fetching Jira Assets: {e}')
-                raise
+            response = self.http_client.get(
+                url,
+                headers=headers,
+                params=params,
+                correlation_id=correlation_id,
+            )
+            data = response.json()
+            
+            if 'objectEntries' in data:
+                all_assets.extend(data['objectEntries'])
+            
+            if not data.get('hasMore', False):
+                break
+            
+            params['page'] += 1
+        
+        logger.info(
+            f'Fetched {len(all_assets)} assets from Jira Assets',
+            extra={
+                'service': self.SERVICE_NAME,
+                'asset_count': len(all_assets),
+                'correlation_id': correlation_id,
+            }
+        )
         
         return all_assets
     
@@ -131,7 +211,6 @@ class JiraAssetsService(IntegrationService):
         if auth_type == 'basic':
             username = credentials.get('username')
             password = credentials.get('password')
-            import base64
             auth_string = f'{username}:{password}'
             encoded = base64.b64encode(auth_string.encode()).decode()
             return {
