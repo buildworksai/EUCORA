@@ -5,10 +5,11 @@ CAB Workflow views for approval workflows.
 """
 from django.conf import settings
 from django.db import transaction
-from rest_framework.decorators import api_view, permission_classes
+from rest_framework.decorators import api_view, permission_classes, throttle_classes
 from rest_framework.permissions import IsAuthenticated, AllowAny
 from rest_framework.response import Response
 from rest_framework import status
+from apps.core.throttles import StrictRateThrottle, BurstRateThrottle
 from .models import CABApproval
 from apps.deployment_intents.models import DeploymentIntent
 from django.utils import timezone
@@ -20,6 +21,7 @@ logger = logging.getLogger(__name__)
 
 @exempt_csrf_in_debug
 @api_view(['POST'])
+@throttle_classes([StrictRateThrottle])
 @permission_classes([AllowAny if settings.DEBUG else IsAuthenticated])
 @transaction.atomic
 def approve_deployment(request, correlation_id):
@@ -88,6 +90,7 @@ def approve_deployment(request, correlation_id):
 
 @exempt_csrf_in_debug
 @api_view(['POST'])
+@throttle_classes([StrictRateThrottle])
 @permission_classes([AllowAny if settings.DEBUG else IsAuthenticated])
 @transaction.atomic
 def reject_deployment(request, correlation_id):
@@ -152,6 +155,7 @@ def reject_deployment(request, correlation_id):
 
 
 @api_view(['GET'])
+@throttle_classes([BurstRateThrottle])
 @permission_classes([AllowAny])
 def list_pending_approvals(request):
     """
