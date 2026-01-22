@@ -60,8 +60,9 @@ def test_list_providers(api_client):
 
 
 @pytest.mark.django_db
-def test_configure_provider_validation(api_client, normal_user):
-    api_client.force_authenticate(normal_user)
+def test_configure_provider_validation(api_client, admin_user):
+    # Admin user should get 400 for missing provider_type (validation error)
+    api_client.force_authenticate(admin_user)
     response = api_client.post("/api/v1/ai/providers/configure/", {}, format="json")
     assert response.status_code == 400
 
