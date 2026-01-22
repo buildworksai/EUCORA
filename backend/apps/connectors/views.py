@@ -3,6 +3,7 @@
 """
 Connector views for execution plane integration.
 """
+from django.conf import settings
 from rest_framework.decorators import api_view, permission_classes
 from rest_framework.permissions import IsAuthenticated, AllowAny
 from rest_framework.response import Response
@@ -16,7 +17,7 @@ logger = logging.getLogger(__name__)
 
 
 @api_view(['GET'])
-@permission_classes([IsAuthenticated])
+@permission_classes([AllowAny if settings.DEBUG else IsAuthenticated])
 def list_assets(request):
     """
     List assets from CMDB (Asset Inventory).
@@ -120,7 +121,7 @@ def list_assets(request):
 
 
 @api_view(['GET'])
-@permission_classes([IsAuthenticated])
+@permission_classes([AllowAny if settings.DEBUG else IsAuthenticated])
 def get_asset(request, asset_id):
     """
     Get single asset details.

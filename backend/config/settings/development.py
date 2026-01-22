@@ -31,6 +31,10 @@ REST_FRAMEWORK.update({
     'DEFAULT_PERMISSION_CLASSES': [
         'rest_framework.permissions.AllowAny',
     ],
+    'DEFAULT_AUTHENTICATION_CLASSES': [
+        'apps.authentication.dev_auth.DevAutoLoginAuthentication',
+        'rest_framework.authentication.SessionAuthentication',
+    ],
 })
 
 

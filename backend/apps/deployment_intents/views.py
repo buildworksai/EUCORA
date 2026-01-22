@@ -4,6 +4,7 @@
 Deployment Intent views for orchestration.
 """
 from collections import defaultdict
+from django.conf import settings
 from django.db import transaction
 from rest_framework.decorators import api_view, permission_classes
 from rest_framework.permissions import IsAuthenticated, AllowAny
@@ -82,7 +83,7 @@ def create_deployment(request):
 
 
 @api_view(['GET'])
-@permission_classes([IsAuthenticated])
+@permission_classes([AllowAny if settings.DEBUG else IsAuthenticated])
 def list_deployments(request):
     """
     List deployment intents with filters.
@@ -114,7 +115,7 @@ def list_deployments(request):
 
 
 @api_view(['GET'])
-@permission_classes([IsAuthenticated])
+@permission_classes([AllowAny if settings.DEBUG else IsAuthenticated])
 def list_applications_with_versions(request):
     """
     Return application-centric view of deployments grouped by version.
@@ -199,7 +200,7 @@ def list_applications_with_versions(request):
 
 
 @api_view(['GET'])
-@permission_classes([IsAuthenticated])
+@permission_classes([AllowAny if settings.DEBUG else IsAuthenticated])
 def get_deployment(request, correlation_id):
     """
     Get deployment intent details.
