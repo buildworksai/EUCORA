@@ -4,6 +4,7 @@
 API views for AI Agents.
 """
 import logging
+import uuid
 from django.conf import settings
 from rest_framework.decorators import api_view, permission_classes
 from rest_framework.permissions import IsAuthenticated, AllowAny
@@ -11,7 +12,8 @@ from rest_framework.response import Response
 from rest_framework import status
 from django.utils import timezone
 
-from apps.core.utils import exempt_csrf_in_debug
+from apps.core.utils import exempt_csrf_in_debug, get_demo_mode_enabled
+from apps.event_store.models import DeploymentEvent
 from .models import AIModelProvider, AIConversation, AIMessage, AIAgentTask, AIAgentType
 from .services import get_ai_agent_service
 from .tasks import process_ai_conversation
@@ -53,7 +55,12 @@ def list_providers(request):
 @permission_classes([AllowAny if settings.DEBUG else IsAuthenticated])
 def configure_provider(request):
     """Configure an AI model provider (Platform Admin only)."""
-    # TODO: Add proper permission check: request.user.has_perm('ai_agents.change_aimodelprovider')
+    # Platform Admin permission check (Platform Admin role required)
+    if not settings.DEBUG and not request.user.has_perm('ai_agents.change_aimodelprovider'):
+        return Response(
+            {'error': 'Platform Admin permission required to configure AI providers'},
+            status=status.HTTP_403_FORBIDDEN
+        )
     
     provider_type = request.data.get('provider_type')
     api_key = request.data.get('api_key', '')
@@ -113,8 +120,27 @@ def configure_provider(request):
     if cache_key in service._provider_cache:
         del service._provider_cache[cache_key]
     
-    # Audit log (TODO: Implement proper audit logging)
-    logger.info(f"User {request.user.username} configured AI provider: {provider_type}/{model_name}")
+    # Log audit event to event store
+    correlation_id = uuid.uuid4()
+    DeploymentEvent.objects.create(
+        correlation_id=correlation_id,
+        event_type=DeploymentEvent.EventType.DEPLOYMENT_CREATED,  # Using for AI provider config
+        event_data={
+            'action': 'ai_provider_configured',
+            'provider_type': provider_type,
+            'model_name': model_name,
+            'display_name': display_name,
+            'is_default': is_default,
+            'created': created,
+        },
+        actor=request.user.username,
+        is_demo=get_demo_mode_enabled(),
+    )
+    
+    logger.info(
+        f"User {request.user.username} configured AI provider: {provider_type}/{model_name}",
+        extra={'correlation_id': str(correlation_id), 'provider_type': provider_type}
+    )
     
     return Response({
         'success': True,
