@@ -32,7 +32,7 @@ classifiers = [
 # Core Dependencies (Base Requirements)
 dependencies = [
     # Core Framework
-    "Django~=5.0.0",
+    "Django>=5.1.12,<5.2",  # Updated from 5.0.14 to fix CVE-2025-48432, CVE-2025-57833
     "djangorestframework~=3.15.0",
     # Database
     "psycopg2-binary~=2.9.9",
@@ -50,7 +50,7 @@ dependencies = [
     # Object Storage (MinIO)
     "minio~=7.2.3",
     # HTTP Requests
-    "requests~=2.31.0",
+    "requests>=2.32.4,<3.0",  # Updated from 2.31.0 to fix CVE-2024-35195, CVE-2024-47081
     # Date/Time Utilities
     "python-dateutil~=2.8.2",
     # Utilities
@@ -63,7 +63,7 @@ dependencies = [
     "nest-asyncio~=1.6.0",
     # Celery for async task processing
     "celery[redis]~=5.3.6",
-    "django-celery-beat~=2.7.0",
+    "django-celery-beat~=2.8.1",  # Updated for Django 5.1 compatibility
     # LDAP for Active Directory integration
     "ldap3~=2.9.1",
     # Encryption for sensitive fields
@@ -96,7 +96,7 @@ dev = [
     "black~=25.1.0",
     "flake8~=7.2.0",
     "mypy~=1.8.0",
-    "django-stubs~=5.0.2",
+    "django-stubs~=5.1.0",  # Updated to match Django 5.1
     "isort~=5.13.2",
     # Development Tools
     "django-extensions~=3.2.3",
