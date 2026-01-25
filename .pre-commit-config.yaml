@@ -104,6 +104,21 @@ repos:
         pass_filenames: false
         always_run: true
 
+  # Test Coverage Check (BuildWorks.AI Standard: 90% target, currently 70% baseline)
+  # NOTE: Set to 70% as current baseline. Raise by 2% weekly until 90%.
+  # Update this threshold as coverage improves per WEEK-BY-WEEK-EXECUTION-PLAN.md
+  # IMPORTANT: This runs only on pre-push to avoid slow commits. CI enforces on every PR.
+  - repo: local
+    hooks:
+      - id: pytest-coverage
+        name: pytest coverage check (≥70%)
+        entry: bash -c 'if command -v docker &> /dev/null && docker ps &> /dev/null; then docker compose run --rm api pytest --cov=apps --cov-fail-under=70 -q --tb=no 2>/dev/null || (echo "COVERAGE BELOW 70%" && exit 1); else echo "Docker not running - coverage check skipped (will be enforced in CI)"; fi'
+        language: system
+        types: [python]
+        files: ^backend/
+        pass_filenames: false
+        stages: [pre-push]  # Run on push only, not every commit (too slow)
+
   # Secrets detection
   - repo: https://github.com/Yelp/detect-secrets
     rev: v1.4.0
