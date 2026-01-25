@@ -36,11 +36,11 @@ export const ENDPOINTS = {
 
 /**
  * Example usage:
- * 
+ *
  * ```typescript
  * import { ENDPOINTS, type EvidencePackDetail } from './contracts';
  * import { api } from '@/lib/api/client';
- * 
+ *
  * const response = await api.get<EvidencePackDetail>(ENDPOINTS.EVIDENCE_DETAIL(123));
  * ```
  */

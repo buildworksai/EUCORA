@@ -22,7 +22,7 @@ else
     echo "💻 Running in local environment"
     PYTHON_CMD="python3"
     MANAGE_PY="$BACKEND_DIR/manage.py"
-    
+
     # Check if virtual environment exists
     if [ -d "$BACKEND_DIR/venv" ]; then
         echo "🔧 Activating virtual environment..."

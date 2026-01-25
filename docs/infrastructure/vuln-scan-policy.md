@@ -1,7 +1,7 @@
 # Vulnerability Scan Policy
 
-**Version**: 1.0  
-**Status**: Active  
+**Version**: 1.0
+**Status**: Active
 **Last Updated**: 2026-01-06
 
 ---
@@ -193,4 +193,3 @@ grype package.deb --only-fixed --fail-on high
 - [SBOM Generation](./sbom-generation.md)
 - [Exception Management](../architecture/exception-management.md)
 - [Packaging Pipelines](./packaging-pipelines.md)
-

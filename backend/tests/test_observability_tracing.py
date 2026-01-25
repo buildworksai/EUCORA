@@ -10,11 +10,12 @@ Verifies:
 - Environment variable handling
 - Graceful degradation when OTLP unreachable
 """
-import pytest
-from unittest.mock import patch, MagicMock
 import os
+from unittest.mock import MagicMock, patch
+
+import pytest
 from django.test import TestCase
-from opentelemetry import trace, metrics
+from opentelemetry import metrics, trace
 
 
 class TestObservabilityTracingInitialization(TestCase):
@@ -24,10 +25,10 @@ class TestObservabilityTracingInitialization(TestCase):
     def test_tracing_initializes_successfully(self):
         """Verify tracing initializes without errors."""
         from apps.core.observability import init_tracing
-        
+
         # Should not raise exceptions
         init_tracing("test-service")
-        
+
         # Verify tracer provider is set
         tracer_provider = trace.get_tracer_provider()
         assert tracer_provider is not None
@@ -37,7 +38,7 @@ class TestObservabilityTracingInitialization(TestCase):
     def test_tracing_respects_disabled_flag(self):
         """Verify tracing respects OTEL_ENABLED=false."""
         from apps.core.observability import init_tracing
-        
+
         # Should exit early without initializing
         init_tracing("test-service")
         # No exception should be raised
@@ -46,9 +47,9 @@ class TestObservabilityTracingInitialization(TestCase):
     def test_tracing_uses_custom_otlp_endpoint(self):
         """Verify custom OTLP endpoint is used."""
         from apps.core.observability import init_tracing
-        
+
         init_tracing("test-service")
-        
+
         # Tracer provider should be initialized
         tracer_provider = trace.get_tracer_provider()
         assert tracer_provider is not None
@@ -56,11 +57,11 @@ class TestObservabilityTracingInitialization(TestCase):
     @patch.dict(os.environ, {"OTEL_ENABLED": "true"})
     def test_get_tracer_helper(self):
         """Verify get_tracer helper returns tracer instance."""
-        from apps.core.observability import init_tracing, get_tracer
-        
+        from apps.core.observability import get_tracer, init_tracing
+
         init_tracing("test-service")
         tracer = get_tracer("test-module")
-        
+
         assert tracer is not None
         assert hasattr(tracer, "start_as_current_span")
 
@@ -72,10 +73,10 @@ class TestObservabilityMetricsInitialization(TestCase):
     def test_metrics_initializes_successfully(self):
         """Verify metrics initializes without errors."""
         from apps.core.observability import init_metrics
-        
+
         # Should not raise exceptions
         init_metrics("test-service")
-        
+
         # Verify meter provider is set
         meter_provider = metrics.get_meter_provider()
         assert meter_provider is not None
@@ -84,7 +85,7 @@ class TestObservabilityMetricsInitialization(TestCase):
     def test_metrics_respects_disabled_flag(self):
         """Verify metrics respects OTEL_METRICS_ENABLED=false."""
         from apps.core.observability import init_metrics
-        
+
         # Should exit early without initializing
         init_metrics("test-service")
         # No exception should be raised
@@ -92,11 +93,11 @@ class TestObservabilityMetricsInitialization(TestCase):
     @patch.dict(os.environ, {"OTEL_ENABLED": "true", "OTEL_METRICS_ENABLED": "true"})
     def test_get_meter_helper(self):
         """Verify get_meter helper returns meter instance."""
-        from apps.core.observability import init_metrics, get_meter
-        
+        from apps.core.observability import get_meter, init_metrics
+
         init_metrics("test-service")
         meter = get_meter("test-module")
-        
+
         assert meter is not None
         assert hasattr(meter, "create_counter")
         assert hasattr(meter, "create_gauge")
@@ -110,9 +111,9 @@ class TestObservabilityInstrumentation(TestCase):
     def test_django_instrumented(self):
         """Verify Django is instrumented."""
         from apps.core.observability import init_tracing
-        
+
         init_tracing("test-service")
-        
+
         # If no exception, instrumentor worked
         # Verify by checking that requests middleware is configured
         # (This is tested implicitly - if instrumentation failed, an exception would be raised)
@@ -121,18 +122,18 @@ class TestObservabilityInstrumentation(TestCase):
     def test_celery_instrumented(self):
         """Verify Celery is instrumented."""
         from apps.core.observability import init_tracing
-        
+
         init_tracing("test-service")
-        
+
         # If no exception, Celery instrumentation worked
 
     @patch.dict(os.environ, {"OTEL_ENABLED": "true"})
     def test_requests_instrumented(self):
         """Verify HTTP Requests are instrumented."""
         from apps.core.observability import init_tracing
-        
+
         init_tracing("test-service")
-        
+
         # If no exception, Requests instrumentation worked
 
 
@@ -142,13 +143,14 @@ class TestCorrelationIDPropagation(TestCase):
     @patch.dict(os.environ, {"OTEL_ENABLED": "true"})
     def test_trace_context_propagator_configured(self):
         """Verify W3C TraceContext propagator is configured."""
-        from apps.core.observability import init_tracing
         from opentelemetry.propagate import get_global_textmap
-        
+
+        from apps.core.observability import init_tracing
+
         init_tracing("test-service")
-        
+
         propagator = get_global_textmap()
         assert propagator is not None
         # Verify it's a CompositePropagator with TraceContextTextMapPropagator
-        assert hasattr(propagator, 'extract')
-        assert hasattr(propagator, 'inject')
+        assert hasattr(propagator, "extract")
+        assert hasattr(propagator, "inject")

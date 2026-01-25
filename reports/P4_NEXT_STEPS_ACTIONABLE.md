@@ -95,18 +95,18 @@ def test_publisher_endpoint(authenticated_client_regular, regular_user):
 @pytest.mark.django_db
 class TestHealthChecks:
     """Test health check endpoints."""
-    
+
     def test_liveness_check(self, api_client):
         """Test that endpoint exists and returns 200."""
         response = api_client.get('/api/v1/health/live')
-        
+
         assert response.status_code == 200
         assert response.json()['status'] == 'alive'
 
     def test_readiness_check(self, authenticated_client):
         """Test authenticated endpoint."""
         response = authenticated_client.get('/api/v1/health/ready')
-        
+
         assert response.status_code == 200
 ```
 
@@ -206,7 +206,7 @@ def test_example(sample_deployment_intent, sample_cab_request, sample_evidence_p
     # sample_cab_request already created
     # sample_evidence_pack already created
     # sample_event already created
-    
+
     # Use them:
     assert sample_deployment_intent.app_name is not None
 ```

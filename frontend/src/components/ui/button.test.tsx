@@ -40,10 +40,10 @@ describe('Button', () => {
     const handleClick = vi.fn();
     const user = userEvent.setup();
     render(<Button onClick={handleClick}>Click me</Button>);
-    
+
     const button = screen.getByRole('button', { name: /click me/i });
     await user.click(button);
-    
+
     expect(handleClick).toHaveBeenCalledTimes(1);
   });
 
@@ -70,4 +70,3 @@ describe('Button', () => {
     expect(link).toHaveAttribute('href', '/test');
   });
 });
-

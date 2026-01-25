@@ -14,7 +14,7 @@ interface AuthStore {
   isLoading: boolean;
   error: string | null;
   sessionExpiresAt: string | null;
-  
+
   // Actions
   login: (credentials: LoginCredentials) => Promise<boolean>;
   logout: () => Promise<void>;
@@ -36,21 +36,21 @@ export const useAuthStore = create<AuthStore>()(
 
       login: async (credentials: LoginCredentials) => {
         set({ isLoading: true, error: null });
-        
+
         try {
           // Check if we're in mock mode
           const isMock = import.meta.env.VITE_USE_MOCK_AUTH === 'true';
-          
+
           if (isMock) {
             // Mock authentication
             const mockUser = MOCK_USERS[credentials.email];
-            
+
             if (mockUser && mockUser.password === credentials.password) {
               // eslint-disable-next-line @typescript-eslint/no-unused-vars
               const { password, ...user } = mockUser;
               const expiresAt = new Date();
               expiresAt.setHours(expiresAt.getHours() + 24);
-              
+
               set({
                 user: { ...user, lastLogin: new Date() },
                 isAuthenticated: true,
@@ -66,7 +66,7 @@ export const useAuthStore = create<AuthStore>()(
               return false;
             }
           }
-          
+
           // Real API authentication
           const response = await fetch(`${API_BASE_URL}/api/v1/auth/login`, {
             method: 'POST',
@@ -77,7 +77,7 @@ export const useAuthStore = create<AuthStore>()(
               password: credentials.password,
             }),
           });
-          
+
           if (response.ok) {
             const data = await response.json();
             const user: User = {
@@ -87,15 +87,15 @@ export const useAuthStore = create<AuthStore>()(
               lastName: data.user.last_name || '',
               role: data.user.is_superuser ? 'admin' : 'operator',
               isActive: true,
-              permissions: data.user.is_superuser 
-                ? DEFAULT_PERMISSIONS.admin 
+              permissions: data.user.is_superuser
+                ? DEFAULT_PERMISSIONS.admin
                 : DEFAULT_PERMISSIONS.operator,
               lastLogin: new Date(),
             };
-            
+
             const expiresAt = new Date();
             expiresAt.setHours(expiresAt.getHours() + 24);
-            
+
             set({
               user,
               isAuthenticated: true,
@@ -124,7 +124,7 @@ export const useAuthStore = create<AuthStore>()(
       logout: async () => {
         try {
           const isMock = import.meta.env.VITE_USE_MOCK_AUTH === 'true';
-          
+
           if (!isMock) {
             await fetch(`${API_BASE_URL}/api/v1/auth/logout`, {
               method: 'POST',
@@ -145,7 +145,7 @@ export const useAuthStore = create<AuthStore>()(
 
       checkSession: async () => {
         const { sessionExpiresAt, isAuthenticated } = get();
-        
+
         // Check local expiration first
         if (sessionExpiresAt) {
           const expiresAt = new Date(sessionExpiresAt);
@@ -154,28 +154,28 @@ export const useAuthStore = create<AuthStore>()(
             return;
           }
         }
-        
+
         // Always validate session with backend if authenticated
         // This ensures we catch expired sessions even if local expiration hasn't passed
         if (isAuthenticated) {
           const isMock = import.meta.env.VITE_USE_MOCK_AUTH === 'true';
-          
+
           if (isMock) {
             // In mock mode, just check local expiration
             return;
           }
-          
+
           try {
             const response = await fetch(`${API_BASE_URL}/api/v1/auth/me`, {
               credentials: 'include',
             });
-            
+
             if (!response.ok) {
               // Session invalid - logout
               await get().logout();
               return;
             }
-            
+
             // Update user data from backend
             const data = await response.json();
             const user: User = {
@@ -185,12 +185,12 @@ export const useAuthStore = create<AuthStore>()(
               lastName: data.user.last_name || '',
               role: data.user.is_superuser ? 'admin' : (data.user.is_staff ? 'operator' : 'viewer'),
               isActive: true,
-              permissions: data.user.is_superuser 
-                ? DEFAULT_PERMISSIONS.admin 
+              permissions: data.user.is_superuser
+                ? DEFAULT_PERMISSIONS.admin
                 : (data.user.is_staff ? DEFAULT_PERMISSIONS.operator : DEFAULT_PERMISSIONS.viewer),
               lastLogin: new Date(),
             };
-            
+
             set({ user });
           } catch (error) {
             // Network error - keep session for offline support
@@ -203,7 +203,7 @@ export const useAuthStore = create<AuthStore>()(
       },
 
       clearError: () => set({ error: null }),
-      
+
       updateUser: (updates: Partial<User>) => {
         const { user } = get();
         if (user) {
@@ -222,4 +222,3 @@ export const useAuthStore = create<AuthStore>()(
     }
   )
 );
-

@@ -4,13 +4,15 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen, waitFor } from '@/test/utils';
 import DeploymentsSidebar from './DeploymentsSidebar';
 import { useSidebarApplications } from '@/lib/api/hooks/useSidebarApplications';
+import { createPendingQueryResult, createSuccessQueryResult } from '@/lib/test/mockQueryResult';
+import type { SidebarApplicationGroup } from './sidebar-contracts';
 
 // Mock the hook
 vi.mock('@/lib/api/hooks/useSidebarApplications', () => ({
   useSidebarApplications: vi.fn(),
 }));
 
-const mockApplicationData = [
+const mockApplicationData: SidebarApplicationGroup[] = [
   {
     app_name: 'Adobe Acrobat Reader',
     latest_version: '24.001',
@@ -21,20 +23,28 @@ const mockApplicationData = [
         latest_created_at: '2026-01-20T10:00:00Z',
         deployments: [
           {
+            id: 1,
             correlation_id: 'dep-1',
+            app_name: 'Adobe Acrobat Reader',
+            version: '24.001',
             target_ring: 'CANARY',
             status: 'COMPLETED',
             risk_score: 15,
             requires_cab_approval: false,
             created_at: '2026-01-20T10:00:00Z',
+            updated_at: '2026-01-20T10:00:00Z',
           },
           {
+            id: 2,
             correlation_id: 'dep-2',
+            app_name: 'Adobe Acrobat Reader',
+            version: '24.001',
             target_ring: 'PILOT',
             status: 'DEPLOYING',
             risk_score: 15,
             requires_cab_approval: false,
             created_at: '2026-01-20T09:00:00Z',
+            updated_at: '2026-01-20T09:00:00Z',
           },
         ],
       },
@@ -43,12 +53,16 @@ const mockApplicationData = [
         latest_created_at: '2026-01-19T10:00:00Z',
         deployments: [
           {
+            id: 3,
             correlation_id: 'dep-3',
+            app_name: 'Adobe Acrobat Reader',
+            version: '23.999',
             target_ring: 'LAB',
             status: 'APPROVED',
             risk_score: 10,
             requires_cab_approval: false,
             created_at: '2026-01-19T10:00:00Z',
+            updated_at: '2026-01-19T10:00:00Z',
           },
         ],
       },
@@ -64,20 +78,28 @@ const mockApplicationData = [
         latest_created_at: '2026-01-20T08:00:00Z',
         deployments: [
           {
+            id: 4,
             correlation_id: 'dep-4',
+            app_name: 'Microsoft Teams',
+            version: '25.1.1',
             target_ring: 'GLOBAL',
             status: 'AWAITING_CAB',
             risk_score: 65,
             requires_cab_approval: true,
             created_at: '2026-01-20T08:00:00Z',
+            updated_at: '2026-01-20T08:00:00Z',
           },
           {
+            id: 5,
             correlation_id: 'dep-5',
+            app_name: 'Microsoft Teams',
+            version: '25.1.1',
             target_ring: 'DEPARTMENT',
             status: 'PENDING',
             risk_score: 65,
             requires_cab_approval: true,
             created_at: '2026-01-20T07:00:00Z',
+            updated_at: '2026-01-20T07:00:00Z',
           },
         ],
       },
@@ -91,50 +113,18 @@ describe('DeploymentsSidebar', () => {
   });
 
   it('renders loading skeleton initially', () => {
-    vi.mocked(useSidebarApplications).mockReturnValue({
-      data: undefined,
-      isLoading: true,
-      error: null,
-      refetch: vi.fn(),
-      isFetched: false,
-      isSuccess: false,
-      isError: false,
-      isPending: true,
-      dataUpdatedAt: 0,
-      failureCount: 0,
-      failureReason: null,
-      isRefetching: false,
-      isFetching: true,
-      isLoadingError: false,
-      isPlaceholderData: false,
-      isPaused: false,
-      status: 'pending',
-    } as ReturnType<typeof useSidebarApplications>);
+    vi.mocked(useSidebarApplications).mockReturnValue(
+      createPendingQueryResult<SidebarApplicationGroup[]>()
+    );
 
     render(<DeploymentsSidebar />);
     expect(screen.getByText('Applications')).toBeInTheDocument();
   });
 
   it('renders applications with versions and deployments', async () => {
-    vi.mocked(useSidebarApplications).mockReturnValue({
-      data: mockApplicationData,
-      isLoading: false,
-      error: null,
-      refetch: vi.fn(),
-      isFetched: true,
-      isSuccess: true,
-      isError: false,
-      isPending: false,
-      dataUpdatedAt: 0,
-      failureCount: 0,
-      failureReason: null,
-      isRefetching: false,
-      isFetching: false,
-      isLoadingError: false,
-      isPlaceholderData: false,
-      isPaused: false,
-      status: 'success',
-    } as ReturnType<typeof useSidebarApplications>);
+    vi.mocked(useSidebarApplications).mockReturnValue(
+      createSuccessQueryResult<SidebarApplicationGroup[]>(mockApplicationData)
+    );
 
     render(<DeploymentsSidebar />);
 
@@ -145,25 +135,9 @@ describe('DeploymentsSidebar', () => {
   });
 
   it('displays deployment counts in badges', async () => {
-    vi.mocked(useSidebarApplications).mockReturnValue({
-      data: mockApplicationData,
-      isLoading: false,
-      error: null,
-      refetch: vi.fn(),
-      isFetched: true,
-      isSuccess: true,
-      isError: false,
-      isPending: false,
-      dataUpdatedAt: 0,
-      failureCount: 0,
-      failureReason: null,
-      isRefetching: false,
-      isFetching: false,
-      isLoadingError: false,
-      isPlaceholderData: false,
-      isPaused: false,
-      status: 'success',
-    } as ReturnType<typeof useSidebarApplications>);
+    vi.mocked(useSidebarApplications).mockReturnValue(
+      createSuccessQueryResult<SidebarApplicationGroup[]>(mockApplicationData)
+    );
 
     render(<DeploymentsSidebar />);
 
@@ -174,25 +148,9 @@ describe('DeploymentsSidebar', () => {
   });
 
   it('shows empty state when no applications', async () => {
-    vi.mocked(useSidebarApplications).mockReturnValue({
-      data: [],
-      isLoading: false,
-      error: null,
-      refetch: vi.fn(),
-      isFetched: true,
-      isSuccess: true,
-      isError: false,
-      isPending: false,
-      dataUpdatedAt: 0,
-      failureCount: 0,
-      failureReason: null,
-      isRefetching: false,
-      isFetching: false,
-      isLoadingError: false,
-      isPlaceholderData: false,
-      isPaused: false,
-      status: 'success',
-    } as ReturnType<typeof useSidebarApplications>);
+    vi.mocked(useSidebarApplications).mockReturnValue(
+      createSuccessQueryResult<SidebarApplicationGroup[]>([])
+    );
 
     render(<DeploymentsSidebar />);
 
@@ -202,25 +160,9 @@ describe('DeploymentsSidebar', () => {
   });
 
   it('filters applications by search term', async () => {
-    vi.mocked(useSidebarApplications).mockReturnValue({
-      data: mockApplicationData,
-      isLoading: false,
-      error: null,
-      refetch: vi.fn(),
-      isFetched: true,
-      isSuccess: true,
-      isError: false,
-      isPending: false,
-      dataUpdatedAt: 0,
-      failureCount: 0,
-      failureReason: null,
-      isRefetching: false,
-      isFetching: false,
-      isLoadingError: false,
-      isPlaceholderData: false,
-      isPaused: false,
-      status: 'success',
-    } as ReturnType<typeof useSidebarApplications>);
+    vi.mocked(useSidebarApplications).mockReturnValue(
+      createSuccessQueryResult<SidebarApplicationGroup[]>(mockApplicationData)
+    );
 
     render(<DeploymentsSidebar />);
 
@@ -234,25 +176,9 @@ describe('DeploymentsSidebar', () => {
   });
 
   it('displays status badges and risk scores', async () => {
-    vi.mocked(useSidebarApplications).mockReturnValue({
-      data: mockApplicationData,
-      isLoading: false,
-      error: null,
-      refetch: vi.fn(),
-      isFetched: true,
-      isSuccess: true,
-      isError: false,
-      isPending: false,
-      dataUpdatedAt: 0,
-      failureCount: 0,
-      failureReason: null,
-      isRefetching: false,
-      isFetching: false,
-      isLoadingError: false,
-      isPlaceholderData: false,
-      isPaused: false,
-      status: 'success',
-    } as ReturnType<typeof useSidebarApplications>);
+    vi.mocked(useSidebarApplications).mockReturnValue(
+      createSuccessQueryResult<SidebarApplicationGroup[]>(mockApplicationData)
+    );
 
     render(<DeploymentsSidebar />);
 

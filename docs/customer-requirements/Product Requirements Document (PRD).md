@@ -13,7 +13,7 @@ BuildWorks.AI — EUCORA Product Line
 
 # 1. Product Overview
 
-EUCORA is a self-hosted enterprise-grade EUC automation platform for packaging, deployment, telemetry, governance, and AI-assisted remediation of endpoint applications across Windows, macOS, and Linux environments. 
+EUCORA is a self-hosted enterprise-grade EUC automation platform for packaging, deployment, telemetry, governance, and AI-assisted remediation of endpoint applications across Windows, macOS, and Linux environments.
 
 The platform delivers:
 - Automated packaging & rollout
@@ -193,16 +193,16 @@ The platform delivers:
 
 # 5. Functional Requirements
 
-**FR-001:** System must support packaging for Windows, macOS, and Linux.  
-**FR-002:** Agents must operate offline with deferred execution.  
-**FR-003:** Telemetry ingestion must support batching & compression.  
-**FR-004:** Approvals must be mandatory unless overridden by policy.  
-**FR-005:** All AI-driven suggestions must include confidence scores.  
-**FR-006:** No user data leaves the deployment boundary without opt-in.  
-**FR-007:** Device identity must not be conflated with user identity.  
-**FR-008:** Telemetry timestamps must be correlated using NTP or logical ordering.  
-**FR-009:** Audit logs must be immutable and tamper-evident.  
-**FR-010:** Model drift must be detectable and visible to admins.  
+**FR-001:** System must support packaging for Windows, macOS, and Linux.
+**FR-002:** Agents must operate offline with deferred execution.
+**FR-003:** Telemetry ingestion must support batching & compression.
+**FR-004:** Approvals must be mandatory unless overridden by policy.
+**FR-005:** All AI-driven suggestions must include confidence scores.
+**FR-006:** No user data leaves the deployment boundary without opt-in.
+**FR-007:** Device identity must not be conflated with user identity.
+**FR-008:** Telemetry timestamps must be correlated using NTP or logical ordering.
+**FR-009:** Audit logs must be immutable and tamper-evident.
+**FR-010:** Model drift must be detectable and visible to admins.
 
 ---
 
@@ -260,9 +260,8 @@ The platform delivers:
 
 # 10. Appendices
 
-**Appendix A:** Supported Installer Types  
-**Appendix B:** Supported OS Versions  
-**Appendix C:** API Specification (separate document)  
-**Appendix D:** Drift Management Rules (C document)  
+**Appendix A:** Supported Installer Types
+**Appendix B:** Supported OS Versions
+**Appendix C:** API Specification (separate document)
+**Appendix D:** Drift Management Rules (C document)
 **Appendix E:** Observability & SRE Runbooks (E document)
-

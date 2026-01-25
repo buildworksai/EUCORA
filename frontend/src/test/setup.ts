@@ -42,4 +42,3 @@ global.ResizeObserver = class ResizeObserver {
   observe() {}
   unobserve() {}
 } as unknown as typeof ResizeObserver;
-

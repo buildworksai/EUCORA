@@ -33,7 +33,7 @@ Key Principles:
     pip install pre-commit
     pre-commit install
     ```
-    
+
     **MANDATORY**: All commits MUST pass pre-commit hooks. Zero bypasses allowed.
 4.  **Commits**: Use conventional commit message format (see Commit Message Format below).
 5.  **Pull Requests**:

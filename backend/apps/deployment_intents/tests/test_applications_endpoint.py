@@ -111,7 +111,7 @@ def test_applications_with_versions_endpoint() -> None:
     teams = sample_response["applications"][1]
     assert teams["app_name"] == "Microsoft Teams"
     assert teams["latest_version"] == "25.1.1"
-    
+
     # Check deployment requires CAB approval
     teams_deployment = teams["versions"][0]["deployments"][0]
     assert teams_deployment["requires_cab_approval"] is True

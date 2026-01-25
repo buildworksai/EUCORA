@@ -58,11 +58,11 @@ export const ENDPOINTS = {
 
 /**
  * Example usage:
- * 
+ *
  * ```typescript
  * import { ENDPOINTS, type CABApprovalListResponse } from './contracts';
  * import { api } from '@/lib/api/client';
- * 
+ *
  * const response = await api.get<CABApprovalListResponse>(ENDPOINTS.CAB_PENDING);
  * ```
  */

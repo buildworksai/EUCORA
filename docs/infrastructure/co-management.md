@@ -1,7 +1,7 @@
 # Co-Management
 
-**Version**: 1.0  
-**Status**: Active  
+**Version**: 1.0
+**Status**: Active
 **Last Updated**: 2026-01-06
 
 ---
@@ -126,7 +126,7 @@ Co-management enables **Intune** (assignment/compliance plane) and **SCCM** (dis
 
 ### Air-Gapped Sites
 
-**Mandatory**: SCCM DP for content distribution  
+**Mandatory**: SCCM DP for content distribution
 **Pattern**: SCCM DP is authoritative content channel
 
 **Configuration**:
@@ -136,7 +136,7 @@ Co-management enables **Intune** (assignment/compliance plane) and **SCCM** (dis
 
 ### Intermittent Sites
 
-**Optional**: SCCM DP for bandwidth optimization  
+**Optional**: SCCM DP for bandwidth optimization
 **Decision**: Based on connectivity and device count
 
 **Configuration**:
@@ -178,4 +178,3 @@ Co-management enables **Intune** (assignment/compliance plane) and **SCCM** (dis
 - [Site Classification](./site-classification.md)
 - [Distribution Decision Matrix](./distribution-decision-matrix.md)
 - [Execution Plane Connectors](../architecture/execution-plane-connectors.md)
-

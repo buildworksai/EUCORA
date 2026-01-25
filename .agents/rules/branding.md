@@ -36,4 +36,3 @@ Standard BuildWorks.AI / SARAISE branding colors:
 -   **Gold (Warning)**: `#FF8F00` (Main), `#F57C00` (Dark)
 -   **Teal/Electric Blue (Info)**: `#00ACC1` (Main), `#0097A7` (Dark)
 -   **Green (Success)**: `#388E3C` (Main), `#2E7D32` (Dark)
-

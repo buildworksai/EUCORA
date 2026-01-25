@@ -4,11 +4,10 @@
 Specialized AI agent implementations.
 """
 
-from .base_agent import BaseAgent
 from .amani_assistant import AmaniAssistant
+from .base_agent import BaseAgent
 
 __all__ = [
-    'BaseAgent',
-    'AmaniAssistant',
+    "BaseAgent",
+    "AmaniAssistant",
 ]
-

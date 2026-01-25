@@ -3,7 +3,7 @@
 # Copyright (c) 2026 BuildWorks.AI
 # Entrypoint script for EUCORA Control Plane
 # Automatically runs migrations and starts the server
-# 
+#
 # CRITICAL: This script is designed for customer demos - it must NEVER fail completely.
 # Errors in non-critical operations (like seeding) will be logged but won't stop the server.
 
@@ -47,7 +47,7 @@ echo "=== DEMO DATA SETUP (Non-blocking) ==="
 enable_demo_mode_safe() {
   local max_retries=3
   local retry=0
-  
+
   while [ $retry -lt $max_retries ]; do
     if python manage.py shell -c "
 from apps.core.utils import set_demo_mode_enabled
@@ -67,7 +67,7 @@ except Exception as e:
       sleep 2
     fi
   done
-  
+
   echo "❌ Failed to enable demo mode after $max_retries attempts, but continuing..."
   return 1
 }
@@ -94,9 +94,9 @@ except Exception as e:
     print(f'ERROR:{e}', file=sys.stderr)
     sys.exit(2)
 " 2>&1)
-  
+
   local exit_code=$?
-  
+
   if [ $exit_code -eq 0 ]; then
     echo "✅ Demo data already exists"
     echo "$check_result" | grep -v "EXISTS:" || true
@@ -124,7 +124,7 @@ except Exception as e:
 seed_demo_data_safe() {
   local max_retries=2
   local retry=0
-  
+
   while [ $retry -lt $max_retries ]; do
     if python manage.py seed_demo_data \
       --assets 100 \
@@ -144,7 +144,7 @@ seed_demo_data_safe() {
       fi
     fi
   done
-  
+
   echo "❌ Demo data seeding failed after $max_retries attempts"
   return 1
 }

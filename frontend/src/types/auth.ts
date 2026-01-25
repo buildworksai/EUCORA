@@ -160,7 +160,7 @@ export function hasPermission(
   action: 'read' | 'write' | 'delete' | 'admin'
 ): boolean {
   if (!user) return false;
-  
+
   return user.permissions.some(
     (p) =>
       (p.resource === '*' || p.resource === resource) &&
@@ -175,4 +175,3 @@ export function isAdmin(user: User | null): boolean {
 export function isDemo(user: User | null): boolean {
   return user?.role === 'demo';
 }
-

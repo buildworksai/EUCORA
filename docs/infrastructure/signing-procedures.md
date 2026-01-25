@@ -1,7 +1,7 @@
 # Signing Procedures
 
-**Version**: 1.0  
-**Status**: Active  
+**Version**: 1.0
+**Status**: Active
 **Last Updated**: 2026-01-06
 
 ---
@@ -188,4 +188,3 @@ All signing operations generate events:
 - [Key Management](./key-management.md)
 - [Packaging Pipelines](./packaging-pipelines.md)
 - [Exception Management](../architecture/exception-management.md)
-

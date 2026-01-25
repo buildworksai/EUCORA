@@ -40,7 +40,7 @@ export default function Dashboard() {
         return rings.map(ring => {
             const ringDeployments = deployments.filter(d => d.target_ring === ring);
             const success = ringDeployments.filter(d => d.status === 'COMPLETED').length;
-            const pending = ringDeployments.filter(d => 
+            const pending = ringDeployments.filter(d =>
                 d.status === 'DEPLOYING' || d.status === 'APPROVED' || d.status === 'AWAITING_CAB'
             ).length;
             return {
@@ -161,6 +161,19 @@ export default function Dashboard() {
                 )}
             </div>
 
+            {/* Active Ring Visualizer */}
+            {activeDeployment && (
+                <Card className="glass">
+                    <CardHeader>
+                        <CardTitle>Live Deployment: {activeDeployment.app_name} (v{activeDeployment.version})</CardTitle>
+                        <CardDescription>Currently progressing through {activeDeployment.target_ring} Ring</CardDescription>
+                    </CardHeader>
+                    <CardContent>
+                        <RingProgressIndicator rings={ringsStatus} />
+                    </CardContent>
+                </Card>
+            )}
+
             <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-7">
                 {/* Main Chart */}
                 <Card className="col-span-4 glass">
@@ -232,19 +245,6 @@ export default function Dashboard() {
                     </CardContent>
                 </Card>
             </div>
-
-            {/* Active Ring Visualizer */}
-            {activeDeployment && (
-                <Card className="glass">
-                    <CardHeader>
-                        <CardTitle>Live Deployment: {activeDeployment.app_name} (v{activeDeployment.version})</CardTitle>
-                        <CardDescription>Currently progressing through {activeDeployment.target_ring} Ring</CardDescription>
-                    </CardHeader>
-                    <CardContent>
-                        <RingProgressIndicator rings={ringsStatus} />
-                    </CardContent>
-                </Card>
-            )}
         </div>
     );
 }

@@ -3,4 +3,4 @@
 """
 Event Store app for append-only audit trail.
 """
-default_app_config = 'apps.event_store.apps.EventStoreConfig'
+default_app_config = "apps.event_store.apps.EventStoreConfig"

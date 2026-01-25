@@ -5,15 +5,9 @@ Retry decorators for resilient external service calls.
 
 Implements exponential backoff with jitter to prevent thundering herd.
 """
-from tenacity import (
-    retry,
-    wait_exponential,
-    stop_after_attempt,
-    retry_if_exception_type,
-    before_log,
-    after_log,
-)
 import logging
+
+from tenacity import after_log, before_log, retry, retry_if_exception_type, stop_after_attempt, wait_exponential
 
 logger = logging.getLogger(__name__)
 

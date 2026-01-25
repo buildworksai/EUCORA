@@ -1,6 +1,6 @@
 /**
  * API type definitions (generated from Django OpenAPI schema).
- * 
+ *
  * Generate command: npx openapi-typescript http://localhost:8000/api/schema/ -o src/types/api.ts
  */
 

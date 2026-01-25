@@ -1,8 +1,8 @@
 # P4.3 Load Testing - Quick Execution Guide
 
-**SPDX-License-Identifier: Apache-2.0**  
-**Date**: Jan 22, 2026  
-**Status**: Ready to Execute  
+**SPDX-License-Identifier: Apache-2.0**
+**Date**: Jan 22, 2026
+**Status**: Ready to Execute
 **Timeline**: Jan 25-26, 2026
 
 ---
@@ -76,10 +76,10 @@ Total                        375         0       135ms   35ms    450ms
 
 ### Scenario 1: Concurrent Deployments (5 minutes)
 
-**What it tests**: Multiple teams creating deployments simultaneously  
-**Users**: 100 concurrent  
-**Expected RPS**: 50-100 requests/sec  
-**Target**: <200ms p50, <500ms p99  
+**What it tests**: Multiple teams creating deployments simultaneously
+**Users**: 100 concurrent
+**Expected RPS**: 50-100 requests/sec
+**Target**: <200ms p50, <500ms p99
 
 ```bash
 locust -f tests/load_tests/locustfile.py \
@@ -104,10 +104,10 @@ EOF
 
 ### Scenario 2: CAB Approval Backlog (5 minutes)
 
-**What it tests**: CAB reviewers approving 100+ pending deployments  
-**Users**: 50 concurrent CAB reviewers  
-**Expected RPS**: 80-120 requests/sec  
-**Target**: <1s for listing 100+ items, <200ms for approve/reject  
+**What it tests**: CAB reviewers approving 100+ pending deployments
+**Users**: 50 concurrent CAB reviewers
+**Expected RPS**: 80-120 requests/sec
+**Target**: <1s for listing 100+ items, <200ms for approve/reject
 
 ```bash
 locust -f tests/load_tests/locustfile.py \
@@ -123,10 +123,10 @@ locust -f tests/load_tests/locustfile.py \
 
 ### Scenario 3: Connector Scaling (5 minutes)
 
-**What it tests**: Publishing to 5 execution planes in parallel  
-**Users**: 200 concurrent publishers  
-**Expected RPS**: 150-200 requests/sec  
-**Target**: <200ms per publish operation  
+**What it tests**: Publishing to 5 execution planes in parallel
+**Users**: 200 concurrent publishers
+**Expected RPS**: 150-200 requests/sec
+**Target**: <200ms per publish operation
 
 ```bash
 locust -f tests/load_tests/locustfile.py \
@@ -142,9 +142,9 @@ locust -f tests/load_tests/locustfile.py \
 
 ### Scenario 4: Burst Load - Interactive Web UI (4 minutes peak)
 
-**What it tests**: System resilience under 1000+ concurrent users  
-**Peak RPS**: 10,000+ requests/sec  
-**Target**: <1s p99 response time, ≥98% success  
+**What it tests**: System resilience under 1000+ concurrent users
+**Peak RPS**: 10,000+ requests/sec
+**Target**: <1s p99 response time, ≥98% success
 
 ```bash
 # Start web UI (no headless, interactive ramp-up)
@@ -355,15 +355,15 @@ If results significantly differ from baselines, bottleneck analysis is needed be
 
 ## Success Criteria for Phase Completion
 
-✅ **All 3 baseline scenarios complete** (Scenarios 1-3)  
-✅ **Baseline metrics match targets** (see tables above)  
-✅ **Burst load scenario sustains 10,000 req/sec**  
-✅ **No system crashes or cascading failures**  
-✅ **Results aggregated in P4-LOAD-TESTING-RESULTS.md**  
+✅ **All 3 baseline scenarios complete** (Scenarios 1-3)
+✅ **Baseline metrics match targets** (see tables above)
+✅ **Burst load scenario sustains 10,000 req/sec**
+✅ **No system crashes or cascading failures**
+✅ **Results aggregated in P4-LOAD-TESTING-RESULTS.md**
 ✅ **Bottleneck analysis documented with recommendations**
 
 ---
 
-**Ready to execute**: Jan 25, 2026  
-**Timeline**: 5-6 hours total  
+**Ready to execute**: Jan 25, 2026
+**Timeline**: 5-6 hours total
 **Next Phase**: P4.4 (TODO Resolution) on Jan 27

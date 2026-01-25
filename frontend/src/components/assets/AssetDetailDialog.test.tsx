@@ -36,12 +36,11 @@ describe('AssetDetailDialog', () => {
     const handleOpenChange = vi.fn();
     const user = userEvent.setup();
     render(<AssetDetailDialog asset={mockAsset} open={true} onOpenChange={handleOpenChange} />);
-    
+
     // Find and click close button
     const closeButton = screen.getByRole('button', { name: /close/i });
     await user.click(closeButton);
-    
+
     expect(handleOpenChange).toHaveBeenCalledWith(false);
   });
 });
-

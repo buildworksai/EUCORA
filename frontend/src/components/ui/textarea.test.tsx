@@ -38,4 +38,3 @@ describe('Textarea', () => {
     expect(ref.current).toBeInstanceOf(HTMLTextAreaElement);
   });
 });
-

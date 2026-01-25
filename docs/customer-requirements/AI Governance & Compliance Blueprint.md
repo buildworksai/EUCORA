@@ -342,4 +342,3 @@ This blueprint ensures EUCORA’s AI features are:
 - Human-governed
 
 and ready for enterprise production deployment.
-

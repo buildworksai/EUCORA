@@ -1,7 +1,7 @@
 # Distribution Decision Matrix
 
-**Version**: 1.0  
-**Status**: Active  
+**Version**: 1.0
+**Status**: Active
 **Last Updated**: 2026-01-06
 
 ---
@@ -28,8 +28,8 @@ This matrix defines **distribution strategies** by platform and site class. Dist
 
 ### Online Sites
 
-**Primary**: Microsoft Intune  
-**Optimization**: Delivery Optimization (peer-to-peer caching)  
+**Primary**: Microsoft Intune
+**Optimization**: Delivery Optimization (peer-to-peer caching)
 **Enterprise Caching**: Microsoft Connected Cache (where feasible)
 
 **Benefits**:
@@ -50,7 +50,7 @@ This matrix defines **distribution strategies** by platform and site class. Dist
 
 ### Air-Gapped Sites
 
-**Mandatory**: SCCM Distribution Points  
+**Mandatory**: SCCM Distribution Points
 **Pattern**: SCCM DP is authoritative content channel
 
 **Co-Management**:
@@ -64,7 +64,7 @@ This matrix defines **distribution strategies** by platform and site class. Dist
 
 ### Online Sites
 
-**Primary**: Microsoft Intune  
+**Primary**: Microsoft Intune
 **Secondary**: Jamf Pro (where deeper macOS controls required)
 
 **Decision Criteria**:
@@ -191,4 +191,3 @@ Validate distribution configuration and test
 - [Air-Gapped Procedures](./air-gapped-procedures.md)
 - [Co-Management](./co-management.md)
 - [Bandwidth Optimization](./bandwidth-optimization.md)
-

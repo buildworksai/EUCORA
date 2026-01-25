@@ -4,6 +4,7 @@
 Tests for asset list/detail endpoints.
 """
 import pytest
+
 from apps.connectors.models import Asset
 from apps.core.utils import set_demo_mode_enabled
 

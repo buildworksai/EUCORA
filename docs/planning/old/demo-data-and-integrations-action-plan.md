@@ -1,9 +1,9 @@
 # Demo Data & External Integrations — Action Plan
 
-**SPDX-License-Identifier: Apache-2.0**  
-**Version**: 1.0  
-**Status**: Planning  
-**Author**: Platform Engineering  
+**SPDX-License-Identifier: Apache-2.0**
+**Version**: 1.0
+**Status**: Planning
+**Author**: Platform Engineering
 **Date**: 2026-01-06
 
 ---
@@ -25,7 +25,7 @@ This document defines the implementation plan for:
 ### 1.1 Identity & Directory Services
 
 #### Microsoft Entra ID (Azure AD)
-**Purpose**: Primary identity provider, user/device sync, conditional access  
+**Purpose**: Primary identity provider, user/device sync, conditional access
 **Integration Points**:
 - OAuth2/OpenID Connect for SSO
 - Microsoft Graph API for:
@@ -45,7 +45,7 @@ This document defines the implementation plan for:
 - Sync frequency: Every 1 hour (configurable)
 
 #### Active Directory (On-Premises)
-**Purpose**: Legacy directory for air-gapped/hybrid sites  
+**Purpose**: Legacy directory for air-gapped/hybrid sites
 **Integration Points**:
 - LDAP/LDAPS for user/group queries
 - PowerShell/WinRM for computer object queries
@@ -66,7 +66,7 @@ This document defines the implementation plan for:
 ### 1.2 CMDB (Configuration Management Database)
 
 #### ServiceNow CMDB
-**Purpose**: Authoritative source for asset inventory, relationships, config items  
+**Purpose**: Authoritative source for asset inventory, relationships, config items
 **Integration Points**:
 - Table API for CI queries (`/api/now/table/cmdb_ci_computer`)
 - Import Sets API for bulk sync
@@ -83,7 +83,7 @@ This document defines the implementation plan for:
 - Sync frequency: Every 30 minutes (configurable)
 
 #### Jira Assets (formerly Insight)
-**Purpose**: Asset management for Jira-centric orgs  
+**Purpose**: Asset management for Jira-centric orgs
 **Integration Points**:
 - Assets REST API v2 for object queries
 - Object schema API for asset types
@@ -95,7 +95,7 @@ This document defines the implementation plan for:
 - Sync frequency: Every 1 hour
 
 #### Freshservice CMDB
-**Purpose**: Alternative CMDB for mid-market  
+**Purpose**: Alternative CMDB for mid-market
 **Integration Points**:
 - Assets API (`/api/v2/assets`)
 - Asset types API
@@ -106,7 +106,7 @@ This document defines the implementation plan for:
 ### 1.3 ITSM (IT Service Management)
 
 #### ServiceNow ITSM
-**Purpose**: Change management, incident tracking, approval workflows  
+**Purpose**: Change management, incident tracking, approval workflows
 **Integration Points**:
 - Change Request API (`/api/now/table/change_request`)
 - Incident API for impact tracking
@@ -124,7 +124,7 @@ This document defines the implementation plan for:
 - Sync frequency: Real-time (webhook) + polling every 5 minutes
 
 #### Jira Service Management
-**Purpose**: ITSM for Atlassian shops  
+**Purpose**: ITSM for Atlassian shops
 **Integration Points**:
 - Issue API for change requests
 - Approval API
@@ -136,7 +136,7 @@ This document defines the implementation plan for:
 - Comments → Audit trail
 
 #### Freshservice ITSM
-**Purpose**: Lightweight ITSM  
+**Purpose**: Lightweight ITSM
 **Integration Points**:
 - Change API (`/api/v2/changes`)
 - Approval API
@@ -147,7 +147,7 @@ This document defines the implementation plan for:
 ### 1.4 Mobile Device Management (MDM)
 
 #### Apple Business Manager (ABM)
-**Purpose**: Device enrollment, app distribution for Apple devices  
+**Purpose**: Device enrollment, app distribution for Apple devices
 **Integration Points**:
 - ABM API for device assignments
 - VPP (Volume Purchase Program) API for app licensing
@@ -164,7 +164,7 @@ This document defines the implementation plan for:
 - Sync frequency: Every 6 hours
 
 #### Android Enterprise / Zero-Touch
-**Purpose**: Android device enrollment and management  
+**Purpose**: Android device enrollment and management
 **Integration Points**:
 - Google Play EMM API
 - Zero-Touch API for device provisioning
@@ -180,7 +180,7 @@ This document defines the implementation plan for:
 ### 1.5 Endpoint Management Platforms (Execution Planes)
 
 #### Microsoft Intune
-**Purpose**: Primary execution plane for Windows/macOS/iOS/Android  
+**Purpose**: Primary execution plane for Windows/macOS/iOS/Android
 **Integration Points**:
 - Microsoft Graph API (`/deviceManagement/*`)
 - Device compliance queries
@@ -193,7 +193,7 @@ This document defines the implementation plan for:
 - Sync frequency: Every 15 minutes
 
 #### Jamf Pro
-**Purpose**: macOS-specific management  
+**Purpose**: macOS-specific management
 **Integration Points**:
 - Jamf Pro API (Classic + Universal)
 - Computer inventory API
@@ -206,7 +206,7 @@ This document defines the implementation plan for:
 - Sync frequency: Every 15 minutes
 
 #### SCCM (Microsoft Endpoint Configuration Manager)
-**Purpose**: Legacy Windows management for air-gapped sites  
+**Purpose**: Legacy Windows management for air-gapped sites
 **Integration Points**:
 - AdminService REST API
 - WMI/PowerShell queries
@@ -219,7 +219,7 @@ This document defines the implementation plan for:
 - Sync frequency: Every 30 minutes
 
 #### Ubuntu Landscape
-**Purpose**: Linux fleet management  
+**Purpose**: Linux fleet management
 **Integration Points**:
 - Landscape API for computer queries
 - Package profile status
@@ -235,7 +235,7 @@ This document defines the implementation plan for:
 ### 1.6 Monitoring & Observability
 
 #### Datadog
-**Purpose**: Application performance monitoring, metrics, logs  
+**Purpose**: Application performance monitoring, metrics, logs
 **Integration Points**:
 - Metrics API for custom metrics
 - Events API for deployment events
@@ -247,7 +247,7 @@ This document defines the implementation plan for:
 - Real-time (push)
 
 #### Splunk
-**Purpose**: SIEM, log aggregation, security analytics  
+**Purpose**: SIEM, log aggregation, security analytics
 **Integration Points**:
 - HTTP Event Collector (HEC) for logs
 - REST API for search queries
@@ -259,7 +259,7 @@ This document defines the implementation plan for:
 - Real-time (push)
 
 #### Elastic (ELK Stack)
-**Purpose**: Alternative log aggregation  
+**Purpose**: Alternative log aggregation
 **Integration Points**:
 - Elasticsearch API for log ingestion
 - Kibana dashboards for visualization
@@ -269,7 +269,7 @@ This document defines the implementation plan for:
 ### 1.7 Vulnerability & Security Scanning
 
 #### Trivy / Grype / Snyk
-**Purpose**: Container/package vulnerability scanning  
+**Purpose**: Container/package vulnerability scanning
 **Integration Points**:
 - CLI integration in packaging pipelines
 - API for scan result queries
@@ -281,7 +281,7 @@ This document defines the implementation plan for:
 - Per-build (synchronous)
 
 #### Microsoft Defender for Endpoint
-**Purpose**: Threat detection, vulnerability assessment  
+**Purpose**: Threat detection, vulnerability assessment
 **Integration Points**:
 - Microsoft Graph Security API
 - Threat Intelligence API
@@ -422,14 +422,14 @@ Asset.objects.bulk_create([
 **API Endpoint**:
 ```
 POST /api/v1/admin/seed-demo-data
-  Body: { 
-    "assets": 50000, 
-    "apps": 5000, 
-    "clear_existing": true 
+  Body: {
+    "assets": 50000,
+    "apps": 5000,
+    "clear_existing": true
   }
-  Response: { 
-    "status": "success", 
-    "counts": { "assets": 50000, "apps": 5000 } 
+  Response: {
+    "status": "success",
+    "counts": { "assets": 50000, "apps": 5000 }
   }
 ```
 
@@ -488,10 +488,10 @@ export default function CMDBIntegration() {
           Sync asset inventory from your CMDB system
         </CardDescription>
       </CardHeader>
-      
+
       <CardContent>
         {/* System Type Selector */}
-        <SystemTypeSelector 
+        <SystemTypeSelector
           value={config.type}
           onChange={(type) => setConfig({ ...config, type })}
           options={['servicenow', 'jira', 'freshservice', 'custom']}
@@ -500,10 +500,10 @@ export default function CMDBIntegration() {
         {/* Dynamic Form Based on Type */}
         {config.type === 'servicenow' && <ServiceNowForm config={config} onChange={setConfig} />}
         {config.type === 'jira' && <JiraForm config={config} onChange={setConfig} />}
-        
+
         {/* Sync Settings */}
         <SyncSettingsForm config={config} onChange={setConfig} />
-        
+
         {/* Test Connection */}
         <TestConnectionButton onClick={handleTestConnection} status={testStatus} />
       </CardContent>
@@ -528,7 +528,7 @@ export default function CMDBIntegration() {
 # backend/apps/integrations/models.py
 class ExternalSystem(TimeStampedModel):
     """Base model for external system integrations."""
-    
+
     class SystemType(models.TextChoices):
         ENTRA_ID = 'entra_id', 'Microsoft Entra ID'
         ACTIVE_DIRECTORY = 'active_directory', 'Active Directory'
@@ -541,7 +541,7 @@ class ExternalSystem(TimeStampedModel):
         ANDROID_ENTERPRISE = 'android_enterprise', 'Android Enterprise'
         DATADOG = 'datadog', 'Datadog'
         SPLUNK = 'splunk', 'Splunk'
-    
+
     name = models.CharField(max_length=255)
     type = models.CharField(max_length=50, choices=SystemType.choices)
     is_enabled = models.BooleanField(default=False)
@@ -555,7 +555,7 @@ class ExternalSystem(TimeStampedModel):
 
 class IntegrationSyncLog(TimeStampedModel):
     """Audit log for integration sync operations."""
-    
+
     system = models.ForeignKey(ExternalSystem, on_delete=models.CASCADE)
     sync_started_at = models.DateTimeField()
     sync_completed_at = models.DateTimeField(null=True, blank=True)
@@ -620,13 +620,13 @@ def sync_external_system(self, system_id):
     """Background task to sync data from external system."""
     system = ExternalSystem.objects.get(id=system_id)
     service = get_integration_service(system.type)
-    
+
     log = IntegrationSyncLog.objects.create(
         system=system,
         sync_started_at=timezone.now(),
         status='running'
     )
-    
+
     try:
         result = service.sync(system)
         log.sync_completed_at = timezone.now()
@@ -635,7 +635,7 @@ def sync_external_system(self, system_id):
         log.records_created = result['created']
         log.records_updated = result['updated']
         log.save()
-        
+
         system.last_sync_at = timezone.now()
         system.last_sync_status = 'success'
         system.save()
@@ -643,10 +643,10 @@ def sync_external_system(self, system_id):
         log.status = 'failed'
         log.error_message = str(e)
         log.save()
-        
+
         system.last_sync_status = 'failed'
         system.save()
-        
+
         self.retry(exc=e, countdown=60 * (2 ** self.request.retries))
 ```
 
@@ -678,26 +678,26 @@ from abc import ABC, abstractmethod
 
 class IntegrationService(ABC):
     """Base class for all external system integrations."""
-    
+
     @abstractmethod
     def test_connection(self, config: dict) -> dict:
         """Test API connectivity and credentials."""
         pass
-    
+
     @abstractmethod
     def sync(self, system: ExternalSystem) -> dict:
         """Perform full sync from external system."""
         pass
-    
+
     @abstractmethod
     def fetch_assets(self, system: ExternalSystem) -> list:
         """Fetch asset inventory."""
         pass
-    
+
     def _authenticate(self, system: ExternalSystem):
         """Handle authentication (OAuth2, Basic, Cert)."""
         pass
-    
+
     def _handle_rate_limit(self, response):
         """Handle rate limiting with exponential backoff."""
         pass
@@ -708,24 +708,24 @@ class IntegrationService(ABC):
 # backend/apps/integrations/services/servicenow.py
 class ServiceNowService(IntegrationService):
     """ServiceNow CMDB integration."""
-    
+
     def test_connection(self, config: dict) -> dict:
         """Test ServiceNow API connectivity."""
         url = f"{config['api_url']}/api/now/table/cmdb_ci_computer"
         headers = self._get_auth_headers(config)
-        
+
         try:
             response = requests.get(url, headers=headers, params={'sysparm_limit': 1})
             response.raise_for_status()
             return {'status': 'success', 'message': 'Connection successful'}
         except requests.exceptions.RequestException as e:
             return {'status': 'failed', 'message': str(e)}
-    
+
     def sync(self, system: ExternalSystem) -> dict:
         """Sync assets from ServiceNow CMDB."""
         assets = self.fetch_assets(system)
         created, updated = 0, 0
-        
+
         for asset_data in assets:
             asset, created_flag = Asset.objects.update_or_create(
                 asset_id=asset_data['sys_id'],
@@ -744,13 +744,13 @@ class ServiceNowService(IntegrationService):
                 created += 1
             else:
                 updated += 1
-        
+
         return {
             'fetched': len(assets),
             'created': created,
             'updated': updated
         }
-    
+
     def fetch_assets(self, system: ExternalSystem) -> list:
         """Fetch computer CIs from ServiceNow."""
         url = f"{system.api_url}/api/now/table/cmdb_ci_computer"
@@ -760,21 +760,21 @@ class ServiceNowService(IntegrationService):
             'sysparm_limit': 10000,
             'sysparm_offset': 0
         }
-        
+
         assets = []
         while True:
             response = requests.get(url, headers=headers, params=params)
             response.raise_for_status()
             data = response.json()
             assets.extend(data['result'])
-            
+
             if len(data['result']) < params['sysparm_limit']:
                 break
-            
+
             params['sysparm_offset'] += params['sysparm_limit']
-        
+
         return assets
-    
+
     def _get_auth_headers(self, system):
         """Generate auth headers (Basic Auth or OAuth2)."""
         # Retrieve credentials from vault
@@ -783,7 +783,7 @@ class ServiceNowService(IntegrationService):
             'Authorization': f"Basic {credentials['basic_auth_token']}",
             'Content-Type': 'application/json'
         }
-    
+
     def _map_status(self, install_status):
         """Map ServiceNow install status to Asset status."""
         mapping = {
@@ -793,7 +793,7 @@ class ServiceNowService(IntegrationService):
             '6': 'Maintenance'
         }
         return mapping.get(str(install_status), 'Active')
-    
+
     def _map_type(self, category):
         """Map ServiceNow category to Asset type."""
         # Implementation specific to ServiceNow categories
@@ -1292,7 +1292,7 @@ def get_integration_service(system_type: str) -> IntegrationService:
 
 ---
 
-**Document Version**: 1.0  
-**Last Updated**: 2026-01-06  
-**Next Review**: 2026-02-06  
+**Document Version**: 1.0
+**Last Updated**: 2026-01-06
+**Next Review**: 2026-02-06
 **Owner**: Platform Engineering Team

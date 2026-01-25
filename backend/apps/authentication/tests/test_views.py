@@ -3,112 +3,126 @@
 """
 Tests for authentication views.
 """
+from unittest.mock import MagicMock, patch
+
 import pytest
-from unittest.mock import patch, MagicMock
 from django.conf import settings
+
 from apps.authentication.views import _exchange_code_for_token, _get_user_profile
 
 
 @pytest.mark.django_db
 class TestAuthenticationViews:
     """Test authentication view endpoints."""
-    
+
     def test_entra_id_login_missing_code(self, api_client):
         """Test login without authorization code."""
-        url = '/api/v1/auth/login'
-        response = api_client.post(url, {}, format='json')
-        
+        url = "/api/v1/auth/login"
+        response = api_client.post(url, {}, format="json")
+
         assert response.status_code == 400
-        assert 'error' in response.data
-    
-    @patch('apps.authentication.views._exchange_code_for_token')
+        assert "error" in response.data
+
+    @patch("apps.authentication.views._exchange_code_for_token")
     def test_entra_id_login_invalid_code(self, mock_exchange_token, api_client):
         """Test login with invalid authorization code."""
-        mock_exchange_token.side_effect = Exception('Invalid code')
-        
-        url = '/api/v1/auth/login'
-        response = api_client.post(url, {
-            'code': 'invalid-code',
-        }, format='json')
-        
+        mock_exchange_token.side_effect = Exception("Invalid code")
+
+        url = "/api/v1/auth/login"
+        response = api_client.post(
+            url,
+            {
+                "code": "invalid-code",
+            },
+            format="json",
+        )
+
         assert response.status_code == 401
-        assert 'error' in response.data
+        assert "error" in response.data
 
     def test_password_login_success(self, api_client, authenticated_user):
         """Test email/password login."""
-        url = '/api/v1/auth/login'
-        response = api_client.post(url, {
-            'email': authenticated_user.email,
-            'password': 'testpass123',
-        }, format='json')
+        url = "/api/v1/auth/login"
+        response = api_client.post(
+            url,
+            {
+                "email": authenticated_user.email,
+                "password": "testpass123",
+            },
+            format="json",
+        )
 
         assert response.status_code == 200
-        assert response.data['user']['email'] == authenticated_user.email
+        assert response.data["user"]["email"] == authenticated_user.email
 
     def test_password_login_failure(self, api_client, authenticated_user):
         """Test login with invalid password."""
-        url = '/api/v1/auth/login'
-        response = api_client.post(url, {
-            'username': authenticated_user.username,
-            'password': 'wrong',
-        }, format='json')
+        url = "/api/v1/auth/login"
+        response = api_client.post(
+            url,
+            {
+                "username": authenticated_user.username,
+                "password": "wrong",
+            },
+            format="json",
+        )
 
         assert response.status_code == 401
-    
+
     def test_logout(self, authenticated_client, authenticated_user):
         """Test logout endpoint."""
-        url = '/api/v1/auth/logout'
+        url = "/api/v1/auth/logout"
         response = authenticated_client.post(url)
-        
+
         assert response.status_code == 200
-        assert 'message' in response.data
-    
+        assert "message" in response.data
+
     def test_current_user(self, authenticated_client, authenticated_user):
         """Test current user endpoint."""
-        url = '/api/v1/auth/me'
+        url = "/api/v1/auth/me"
         response = authenticated_client.get(url)
-        
+
         assert response.status_code == 200
-        assert 'user' in response.data
-        assert response.data['user']['username'] == authenticated_user.username
-    
+        assert "user" in response.data
+        assert response.data["user"]["username"] == authenticated_user.username
+
     def test_current_user_unauthenticated(self, api_client):
         """Test current user endpoint without authentication."""
-        url = '/api/v1/auth/me'
+        url = "/api/v1/auth/me"
         response = api_client.get(url)
-        
+
         assert response.status_code == 403  # Forbidden
 
     def test_validate_session(self, authenticated_client):
-        url = '/api/v1/auth/validate'
+        url = "/api/v1/auth/validate"
         response = authenticated_client.get(url)
         assert response.status_code == 200
-        assert response.data['valid'] is True
+        assert response.data["valid"] is True
 
-    @patch('apps.authentication.views._exchange_code_for_token')
-    @patch('apps.authentication.views._get_user_profile')
+    @patch("apps.authentication.views._exchange_code_for_token")
+    @patch("apps.authentication.views._get_user_profile")
     def test_entra_id_login_success(self, mock_profile, mock_exchange, api_client):
-        mock_exchange.return_value = {'access_token': 'token'}
+        mock_exchange.return_value = {"access_token": "token"}
         mock_profile.return_value = {
-            'userPrincipalName': 'entra@example.com',
-            'mail': 'entra@example.com',
-            'givenName': 'Entra',
-            'surname': 'User',
+            "userPrincipalName": "entra@example.com",
+            "mail": "entra@example.com",
+            "givenName": "Entra",
+            "surname": "User",
         }
 
-        url = '/api/v1/auth/login'
-        response = api_client.post(url, {'code': 'valid-code'}, format='json')
+        url = "/api/v1/auth/login"
+        response = api_client.post(url, {"code": "valid-code"}, format="json")
         assert response.status_code == 200
-        assert response.data['user']['email'] == 'entra@example.com'
+        assert response.data["user"]["email"] == "entra@example.com"
 
-    @patch('apps.authentication.views._exchange_code_for_token')
-    @patch('apps.authentication.views._get_user_profile')
+    @patch("apps.authentication.views._exchange_code_for_token")
+    @patch("apps.authentication.views._get_user_profile")
     def test_entra_id_profile_failure(self, mock_profile, mock_exchange, api_client):
-        mock_exchange.return_value = {'access_token': 'token'}
-        mock_profile.side_effect = Exception('profile error')
+        mock_exchange.return_value = {"access_token": "token"}
+        mock_profile.side_effect = Exception("profile error")
 
-        url = '/api/v1/auth/login'
-        response = api_client.post(url, {'code': 'valid-code'}, format='json')
+        url = "/api/v1/auth/login"
+        response = api_client.post(url, {"code": "valid-code"}, format="json")
         assert response.status_code == 401
 
 

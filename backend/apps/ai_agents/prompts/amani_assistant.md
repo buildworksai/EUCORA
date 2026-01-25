@@ -41,4 +41,3 @@ Use this context to provide relevant, actionable assistance.
 ## REMEMBER
 
 **You assist, humans decide. All recommendations must be reviewed and approved by authorized personnel.**
-

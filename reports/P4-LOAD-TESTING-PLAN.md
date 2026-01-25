@@ -1,8 +1,8 @@
 # P4.3 Load Testing Plan
 
-**SPDX-License-Identifier: Apache-2.0**  
-**Status**: ✅ READY TO EXECUTE  
-**Phase**: P4.3 Testing & Quality  
+**SPDX-License-Identifier: Apache-2.0**
+**Status**: ✅ READY TO EXECUTE
+**Phase**: P4.3 Testing & Quality
 **Target Completion**: Jan 25-26, 2026
 
 ---
@@ -23,8 +23,8 @@ Load testing validates system performance under sustained and burst loads using 
 
 ### Scenario 1: Concurrent Deployments
 
-**Simulates**: Multiple teams deploying apps simultaneously  
-**User Type**: `DeploymentUser`  
+**Simulates**: Multiple teams deploying apps simultaneously
+**User Type**: `DeploymentUser`
 **Load Profile**:
 - 100 concurrent users
 - Create 3 deployments per user
@@ -34,7 +34,7 @@ Load testing validates system performance under sustained and burst loads using 
 **Tasks**:
 ```python
 @task(3) create_deployment()     # 75% of traffic
-@task(1) list_deployments()      # 17% of traffic  
+@task(1) list_deployments()      # 17% of traffic
 @task(1) get_deployment_details()  # 8% of traffic
 ```
 
@@ -59,8 +59,8 @@ locust -f tests/load_tests/locustfile.py \
 
 ### Scenario 2: CAB Approval Backlog
 
-**Simulates**: CAB reviewers approving/rejecting pending deployments  
-**User Type**: `CABApprovalUser`  
+**Simulates**: CAB reviewers approving/rejecting pending deployments
+**User Type**: `CABApprovalUser`
 **Load Profile**:
 - 50 concurrent CAB reviewers
 - Each approves ~5 deployments
@@ -95,8 +95,8 @@ locust -f tests/load_tests/locustfile.py \
 
 ### Scenario 3: Connector Scaling
 
-**Simulates**: Publishing to multiple execution planes in parallel  
-**User Type**: `ConnectorPublishingUser`  
+**Simulates**: Publishing to multiple execution planes in parallel
+**User Type**: `ConnectorPublishingUser`
 **Load Profile**:
 - 200 concurrent publishers
 - Publish to 5 execution planes (Intune, Jamf, SCCM, Landscape, Ansible)
@@ -133,8 +133,8 @@ locust -f tests/load_tests/locustfile.py \
 
 ### Scenario 4: Burst Load (Optional)
 
-**Simulates**: Sudden spike in deployment traffic  
-**User Type**: `HighLoadDeploymentUser`  
+**Simulates**: Sudden spike in deployment traffic
+**User Type**: `HighLoadDeploymentUser`
 **Load Profile**:
 - Ramp up to 1000 concurrent users over 1 minute
 - Sustain for 2 minutes
@@ -325,7 +325,7 @@ print(df.groupby('Name')[['Request Count', 'Failure Count', 'Median Response Tim
 
 ---
 
-**Status**: Ready to execute  
-**Timeline**: Jan 25-26, 2026  
-**Owner**: QA Engineer  
+**Status**: Ready to execute
+**Timeline**: Jan 25-26, 2026
+**Owner**: QA Engineer
 **Next Review**: After Scenario 1 baseline complete

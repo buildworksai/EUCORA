@@ -1,7 +1,7 @@
 # Intune Rollback Procedures
 
-**Version**: 1.0  
-**Status**: Active  
+**Version**: 1.0
+**Status**: Active
 **Last Updated**: 2026-01-06
 
 ---
@@ -18,7 +18,7 @@ This document defines **rollback strategies** for Intune deployments. Rollback i
 
 ### 1. Supersedence/Version Pinning
 
-**Use Case**: Rollback to previous version  
+**Use Case**: Rollback to previous version
 **Method**: Create supersedence relationship in Intune
 
 **Process**:
@@ -33,7 +33,7 @@ This document defines **rollback strategies** for Intune deployments. Rollback i
 
 ### 2. Targeted Uninstall
 
-**Use Case**: Remove application completely  
+**Use Case**: Remove application completely
 **Method**: Create uninstall assignment
 
 **Process**:
@@ -48,7 +48,7 @@ This document defines **rollback strategies** for Intune deployments. Rollback i
 
 ### 3. Remediation Scripts
 
-**Use Case**: Fix issues without full rollback  
+**Use Case**: Fix issues without full rollback
 **Method**: Deploy PowerShell remediation script
 
 **Process**:
@@ -210,4 +210,3 @@ This document defines **rollback strategies** for Intune deployments. Rollback i
 - [Error Handling](./error-handling.md)
 - [Ring Model](../../architecture/ring-model.md)
 - [Promotion Gates](../../architecture/promotion-gates.md)
-

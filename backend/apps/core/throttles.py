@@ -6,24 +6,19 @@ Rate limiting throttle classes for DRF.
 Implements throttling strategies for different API endpoints to prevent abuse and
 ensure fair resource utilization.
 """
-from rest_framework.throttling import UserRateThrottle, AnonRateThrottle
+from rest_framework.throttling import AnonRateThrottle, UserRateThrottle
 
 
 class _IsTestUser:
     """Helper to identify load test users."""
-    TEST_USERNAMES = {
-        'loadtest_user', 
-        'cab_approver', 
-        'publisher_user'
-    }
-    
+
+    TEST_USERNAMES = {"loadtest_user", "cab_approver", "publisher_user"}
+
     @classmethod
     def is_test_user(cls, request):
         """Check if the authenticated user is a test user."""
         return (
-            hasattr(request, 'user') and 
-            request.user.is_authenticated and 
-            request.user.username in cls.TEST_USERNAMES
+            hasattr(request, "user") and request.user.is_authenticated and request.user.username in cls.TEST_USERNAMES
         )
 
 
@@ -36,14 +31,15 @@ class LoginRateThrottle(AnonRateThrottle):
 
     Rate: 5 login attempts per hour per IP address
     """
-    scope = 'login'
+
+    scope = "login"
 
     def get_cache_key(self):
         """Override to bypass throttling for test user login attempts."""
         # Check if the request contains test user credentials
         try:
-            if hasattr(self, 'request') and self.request and self.request.data:
-                username = self.request.data.get('username', '')
+            if hasattr(self, "request") and self.request and self.request.data:
+                username = self.request.data.get("username", "")
                 if username in _IsTestUser.TEST_USERNAMES:
                     return None  # No throttling for test users
         except:
@@ -60,7 +56,8 @@ class APIRateThrottle(UserRateThrottle):
 
     Rate: 1000 requests per hour per user
     """
-    scope = 'api'
+
+    scope = "api"
 
     def allow_request(self, request, view):
         """Allow requests from test users without throttling."""
@@ -79,7 +76,8 @@ class BurstRateThrottle(UserRateThrottle):
 
     Rate: 5000 requests per hour per user
     """
-    scope = 'burst'
+
+    scope = "burst"
 
     def allow_request(self, request, view):
         """Allow requests from test users without throttling."""
@@ -98,7 +96,8 @@ class StrictRateThrottle(UserRateThrottle):
 
     Rate: 100 requests per hour per user (production)
     """
-    scope = 'strict'
+
+    scope = "strict"
 
     def allow_request(self, request, view):
         """Allow requests from test users without throttling."""

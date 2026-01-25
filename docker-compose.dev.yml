@@ -61,6 +61,7 @@ services:
     restart: unless-stopped
     volumes:
       - ./backend:/app
+      - prometheus_metrics:/tmp/prometheus_metrics
     ports:
       - "8000:8000"
     depends_on:
@@ -89,6 +90,7 @@ services:
       - MINIO_USE_SSL=False
       - DEBUG=True
       - OTEL_ENABLED=False
+      - PROMETHEUS_MULTIPROC_DIR=/tmp/prometheus_metrics
     stdin_open: true
     tty: true
 
@@ -100,6 +102,7 @@ services:
     command: celery -A config worker --loglevel=info --concurrency=4
     volumes:
       - ./backend:/app
+      - prometheus_metrics:/tmp/prometheus_metrics
     depends_on:
       - db
       - redis
@@ -121,6 +124,7 @@ services:
       - MINIO_SECRET_KEY=minioadmin
       - DEBUG=True
       - OTEL_ENABLED=False
+      - PROMETHEUS_MULTIPROC_DIR=/tmp/prometheus_metrics
     stdin_open: true
     tty: true
 
@@ -233,4 +237,5 @@ volumes:
   redis_data:
   minio_data:
   prometheus_data:
+  prometheus_metrics:
   grafana_data:

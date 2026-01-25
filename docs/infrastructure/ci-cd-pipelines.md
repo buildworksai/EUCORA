@@ -1,7 +1,7 @@
 # CI/CD Pipelines
 
-**Version**: 1.0  
-**Status**: Active  
+**Version**: 1.0
+**Status**: Active
 **Last Updated**: 2026-01-06
 
 ---
@@ -18,7 +18,7 @@ This document defines the **CI/CD pipeline configuration** for EUCORA. All pipel
 
 ### 1. Pre-Commit Hooks
 
-**Location**: Local development environment  
+**Location**: Local development environment
 **Enforcement**: Blocks commits if checks fail
 
 **Checks**:
@@ -30,7 +30,7 @@ This document defines the **CI/CD pipeline configuration** for EUCORA. All pipel
 
 ### 2. Code Quality Checks
 
-**Location**: GitHub Actions  
+**Location**: GitHub Actions
 **Trigger**: Push to main/develop, Pull Requests
 
 **Jobs**:
@@ -41,7 +41,7 @@ This document defines the **CI/CD pipeline configuration** for EUCORA. All pipel
 
 ### 3. Backend Tests
 
-**Location**: GitHub Actions  
+**Location**: GitHub Actions
 **Trigger**: Push to main/develop, Pull Requests
 
 **Configuration**:
@@ -56,7 +56,7 @@ pytest --cov=apps --cov-report=xml --cov-fail-under=90 -v
 
 ### 4. Frontend Tests
 
-**Location**: GitHub Actions  
+**Location**: GitHub Actions
 **Trigger**: Push to main/develop, Pull Requests
 
 **Configuration**:
@@ -71,7 +71,7 @@ npm run test:ci
 
 ### 5. Frontend Linting
 
-**Location**: GitHub Actions  
+**Location**: GitHub Actions
 **Trigger**: Push to main/develop, Pull Requests
 
 **Configuration**:
@@ -169,7 +169,7 @@ npm run build
 
 ### Development
 
-**Trigger**: Push to `develop` branch  
+**Trigger**: Push to `develop` branch
 **Actions**:
 - Run tests
 - Build Docker images
@@ -177,7 +177,7 @@ npm run build
 
 ### Staging
 
-**Trigger**: Merge to `main` branch  
+**Trigger**: Merge to `main` branch
 **Actions**:
 - Run full test suite
 - Build production images
@@ -186,7 +186,7 @@ npm run build
 
 ### Production
 
-**Trigger**: Manual approval + tag  
+**Trigger**: Manual approval + tag
 **Actions**:
 - Run full test suite
 - Build production images
@@ -216,4 +216,3 @@ npm run build
 - [Testing Standards](../architecture/testing-standards.md)
 - [Quality Gates](../architecture/quality-gates.md)
 - [Pre-Commit Hooks](.pre-commit-config.yaml)
-

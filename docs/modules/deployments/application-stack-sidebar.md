@@ -7,7 +7,7 @@
 
 This document describes the full-stack implementation of the **Application Stack Sidebar** feature, which displays a hierarchical view of applications, versions, and deployments in the UI sidebar.
 
-**Route**: `/deployments/stack`  
+**Route**: `/deployments/stack`
 **Navigation**: Sidebar → "Application Stack" (Package icon)
 
 ## Architecture

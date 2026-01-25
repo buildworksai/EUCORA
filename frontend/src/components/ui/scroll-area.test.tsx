@@ -25,4 +25,3 @@ describe('ScrollArea', () => {
     expect(scrollArea).toBeInTheDocument();
   });
 });
-

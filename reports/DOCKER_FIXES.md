@@ -1,7 +1,7 @@
 # Docker Container Crash Fixes
 
-**SPDX-License-Identifier: Apache-2.0**  
-**Copyright (c) 2026 BuildWorks.AI**  
+**SPDX-License-Identifier: Apache-2.0**
+**Copyright (c) 2026 BuildWorks.AI**
 **Date**: 2026-01-06
 
 ## Root Cause Analysis
@@ -16,7 +16,7 @@
 
 **Root Cause**: Configuration for `eucora-api` service was accidentally merged into `celery-beat` service.
 
-**Fix**: 
+**Fix**:
 - Removed all duplicate keys from `celery-beat` service
 - Added complete configuration to `eucora-api` service (volumes, depends_on, environment variables)
 
@@ -163,9 +163,8 @@ docker-compose -f docker-compose.dev.yml build --no-cache
 
 **Status**: ✅ **ALL ISSUES RESOLVED**
 
-**Verification**: 
+**Verification**:
 - ✅ Docker Compose file validates successfully
 - ✅ All containers build without errors
 - ✅ Dependencies resolve correctly
 - ✅ Migration dependencies fixed
-

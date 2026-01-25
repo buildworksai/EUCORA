@@ -6,12 +6,12 @@ import { EmptyState } from '@/components/ui/empty-state';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { useEvidencePack } from '@/lib/api/hooks/useEvidence';
-import { 
-    FileText, 
-    Shield, 
-    Package, 
-    AlertTriangle, 
-    CheckCircle2, 
+import {
+    FileText,
+    Shield,
+    Package,
+    AlertTriangle,
+    CheckCircle2,
     XCircle,
     Download,
     Copy,

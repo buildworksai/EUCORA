@@ -7,5 +7,4 @@ Provides AI-assisted workflows with mandatory human approval gates.
 All AI recommendations require human review before execution.
 """
 
-default_app_config = 'apps.ai_agents.apps.AIAgentsConfig'
-
+default_app_config = "apps.ai_agents.apps.AIAgentsConfig"

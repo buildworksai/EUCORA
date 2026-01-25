@@ -31,12 +31,12 @@ function App() {
   React.useEffect(() => {
     // Check immediately
     checkSession();
-    
+
     // Check every 5 minutes
     const interval = setInterval(() => {
       checkSession();
     }, 5 * 60 * 1000);
-    
+
     return () => clearInterval(interval);
   }, [checkSession]);
 

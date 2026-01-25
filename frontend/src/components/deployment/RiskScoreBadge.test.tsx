@@ -42,4 +42,3 @@ describe('RiskScoreBadge', () => {
     expect(screen.getByText(/51 - High Risk \(CAB Required\)/i)).toBeInTheDocument();
   });
 });
-

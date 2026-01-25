@@ -1,10 +1,8 @@
 # SPDX-License-Identifier: Apache-2.0
 # Copyright (c) 2026 BuildWorks.AI
-"""
-Grafana data source configuration for Prometheus.
+# Grafana data source configuration for Prometheus.
+# Automatically provisioned on startup.
 
-Automatically provisioned on startup.
-"""
 apiVersion: 1
 
 datasources:

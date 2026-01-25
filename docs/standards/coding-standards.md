@@ -1,8 +1,8 @@
 # EUCORA Coding Standards
 
-**SPDX-License-Identifier: Apache-2.0**  
-**Version**: 1.0.0  
-**Last Updated**: January 8, 2026  
+**SPDX-License-Identifier: Apache-2.0**
+**Version**: 1.0.0
+**Last Updated**: January 8, 2026
 **Authority**: REQUIRED — All Code Must Comply
 
 ---
@@ -148,17 +148,17 @@ class DeploymentIntent(models.Model):
 
     # Primary key
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
-    
+
     # CRITICAL: Correlation ID for audit trail
     correlation_id = models.UUIDField(db_index=True)
-    
+
     # Foreign keys
     app = models.ForeignKey(
         'apps.App',
         on_delete=models.PROTECT,
         related_name='deployment_intents',
     )
-    
+
     # Fields
     ring = models.IntegerField(choices=RingLevel.choices, default=RingLevel.LAB)
     status = models.CharField(
@@ -166,11 +166,11 @@ class DeploymentIntent(models.Model):
         choices=DeploymentStatus.choices,
         default=DeploymentStatus.PENDING,
     )
-    
+
     # Timestamps
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
-    
+
     class Meta:
         db_table = 'deployment_intents'
         ordering = ['-created_at']
@@ -197,7 +197,7 @@ class DeploymentIntentViewSet(viewsets.ModelViewSet):
     """
 
     permission_classes = [IsAuthenticated]
-    
+
     def get_serializer_class(self):
         if self.action in ['create', 'update', 'partial_update']:
             return DeploymentIntentWriteSerializer
@@ -206,20 +206,20 @@ class DeploymentIntentViewSet(viewsets.ModelViewSet):
     def get_queryset(self):
         """
         Filter by correlation_id.
-        
+
         CRITICAL: This is the primary audit trail mechanism.
         """
         correlation_id = get_request_correlation_id(self.request)
         if not correlation_id:
             return DeploymentIntent.objects.none()
-        
+
         queryset = DeploymentIntent.objects.filter(correlation_id=correlation_id)
-        
+
         # Apply filters
         status = self.request.query_params.get('status')
         if status:
             queryset = queryset.filter(status=status)
-        
+
         return queryset.select_related('app')
 
     def perform_create(self, serializer):
@@ -275,7 +275,7 @@ def my_endpoint(request):
 class DeploymentIntentService:
     """
     Business logic for deployment intents.
-    
+
     CRITICAL:
     - All business logic in services, NOT in ViewSets
     - All database operations wrapped in transactions
@@ -293,7 +293,7 @@ class DeploymentIntentService:
     ) -> DeploymentIntent:
         """
         Create deployment intent with validation.
-        
+
         Args:
             app_id: Application to deploy
             ring: Target ring (0-4)
@@ -301,17 +301,17 @@ class DeploymentIntentService:
             rollback_plan: Rollback plan dictionary
             correlation_id: Correlation ID for audit
             user_id: Creating user (for audit)
-            
+
         Returns:
             Created DeploymentIntent
-            
+
         Raises:
             ValidationError: Invalid data
             App.DoesNotExist: App not found
         """
         # Validate app exists
         app = App.objects.get(id=app_id)
-        
+
         with transaction.atomic():
             # Create deployment intent
             intent = DeploymentIntent.objects.create(
@@ -322,14 +322,14 @@ class DeploymentIntentService:
                 correlation_id=correlation_id,
                 created_by=user_id,
             )
-            
+
             # Emit event for other modules
             EventBus.emit('deployment_intent.created', {
                 'intent_id': str(intent.id),
                 'correlation_id': str(correlation_id),
                 'ring': ring,
             })
-        
+
         return intent
 ```
 
@@ -447,11 +447,11 @@ export function Component() {
 ```typescript
 export function Component() {
   const navigate = useNavigate();
-  
+
   if (someCondition) {
     return <EarlyReturn />; // ❌ WRONG - hook called before this
   }
-  
+
   const { data } = useQuery(...); // ❌ WRONG - hook after early return
   // ...
 }
@@ -576,6 +576,6 @@ Closes #123
 
 ---
 
-**Classification**: PROPRIETARY — REQUIRED  
-**Enforcement**: PRE-COMMIT HOOKS + CI/CD  
+**Classification**: PROPRIETARY — REQUIRED
+**Enforcement**: PRE-COMMIT HOOKS + CI/CD
 **Review**: Code review required for all changes

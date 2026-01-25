@@ -1,10 +1,10 @@
 # EUCORA Production Readiness: Phased Implementation Plan
 
-**SPDX-License-Identifier: Apache-2.0**  
+**SPDX-License-Identifier: Apache-2.0**
 **Copyright (c) 2026 BuildWorks.AI**
 
-**Document Status**: MANDATORY  
-**Created**: 2026-01-21  
+**Document Status**: MANDATORY
+**Created**: 2026-01-21
 **Authority**: Engineering Leadership
 
 ---
@@ -37,8 +37,8 @@ Demo data seeding remains for customer demonstrations, but **demo functionality 
 
 ## Phase 0: Critical Security Fixes
 
-**Timeline**: Week 1  
-**Status**: 🔴 BLOCKING - Cannot ship without completion  
+**Timeline**: Week 1
+**Status**: 🔴 BLOCKING - Cannot ship without completion
 **Owner**: Security + Backend Lead
 
 ### P0.1: Remove Default Secrets
@@ -207,7 +207,7 @@ class LoginRateThrottle(AnonRateThrottle):
 class AIModelProvider(models.Model):
     api_key_vault_ref = models.CharField(...)  # Required in production
     # REMOVE: api_key_dev field
-    
+
 # Option 2: Encrypt at rest
 from django_cryptography.fields import encrypt
 api_key_dev = encrypt(models.CharField(...))
@@ -250,8 +250,8 @@ except OSError as e:
 
 ## Phase 1: Database & Performance
 
-**Timeline**: Week 2  
-**Status**: 🔴 BLOCKING - System will crash under load  
+**Timeline**: Week 2
+**Status**: 🔴 BLOCKING - System will crash under load
 **Owner**: Backend Lead + DBA
 
 ### P1.1: Fix N+1 Query Problems
@@ -435,11 +435,11 @@ def approve_deployment(request, pk):
         approval = CABApproval.objects.select_for_update().get(pk=pk)
         approval.decision = 'APPROVED'
         approval.save()
-        
+
         deployment = approval.deployment_intent
         deployment.status = 'APPROVED'
         deployment.save()
-        
+
         # Event creation inside same transaction
         DeploymentEvent.objects.create(...)
 ```
@@ -453,8 +453,8 @@ def approve_deployment(request, pk):
 
 ## Phase 2: Resilience & Reliability
 
-**Timeline**: Week 3  
-**Status**: 🟠 HIGH - Cascading failures without this  
+**Timeline**: Week 3
+**Status**: 🟠 HIGH - Cascading failures without this
 **Owner**: Backend Lead + SRE
 
 ### P2.1: Move Heavy Operations to Celery
@@ -599,8 +599,8 @@ DATABASES['default']['OPTIONS'] = {
 
 ## Phase 3: Observability & Operations
 
-**Timeline**: Week 4  
-**Status**: 🟠 HIGH - Blind to production issues  
+**Timeline**: Week 4
+**Status**: 🟠 HIGH - Blind to production issues
 **Owner**: SRE + Backend Lead
 
 ### P3.1: Structured Logging
@@ -718,7 +718,7 @@ def health_check(request):
         'minio': check_minio(),
         'external_services': check_external_services(),  # Circuit breaker status
     }
-    
+
     all_healthy = all(c['status'] == 'healthy' for c in checks.values())
     return Response(checks, status=200 if all_healthy else 503)
 ```
@@ -733,8 +733,8 @@ def health_check(request):
 
 ## Phase 4: Testing & Quality
 
-**Timeline**: Weeks 5-6  
-**Status**: 🟡 MEDIUM - Unknown bugs in production  
+**Timeline**: Weeks 5-6
+**Status**: 🟡 MEDIUM - Unknown bugs in production
 **Owner**: QA Lead + All Engineers
 
 ### P4.1: API Endpoint Test Coverage
@@ -758,18 +758,18 @@ class TestDeploymentEndpoints(APITestCase):
     def setUp(self):
         self.user = User.objects.create_user('test', 'test@test.com', 'pass')
         self.client.force_authenticate(user=self.user)
-    
+
     def test_list_applications_returns_grouped_data(self):
         # Create test data
         DeploymentIntent.objects.create(app_name='App1', version='1.0', ...)
         DeploymentIntent.objects.create(app_name='App1', version='2.0', ...)
-        
+
         response = self.client.get('/api/v1/deployments/applications')
-        
+
         self.assertEqual(response.status_code, 200)
         self.assertEqual(len(response.data['applications']), 1)
         self.assertEqual(len(response.data['applications'][0]['versions']), 2)
-    
+
     def test_list_applications_requires_auth(self):
         self.client.logout()
         response = self.client.get('/api/v1/deployments/applications')
@@ -793,7 +793,7 @@ class TestDeploymentEndpoints(APITestCase):
 # backend/tests/integration/test_deployment_flow.py
 class TestDeploymentFlow(TransactionTestCase):
     """End-to-end deployment flow test."""
-    
+
     def test_full_deployment_lifecycle(self):
         # 1. Create deployment intent
         # 2. Verify risk assessment triggered
@@ -802,7 +802,7 @@ class TestDeploymentFlow(TransactionTestCase):
         # 5. Verify deployment status updated
         # 6. Verify event store has all events
         pass
-    
+
     def test_deployment_with_connector(self):
         # Test actual connector integration (mocked external)
         pass
@@ -827,11 +827,11 @@ from locust import HttpUser, task, between
 
 class EUCORAUser(HttpUser):
     wait_time = between(1, 3)
-    
+
     @task(3)
     def list_applications(self):
         self.client.get('/api/v1/deployments/applications')
-    
+
     @task(1)
     def create_deployment(self):
         self.client.post('/api/v1/deployments/', json={...})
@@ -871,8 +871,8 @@ class EUCORAUser(HttpUser):
 
 ## Phase 5: Scale & Hardening
 
-**Timeline**: Week 7  
-**Status**: 🟡 MEDIUM - Growth ceiling  
+**Timeline**: Week 7
+**Status**: 🟡 MEDIUM - Growth ceiling
 **Owner**: SRE + Architect
 
 ### P5.1: Application-Level Caching
@@ -1007,8 +1007,8 @@ with distributed_lock(f'deployment:{deployment_id}'):
 
 ## Phase 6: Final Validation
 
-**Timeline**: Week 8  
-**Status**: Gate to Production  
+**Timeline**: Week 8
+**Status**: Gate to Production
 **Owner**: Engineering Leadership + Security
 
 ### P6.1: Security Penetration Test
@@ -1169,8 +1169,8 @@ django-cryptography~=1.1
 
 ## Phase 7: Self-Hosted Branding & Customization
 
-**Timeline**: Week 9 (1 week - SIMPLIFIED)  
-**Status**: 🟡 FEATURE - Required for customer customization  
+**Timeline**: Week 9 (1 week - SIMPLIFIED)
+**Status**: 🟡 FEATURE - Required for customer customization
 **Owner**: Full-Stack Lead + Designer
 
 ### ARCHITECTURE: SINGLE-TENANT SELF-HOSTED
@@ -1211,11 +1211,11 @@ class SiteSettings(models.Model):
     # Identity
     site_name = models.CharField(max_length=255, default='EUCORA')
     site_tagline = models.CharField(max_length=500, blank=True, default='Enterprise Application Packaging & Deployment')
-    
+
     # Logo
     logo_url = models.URLField(blank=True, null=True, help_text='URL to uploaded logo')
     favicon_url = models.URLField(blank=True, null=True, help_text='URL to favicon')
-    
+
     # Primary Brand Colors
     color_primary = models.CharField(
         max_length=7, default='#3B82F6',
@@ -1223,73 +1223,73 @@ class SiteSettings(models.Model):
     )
     color_primary_light = models.CharField(max_length=7, default='#60A5FA')
     color_primary_dark = models.CharField(max_length=7, default='#1D4ED8')
-    
+
     # Secondary Brand Colors
     color_secondary = models.CharField(max_length=7, default='#8B5CF6')
     color_secondary_light = models.CharField(max_length=7, default='#A78BFA')
     color_secondary_dark = models.CharField(max_length=7, default='#6D28D9')
-    
+
     # Accent Color (for highlights, CTAs)
     color_accent = models.CharField(max_length=7, default='#F59E0B')
     color_accent_light = models.CharField(max_length=7, default='#FBBF24')
     color_accent_dark = models.CharField(max_length=7, default='#D97706')
-    
+
     # Semantic Colors
     color_success = models.CharField(max_length=7, default='#10B981')
     color_warning = models.CharField(max_length=7, default='#F59E0B')
     color_error = models.CharField(max_length=7, default='#EF4444')
     color_info = models.CharField(max_length=7, default='#3B82F6')
-    
+
     # Background Colors
     color_background = models.CharField(max_length=7, default='#F9FAFB')
     color_surface = models.CharField(max_length=7, default='#FFFFFF')
     color_surface_elevated = models.CharField(max_length=7, default='#FFFFFF')
-    
+
     # Text Colors
     color_text_primary = models.CharField(max_length=7, default='#111827')
     color_text_secondary = models.CharField(max_length=7, default='#6B7280')
     color_text_muted = models.CharField(max_length=7, default='#9CA3AF')
     color_text_inverse = models.CharField(max_length=7, default='#FFFFFF')
-    
+
     # Border Colors
     color_border = models.CharField(max_length=7, default='#E5E7EB')
     color_border_light = models.CharField(max_length=7, default='#F3F4F6')
-    
+
     # Sidebar/Navigation Colors
     color_sidebar_bg = models.CharField(max_length=7, default='#1F2937')
     color_sidebar_text = models.CharField(max_length=7, default='#F9FAFB')
     color_sidebar_active = models.CharField(max_length=7, default='#3B82F6')
-    
+
     # Header Colors
     color_header_bg = models.CharField(max_length=7, default='#FFFFFF')
     color_header_text = models.CharField(max_length=7, default='#111827')
-    
+
     # Footer (for marketing page)
     color_footer_bg = models.CharField(max_length=7, default='#111827')
     color_footer_text = models.CharField(max_length=7, default='#9CA3AF')
-    
+
     # Metadata
     updated_at = models.DateTimeField(auto_now=True)
     updated_by = models.ForeignKey(
         'auth.User', on_delete=models.SET_NULL, null=True, blank=True
     )
-    
+
     class Meta:
         db_table = 'site_settings'
         verbose_name = 'Site Settings'
         verbose_name_plural = 'Site Settings'
-    
+
     def save(self, *args, **kwargs):
         # Enforce singleton: always use pk=1
         self.pk = 1
         super().save(*args, **kwargs)
-    
+
     @classmethod
     def get_settings(cls):
         """Get or create the singleton settings instance."""
         obj, _ = cls.objects.get_or_create(pk=1)
         return obj
-    
+
     def __str__(self):
         return f"Site Settings - {self.site_name}"
 ```
@@ -1369,11 +1369,11 @@ def manage_site_settings(request):
     Admin endpoint to view/update all site settings.
     """
     settings = SiteSettings.get_settings()
-    
+
     if request.method == 'GET':
         serializer = SiteSettingsSerializer(settings)
         return Response(serializer.data)
-    
+
     elif request.method == 'PUT':
         serializer = SiteSettingsSerializer(settings, data=request.data, partial=True)
         serializer.is_valid(raise_exception=True)
@@ -1418,31 +1418,31 @@ def upload_logo(request):
     """
     logo_file = request.FILES.get('logo')
     logo_type = request.data.get('type', 'logo')  # 'logo' or 'favicon'
-    
+
     if not logo_file:
         return Response({'error': 'No file provided'}, status=400)
-    
+
     # Validate file size (2MB for logo, 256KB for favicon)
     max_size = 256 * 1024 if logo_type == 'favicon' else 2 * 1024 * 1024
     if logo_file.size > max_size:
         return Response({
             'error': f'File too large (max {max_size // 1024}KB)'
         }, status=400)
-    
+
     # Validate file type
     allowed_types = ['image/png', 'image/jpeg', 'image/svg+xml', 'image/x-icon']
     if logo_file.content_type not in allowed_types:
         return Response({
             'error': 'Invalid file type. Allowed: PNG, JPEG, SVG, ICO'
         }, status=400)
-    
+
     # Process image (resize if needed, except SVG)
     if logo_file.content_type != 'image/svg+xml':
         max_dimension = 64 if logo_type == 'favicon' else 512
         processed = process_image(logo_file, max_dimension)
     else:
         processed = logo_file.read()
-    
+
     # Upload to MinIO
     extension = logo_file.content_type.split('/')[-1].replace('x-icon', 'ico')
     key = f'branding/{logo_type}.{extension}'
@@ -1453,7 +1453,7 @@ def upload_logo(request):
         content_type=logo_file.content_type,
         public=True
     )
-    
+
     # Update settings
     settings = SiteSettings.get_settings()
     if logo_type == 'favicon':
@@ -1462,7 +1462,7 @@ def upload_logo(request):
         settings.logo_url = url
     settings.updated_by = request.user
     settings.save()
-    
+
     return Response({
         'url': url,
         'type': logo_type,
@@ -1473,15 +1473,15 @@ def upload_logo(request):
 def process_image(file, max_dimension):
     """Resize image if larger than max_dimension, preserve aspect ratio."""
     img = Image.open(file)
-    
+
     # Convert to RGB if necessary (for JPEG compatibility)
     if img.mode in ('RGBA', 'P'):
         img = img.convert('RGBA')
-    
+
     # Resize if needed
     if max(img.size) > max_dimension:
         img.thumbnail((max_dimension, max_dimension), Image.Resampling.LANCZOS)
-    
+
     # Save to bytes
     buffer = io.BytesIO()
     img_format = 'PNG' if img.mode == 'RGBA' else 'JPEG'
@@ -1644,7 +1644,7 @@ export const useTheme = () => useContext(ThemeContext);
 
 function applyThemeToDOM(colors: ThemeColors) {
   const root = document.documentElement;
-  
+
   // Map all colors to CSS custom properties
   Object.entries(colors).forEach(([key, value]) => {
     // Convert camelCase to kebab-case: primaryLight -> primary-light
@@ -1655,7 +1655,7 @@ function applyThemeToDOM(colors: ThemeColors) {
 
 function updateFavicon(url: string | null) {
   if (!url) return;
-  const link = document.querySelector<HTMLLinkElement>("link[rel*='icon']") 
+  const link = document.querySelector<HTMLLinkElement>("link[rel*='icon']")
     || document.createElement('link');
   link.rel = 'icon';
   link.href = url;
@@ -1765,14 +1765,14 @@ import { useMutation, useQuery } from '@tanstack/react-query';
 export function BrandingSettings() {
   const { refresh } = useTheme();
   const [activeTab, setActiveTab] = useState<'general' | 'colors' | 'preview'>('general');
-  
+
   const { data: settings, isLoading } = useQuery({
     queryKey: ['admin', 'site-settings'],
     queryFn: () => fetch('/api/v1/admin/site-settings').then(r => r.json()),
   });
-  
+
   const updateMutation = useMutation({
-    mutationFn: (data: Partial<SiteSettings>) => 
+    mutationFn: (data: Partial<SiteSettings>) =>
       fetch('/api/v1/admin/site-settings', {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
@@ -1788,7 +1788,7 @@ export function BrandingSettings() {
   return (
     <div className="max-w-4xl mx-auto p-6">
       <h1 className="text-2xl font-bold mb-6">Site Branding</h1>
-      
+
       {/* Tabs */}
       <div className="flex border-b mb-6">
         {['general', 'colors', 'preview'].map(tab => (
@@ -1796,8 +1796,8 @@ export function BrandingSettings() {
             key={tab}
             onClick={() => setActiveTab(tab as typeof activeTab)}
             className={`px-4 py-2 capitalize ${
-              activeTab === tab 
-                ? 'border-b-2 border-primary text-primary font-medium' 
+              activeTab === tab
+                ? 'border-b-2 border-primary text-primary font-medium'
                 : 'text-text-secondary'
             }`}
           >
@@ -1805,7 +1805,7 @@ export function BrandingSettings() {
           </button>
         ))}
       </div>
-      
+
       {/* General Tab */}
       {activeTab === 'general' && (
         <div className="space-y-6">
@@ -1819,7 +1819,7 @@ export function BrandingSettings() {
               className="w-full border rounded px-3 py-2"
             />
           </div>
-          
+
           {/* Logo Upload */}
           <div>
             <label className="block text-sm font-medium mb-1">Logo</label>
@@ -1827,7 +1827,7 @@ export function BrandingSettings() {
               {settings.logo_url && (
                 <img src={settings.logo_url} alt="Logo" className="h-16" />
               )}
-              <LogoUploader 
+              <LogoUploader
                 type="logo"
                 onUpload={(url) => refresh()}
               />
@@ -1836,7 +1836,7 @@ export function BrandingSettings() {
               PNG, JPEG, or SVG. Max 2MB, 512x512px recommended.
             </p>
           </div>
-          
+
           {/* Favicon Upload */}
           <div>
             <label className="block text-sm font-medium mb-1">Favicon</label>
@@ -1844,7 +1844,7 @@ export function BrandingSettings() {
               {settings.favicon_url && (
                 <img src={settings.favicon_url} alt="Favicon" className="h-8 w-8" />
               )}
-              <LogoUploader 
+              <LogoUploader
                 type="favicon"
                 onUpload={(url) => refresh()}
               />
@@ -1852,7 +1852,7 @@ export function BrandingSettings() {
           </div>
         </div>
       )}
-      
+
       {/* Colors Tab */}
       {activeTab === 'colors' && (
         <div className="space-y-8">
@@ -1866,7 +1866,7 @@ export function BrandingSettings() {
             ]}
             onChange={updateMutation.mutate}
           />
-          
+
           {/* Secondary Colors */}
           <ColorSection
             title="Secondary Colors"
@@ -1877,7 +1877,7 @@ export function BrandingSettings() {
             ]}
             onChange={updateMutation.mutate}
           />
-          
+
           {/* Accent Colors */}
           <ColorSection
             title="Accent Colors"
@@ -1888,7 +1888,7 @@ export function BrandingSettings() {
             ]}
             onChange={updateMutation.mutate}
           />
-          
+
           {/* Semantic Colors */}
           <ColorSection
             title="Semantic Colors"
@@ -1900,7 +1900,7 @@ export function BrandingSettings() {
             ]}
             onChange={updateMutation.mutate}
           />
-          
+
           {/* Surface Colors */}
           <ColorSection
             title="Background & Surface"
@@ -1911,7 +1911,7 @@ export function BrandingSettings() {
             ]}
             onChange={updateMutation.mutate}
           />
-          
+
           {/* Text Colors */}
           <ColorSection
             title="Text Colors"
@@ -1923,7 +1923,7 @@ export function BrandingSettings() {
             ]}
             onChange={updateMutation.mutate}
           />
-          
+
           {/* Layout Colors */}
           <ColorSection
             title="Layout Colors"
@@ -1938,7 +1938,7 @@ export function BrandingSettings() {
             ]}
             onChange={updateMutation.mutate}
           />
-          
+
           {/* Border Colors */}
           <ColorSection
             title="Border Colors"
@@ -1948,7 +1948,7 @@ export function BrandingSettings() {
             ]}
             onChange={updateMutation.mutate}
           />
-          
+
           {/* Reset Button */}
           <button
             onClick={() => updateMutation.mutate(DEFAULT_COLORS)}
@@ -1958,7 +1958,7 @@ export function BrandingSettings() {
           </button>
         </div>
       )}
-      
+
       {/* Preview Tab */}
       {activeTab === 'preview' && (
         <BrandingPreview settings={settings} />
@@ -2045,8 +2045,8 @@ function ColorSection({ title, colors, onChange }) {
 
 ## Phase 8: Marketing & Public Pages
 
-**Timeline**: Week 11  
-**Status**: 🟡 FEATURE - Required for public presence  
+**Timeline**: Week 11
+**Status**: 🟡 FEATURE - Required for public presence
 **Owner**: Frontend Lead + Marketing
 
 ### P8.1: Marketing Landing Page
@@ -2073,21 +2073,21 @@ export function LandingPage() {
       <nav className="flex justify-between items-center px-8 py-4 bg-white shadow">
         <img src="/eucora-logo.svg" alt="EUCORA" className="h-8" />
         <div className="flex gap-4">
-          <Link 
-            to="/demo" 
+          <Link
+            to="/demo"
             className="px-4 py-2 text-gray-700 hover:text-primary"
           >
             Try Demo
           </Link>
-          <Link 
-            to="/login" 
+          <Link
+            to="/login"
             className="px-4 py-2 bg-primary text-white rounded hover:bg-primary-dark"
           >
             Login
           </Link>
         </div>
       </nav>
-      
+
       {/* Hero Section */}
       <section className="py-20 px-8 bg-gradient-to-br from-blue-50 to-white">
         <div className="max-w-4xl mx-auto text-center">
@@ -2095,18 +2095,18 @@ export function LandingPage() {
             Enterprise Application Packaging & Deployment
           </h1>
           <p className="text-xl text-gray-600 mb-8">
-            Automate your software deployment lifecycle with CAB-approved 
+            Automate your software deployment lifecycle with CAB-approved
             governance, ring-based rollouts, and complete audit trails.
           </p>
           <div className="flex justify-center gap-4">
-            <Link 
-              to="/register" 
+            <Link
+              to="/register"
               className="px-8 py-3 bg-primary text-white text-lg rounded-lg hover:bg-primary-dark"
             >
               Start Free Trial
             </Link>
-            <Link 
-              to="/demo" 
+            <Link
+              to="/demo"
               className="px-8 py-3 border border-primary text-primary text-lg rounded-lg hover:bg-blue-50"
             >
               Watch Demo
@@ -2114,43 +2114,43 @@ export function LandingPage() {
           </div>
         </div>
       </section>
-      
+
       {/* Features Section */}
       <section className="py-16 px-8">
         <div className="max-w-6xl mx-auto grid grid-cols-3 gap-8">
-          <FeatureCard 
+          <FeatureCard
             icon={<ShieldIcon />}
             title="CAB Governance"
             description="Built-in Change Advisory Board workflows with risk scoring and evidence packs."
           />
-          <FeatureCard 
+          <FeatureCard
             icon={<LayersIcon />}
             title="Ring-Based Rollouts"
             description="Lab → Canary → Pilot → Production with automatic promotion gates."
           />
-          <FeatureCard 
+          <FeatureCard
             icon={<ConnectIcon />}
             title="Multi-Platform"
             description="Intune, SCCM, Jamf, Landscape, Ansible - all from one control plane."
           />
         </div>
       </section>
-      
+
       {/* CTA Section */}
       <section className="py-16 px-8 bg-primary text-white">
         <div className="max-w-4xl mx-auto text-center">
           <h2 className="text-3xl font-bold mb-4">
             Ready to modernize your deployment pipeline?
           </h2>
-          <Link 
-            to="/register" 
+          <Link
+            to="/register"
             className="inline-block px-8 py-3 bg-white text-primary text-lg rounded-lg hover:bg-gray-100"
           >
             Get Started Free
           </Link>
         </div>
       </section>
-      
+
       {/* Footer */}
       <footer className="py-8 px-8 bg-gray-900 text-gray-400">
         {/* Footer content */}
@@ -2180,7 +2180,7 @@ export function LandingPage() {
 export function AuthPage() {
   const [mode, setMode] = useState<'login' | 'signup'>('login');
   const { orgSlug } = useParams();
-  
+
   return (
     <div className="min-h-screen bg-gray-50 flex items-center justify-center">
       <div className="bg-white p-8 rounded-lg shadow-lg w-full max-w-md">
@@ -2189,8 +2189,8 @@ export function AuthPage() {
           <button
             onClick={() => setMode('login')}
             className={`flex-1 py-2 text-center ${
-              mode === 'login' 
-                ? 'border-b-2 border-primary text-primary font-medium' 
+              mode === 'login'
+                ? 'border-b-2 border-primary text-primary font-medium'
                 : 'text-gray-500'
             }`}
           >
@@ -2199,15 +2199,15 @@ export function AuthPage() {
           <button
             onClick={() => setMode('signup')}
             className={`flex-1 py-2 text-center ${
-              mode === 'signup' 
-                ? 'border-b-2 border-primary text-primary font-medium' 
+              mode === 'signup'
+                ? 'border-b-2 border-primary text-primary font-medium'
                 : 'text-gray-500'
             }`}
           >
             Sign Up
           </button>
         </div>
-        
+
         {/* Form */}
         {mode === 'login' ? (
           <LoginForm orgSlug={orgSlug} />
@@ -2227,16 +2227,16 @@ export function AuthPage() {
   {/* Public routes */}
   <Route path="/" element={<LandingPage />} />
   <Route path="/demo" element={<DemoRedirect />} />
-  
+
   {/* Auth routes */}
   <Route path="/login" element={<AuthPage />} />
   <Route path="/signup" element={<AuthPage />} />
   <Route path="/register" element={<OrgRegistrationPage />} />
-  
+
   {/* Org-scoped auth */}
   <Route path="/org/:orgSlug/login" element={<AuthPage />} />
   <Route path="/org/:orgSlug/signup" element={<AuthPage />} />
-  
+
   {/* Protected app routes */}
   <Route path="/app/*" element={<ProtectedLayout />}>
     {/* ... app routes */}
@@ -2271,17 +2271,17 @@ export function AuthPage() {
 export function DemoRedirect() {
   const navigate = useNavigate();
   const { login } = useAuth();
-  
+
   useEffect(() => {
     const enterDemo = async () => {
       if (import.meta.env.VITE_DEMO_MODE !== 'true') {
         // Demo not available - show message
-        navigate('/login', { 
-          state: { message: 'Demo mode not available in production' } 
+        navigate('/login', {
+          state: { message: 'Demo mode not available in production' }
         });
         return;
       }
-      
+
       // Auto-login with demo credentials
       try {
         await login({
@@ -2290,15 +2290,15 @@ export function DemoRedirect() {
         });
         navigate('/app/dashboard');
       } catch {
-        navigate('/login', { 
-          state: { message: 'Demo login failed' } 
+        navigate('/login', {
+          state: { message: 'Demo login failed' }
         });
       }
     };
-    
+
     enterDemo();
   }, []);
-  
+
   return <LoadingSpinner message="Entering demo mode..." />;
 }
 ```
@@ -2308,7 +2308,7 @@ export function DemoRedirect() {
 // frontend/src/components/DemoModeBanner.tsx
 export function DemoModeBanner() {
   if (import.meta.env.VITE_DEMO_MODE !== 'true') return null;
-  
+
   return (
     <div className="bg-yellow-500 text-yellow-900 text-center py-2 text-sm font-medium">
       ⚠️ DEMO MODE - Data shown is for demonstration purposes only
@@ -2340,7 +2340,7 @@ export function OrgRegistrationPage() {
     primaryColor: '#3B82F6',
     logo: null as File | null,
   });
-  
+
   return (
     <div className="min-h-screen bg-gray-50 py-12">
       <div className="max-w-2xl mx-auto">
@@ -2348,16 +2348,16 @@ export function OrgRegistrationPage() {
         <div className="flex justify-center mb-8">
           <StepIndicator current={step} total={3} />
         </div>
-        
+
         <div className="bg-white p-8 rounded-lg shadow-lg">
           {step === 1 && (
-            <OrgDetailsStep 
+            <OrgDetailsStep
               formData={formData}
               onChange={setFormData}
               onNext={() => setStep(2)}
             />
           )}
-          
+
           {step === 2 && (
             <BrandingStep
               formData={formData}
@@ -2366,7 +2366,7 @@ export function OrgRegistrationPage() {
               onNext={() => setStep(3)}
             />
           )}
-          
+
           {step === 3 && (
             <AdminAccountStep
               formData={formData}
@@ -2385,7 +2385,7 @@ function OrgDetailsStep({ formData, onChange, onNext }) {
   return (
     <>
       <h2 className="text-2xl font-bold mb-6">Organization Details</h2>
-      
+
       <div className="space-y-4">
         <div>
           <label className="block text-sm font-medium mb-1">
@@ -2403,7 +2403,7 @@ function OrgDetailsStep({ formData, onChange, onNext }) {
           </p>
         </div>
       </div>
-      
+
       <button onClick={onNext} className="mt-6 w-full bg-primary text-white py-2 rounded">
         Continue
       </button>
@@ -2415,7 +2415,7 @@ function BrandingStep({ formData, onChange, onBack, onNext }) {
   return (
     <>
       <h2 className="text-2xl font-bold mb-6">Customize Branding</h2>
-      
+
       <div className="space-y-6">
         {/* Logo Upload */}
         <div>
@@ -2430,7 +2430,7 @@ function BrandingStep({ formData, onChange, onBack, onNext }) {
             PNG, JPG, or SVG. Max 2MB. Recommended: 512x512px
           </p>
         </div>
-        
+
         {/* Color Picker */}
         <div>
           <label className="block text-sm font-medium mb-1">
@@ -2452,15 +2452,15 @@ function BrandingStep({ formData, onChange, onBack, onNext }) {
             />
           </div>
         </div>
-        
+
         {/* Preview */}
         <div>
           <label className="block text-sm font-medium mb-2">Preview</label>
-          <div 
+          <div
             className="p-4 rounded border"
             style={{ borderColor: formData.primaryColor }}
           >
-            <button 
+            <button
               className="px-4 py-2 text-white rounded"
               style={{ backgroundColor: formData.primaryColor }}
             >
@@ -2469,7 +2469,7 @@ function BrandingStep({ formData, onChange, onBack, onNext }) {
           </div>
         </div>
       </div>
-      
+
       <div className="flex gap-4 mt-6">
         <button onClick={onBack} className="flex-1 border py-2 rounded">
           Back

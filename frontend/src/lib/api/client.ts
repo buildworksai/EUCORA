@@ -11,7 +11,7 @@ const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000';
 function getCorrelationId(): string {
   // Try to get from sessionStorage
   let correlationId = sessionStorage.getItem('correlation_id');
-  
+
   if (!correlationId) {
     // Generate new UUID v4
     correlationId = 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
@@ -21,7 +21,7 @@ function getCorrelationId(): string {
     });
     sessionStorage.setItem('correlation_id', correlationId);
   }
-  
+
   return correlationId;
 }
 
@@ -37,12 +37,12 @@ async function getCsrfToken(): Promise<string | null> {
     csrfTokenCache = match[1];
     return csrfTokenCache;
   }
-  
+
   // If not in cookie and we have a cached token, use it
   if (csrfTokenCache) {
     return csrfTokenCache;
   }
-  
+
   // Try to fetch from API endpoint (for development/mock auth scenarios)
   try {
     // API_BASE_URL already includes /api/v1, so use it directly
@@ -51,7 +51,7 @@ async function getCsrfToken(): Promise<string | null> {
       method: 'GET',
       credentials: 'include',
     });
-    
+
     if (response.ok) {
       const data = await response.json();
       csrfTokenCache = data.csrf_token || null;
@@ -61,7 +61,7 @@ async function getCsrfToken(): Promise<string | null> {
     // Silently fail - CSRF token might not be needed for GET requests
     console.debug('Failed to fetch CSRF token:', error);
   }
-  
+
   return null;
 }
 
@@ -101,7 +101,7 @@ async function apiRequest<T>(
 
   // Normalize endpoint - ensure it starts with / and handle API_BASE_URL properly
   let normalizedEndpoint = endpoint.startsWith('/') ? endpoint : `/${endpoint}`;
-  
+
   // If API_BASE_URL already includes /api/v1, don't add it again
   let fullUrl: string;
   if (API_BASE_URL.includes('/api/v1')) {
@@ -171,7 +171,7 @@ async function apiRequest<T>(
         // Don't show toast for 401 - handled by redirect
         throw new Error('Session expired. Please log in again.');
       }
-      
+
       // Don't show toast for 404 (handled by components)
       if (response.status !== 404) {
         toast.error(errorMessage, {

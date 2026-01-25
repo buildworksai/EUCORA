@@ -1,9 +1,9 @@
 # Demo Data Seeding Runbook
 
-**SPDX-License-Identifier: Apache-2.0**  
-**Version**: v1.2  
-**Status**: Active  
-**Owner**: Platform Engineering  
+**SPDX-License-Identifier: Apache-2.0**
+**Version**: v1.2
+**Status**: Active
+**Owner**: Platform Engineering
 **Last Updated**: 2026-01-06
 
 ---

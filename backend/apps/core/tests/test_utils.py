@@ -4,11 +4,12 @@
 Tests for core utilities.
 """
 import pytest
-from rest_framework.test import APIRequestFactory
 from rest_framework.request import Request
-from apps.core.utils import generate_correlation_id, get_demo_mode_enabled, set_demo_mode_enabled, apply_demo_filter
-from apps.core.models import DemoModeConfig
+from rest_framework.test import APIRequestFactory
+
 from apps.connectors.models import Asset
+from apps.core.models import DemoModeConfig
+from apps.core.utils import apply_demo_filter, generate_correlation_id, get_demo_mode_enabled, set_demo_mode_enabled
 
 
 @pytest.mark.django_db

@@ -145,7 +145,7 @@ MQTT optional for push events in low bandwidth sites.
 # 6. Data Flow Diagrams (Logical)
 
 ```
-[Agent] 
+[Agent]
    → (HTTPS/2) → [API Gateway]
        → [Telemetry Normalizer]
            ↘ Prometheus (metrics)

@@ -74,4 +74,3 @@ describe('Table Components', () => {
     expect(screen.getByText('Selected Row')).toBeInTheDocument();
   });
 });
-

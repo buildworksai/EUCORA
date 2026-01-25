@@ -49,11 +49,11 @@ export const ENDPOINTS = {
 
 /**
  * Example usage:
- * 
+ *
  * ```typescript
  * import { ENDPOINTS, type HealthCheck } from './contracts';
  * import { api } from '@/lib/api/client';
- * 
+ *
  * const response = await api.get<HealthCheck>(ENDPOINTS.HEALTH);
  * ```
  */

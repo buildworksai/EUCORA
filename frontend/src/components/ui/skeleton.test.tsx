@@ -41,4 +41,3 @@ describe('Skeleton Components', () => {
     expect(skeletons.length).toBeGreaterThan(3);
   });
 });
-

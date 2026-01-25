@@ -16,7 +16,7 @@ describe('Switch', () => {
     const user = userEvent.setup();
     render(<Switch />);
     const switchElement = screen.getByRole('switch');
-    
+
     expect(switchElement).not.toBeChecked();
     await user.click(switchElement);
     expect(switchElement).toBeChecked();
@@ -32,10 +32,10 @@ describe('Switch', () => {
     const handleChange = vi.fn();
     const user = userEvent.setup();
     render(<Switch onCheckedChange={handleChange} />);
-    
+
     const switchElement = screen.getByRole('switch');
     await user.click(switchElement);
-    
+
     expect(handleChange).toHaveBeenCalledWith(true);
   });
 
@@ -45,4 +45,3 @@ describe('Switch', () => {
     expect(switchElement).toHaveClass('custom-switch');
   });
 });
-

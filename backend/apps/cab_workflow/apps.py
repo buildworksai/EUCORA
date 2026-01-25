@@ -8,6 +8,7 @@ from django.apps import AppConfig
 
 class CABWorkflowConfig(AppConfig):
     """CAB Workflow app configuration."""
-    default_auto_field = 'django.db.models.BigAutoField'
-    name = 'apps.cab_workflow'
-    verbose_name = 'EUCORA CAB Workflow'
+
+    default_auto_field = "django.db.models.BigAutoField"
+    name = "apps.cab_workflow"
+    verbose_name = "EUCORA CAB Workflow"

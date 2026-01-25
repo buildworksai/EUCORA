@@ -16,7 +16,7 @@ The issue stems from **Django REST Framework's SessionAuthentication enforcing C
    ```
    This allows unauthenticated requests in development mode.
 
-2. **CSRF Protection Conflict**: 
+2. **CSRF Protection Conflict**:
    - DRF's `SessionAuthentication` (configured in `REST_FRAMEWORK['DEFAULT_AUTHENTICATION_CLASSES']`) enforces CSRF protection for POST/PUT/DELETE requests
    - Even with `AllowAny` permission, CSRF tokens are required for state-changing operations
    - When frontend uses mock authentication (`VITE_USE_MOCK_AUTH === 'true'`), there's no valid Django session cookie
@@ -40,11 +40,11 @@ The issue stems from **Django REST Framework's SessionAuthentication enforcing C
 def exempt_csrf_in_debug(view_func: Callable) -> Callable:
     """
     Exempt view from CSRF protection in DEBUG mode only.
-    
+
     This is needed because DRF's SessionAuthentication enforces CSRF protection
     for state-changing operations (POST/PUT/DELETE) even when AllowAny permission
     is used. In development with mock authentication, this causes 403 errors.
-    
+
     Usage:
         @exempt_csrf_in_debug
         @api_view(['POST'])

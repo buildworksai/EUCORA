@@ -80,11 +80,11 @@ export const ENDPOINTS = {
 
 /**
  * Example usage:
- * 
+ *
  * ```typescript
  * import { ENDPOINTS, type ComplianceMetrics } from './contracts';
  * import { api } from '@/lib/api/client';
- * 
+ *
  * const response = await api.get<ComplianceMetrics>(ENDPOINTS.COMPLIANCE_METRICS);
  * ```
  */

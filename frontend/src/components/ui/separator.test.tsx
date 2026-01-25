@@ -23,4 +23,3 @@ describe('Separator', () => {
     expect(separator).toBeInTheDocument();
   });
 });
-

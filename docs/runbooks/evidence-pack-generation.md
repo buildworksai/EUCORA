@@ -1,7 +1,7 @@
 # Evidence Pack Generation Runbook
 
-**Version**: 1.0  
-**Status**: Active  
+**Version**: 1.0
+**Status**: Active
 **Last Updated**: 2026-01-06
 
 ---
@@ -171,4 +171,3 @@ evidence_pack = {
 - [Evidence Pack Schema](../architecture/evidence-pack-schema.md)
 - [CAB Submission](./cab-submission.md)
 - [Risk Model](../architecture/risk-model.md)
-

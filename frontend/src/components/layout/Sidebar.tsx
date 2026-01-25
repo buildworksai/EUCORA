@@ -4,8 +4,8 @@ import { useUIStore } from '@/lib/stores/uiStore';
 import { useAuthStore } from '@/lib/stores/authStore';
 import { isAdmin, isDemo, hasPermission } from '@/types/auth';
 import { cn } from '@/lib/utils';
-import { 
-    LayoutDashboard, Box, ShieldCheck, Settings, Database, Activity, 
+import {
+    LayoutDashboard, Box, ShieldCheck, Settings, Database, Activity,
     HeartPulse, Sparkles, Shield, Users, Bell, Package
 } from 'lucide-react';
 import { NavLink } from 'react-router-dom';
@@ -45,15 +45,15 @@ export function Sidebar() {
         if (userIsAdmin) return true;
 
         if (item.adminOnly) return false;
-        
+
         // Demo users see all read-only pages
         if (userIsDemo) return true;
-        
+
         // Check permission for resource
         if (item.resource) {
             return hasPermission(user, item.resource, 'read');
         }
-        
+
         return true;
     });
 
@@ -115,7 +115,7 @@ export function Sidebar() {
                         </div>
                     </div>
                 </div>
-                
+
                 {/* User Role Indicator */}
                 <div className="mt-3 p-3 rounded-lg bg-white/5">
                     <div className="flex items-center gap-2 text-xs">
@@ -137,7 +137,7 @@ export function Sidebar() {
                         )}
                     </div>
                 </div>
-                
+
                 <div className="mt-4 text-[10px] text-center text-muted-foreground/50">
                     Built by BuildWorks.AI
                 </div>

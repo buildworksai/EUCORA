@@ -9,25 +9,27 @@ Verifies:
 - Metrics are labeled properly
 - Prometheus registry integration
 """
+from unittest.mock import MagicMock, patch
+
 import pytest
-from unittest.mock import patch, MagicMock
-from prometheus_client import REGISTRY, CollectorRegistry
 from django.test import TestCase
+from prometheus_client import REGISTRY, CollectorRegistry
+
 from apps.core.metrics import (
-    deployment_total,
-    deployment_duration_seconds,
-    risk_score,
-    circuit_breaker_state,
     celery_task_duration_seconds,
-    http_request_duration_seconds,
+    circuit_breaker_state,
     connector_health,
     connector_operation_duration_seconds,
-    record_deployment,
-    record_risk_score,
-    update_circuit_breaker_state,
+    deployment_duration_seconds,
+    deployment_total,
+    http_request_duration_seconds,
     record_celery_task,
-    record_http_request,
     record_connector_operation,
+    record_deployment,
+    record_http_request,
+    record_risk_score,
+    risk_score,
+    update_circuit_breaker_state,
 )
 
 
@@ -37,35 +39,35 @@ class TestDeploymentMetrics(TestCase):
     def test_deployment_total_counter_increments(self):
         """Verify deployment_total counter increments."""
         record_deployment("success", "CANARY", "app-name", False, 45.5)
-        
+
         # Verify metric was recorded (checking via label combinations)
         assert deployment_total is not None
-        assert hasattr(deployment_total, 'labels')
+        assert hasattr(deployment_total, "labels")
 
     def test_deployment_duration_recorded(self):
         """Verify deployment duration is recorded."""
         record_deployment("success", "PILOT", "test-app", True, 120.5)
-        
+
         assert deployment_duration_seconds is not None
-        assert hasattr(deployment_duration_seconds, 'labels')
+        assert hasattr(deployment_duration_seconds, "labels")
 
     def test_record_deployment_with_different_rings(self):
         """Verify deployments can be recorded for all rings."""
         rings = ["LAB", "CANARY", "PILOT", "DEPARTMENT", "GLOBAL"]
-        
+
         for ring in rings:
             record_deployment("success", ring, "app", False, 30.0)
-        
+
         # All should complete without error
         assert True
 
     def test_record_deployment_with_different_status(self):
         """Verify deployments can be recorded with different statuses."""
         statuses = ["success", "failed", "pending_approval", "rolled_back"]
-        
+
         for status in statuses:
             record_deployment(status, "CANARY", "app", False, 20.0)
-        
+
         assert True
 
 
@@ -75,7 +77,7 @@ class TestRiskScoreMetrics(TestCase):
     def test_risk_score_histogram_created(self):
         """Verify risk score histogram exists."""
         assert risk_score is not None
-        assert hasattr(risk_score, 'labels')
+        assert hasattr(risk_score, "labels")
 
     def test_record_risk_score_requires_cab(self):
         """Verify risk scores requiring CAB are recorded."""
@@ -91,7 +93,7 @@ class TestRiskScoreMetrics(TestCase):
         """Verify boundary risk scores are recorded."""
         for score in [0, 25, 50, 75, 100]:
             record_risk_score(score, score > 50)
-        
+
         assert True
 
 
@@ -101,7 +103,7 @@ class TestCircuitBreakerMetrics(TestCase):
     def test_circuit_breaker_state_gauge_created(self):
         """Verify circuit breaker state gauge exists."""
         assert circuit_breaker_state is not None
-        assert hasattr(circuit_breaker_state, 'labels')
+        assert hasattr(circuit_breaker_state, "labels")
 
     def test_update_circuit_breaker_closed(self):
         """Verify circuit breaker closed state is recorded."""
@@ -121,10 +123,10 @@ class TestCircuitBreakerMetrics(TestCase):
     def test_circuit_breaker_for_multiple_services(self):
         """Verify circuit breaker state tracked for multiple services."""
         services = [("intune", "intune"), ("jamf", "jamf"), ("sccm", "sccm"), ("landscape", "landscape")]
-        
+
         for service_name, connector_type in services:
             update_circuit_breaker_state(service_name, connector_type, 0)
-        
+
         assert True
 
 
@@ -150,7 +152,7 @@ class TestCeleryTaskMetrics(TestCase):
         """Verify tasks with multiple retries are tracked."""
         for retry in range(1, 4):
             record_celery_task("execute_ai_task", "success", 20.0, retry_count=retry)
-        
+
         assert True
 
 
@@ -181,19 +183,19 @@ class TestHTTPMetrics(TestCase):
             "/api/v1/evidence/",
             "/api/v1/connectors/",
         ]
-        
+
         for endpoint in endpoints:
             record_http_request("GET", endpoint, 200, 0.25)
-        
+
         assert True
 
     def test_http_request_various_methods(self):
         """Verify HTTP metrics track various methods."""
         methods = ["GET", "POST", "PUT", "DELETE", "PATCH"]
-        
+
         for method in methods:
             record_http_request(method, "/api/v1/deployments/", 200, 0.15)
-        
+
         assert True
 
 
@@ -224,11 +226,11 @@ class TestConnectorMetrics(TestCase):
         """Verify various connector operations are tracked."""
         connectors = ["intune", "jamf", "sccm", "landscape", "ansible"]
         operations = ["deploy", "query", "remediate", "rollback"]
-        
+
         for connector in connectors:
             for operation in operations:
                 record_connector_operation(connector, operation, "success", 10.0)
-        
+
         assert True
 
 
@@ -238,10 +240,10 @@ class TestMetricsRegistry(TestCase):
     def test_metrics_in_prometheus_registry(self):
         """Verify metrics are registered with Prometheus."""
         from prometheus_client import REGISTRY
-        
+
         # Verify metrics are accessible in registry
         metrics_list = list(REGISTRY.collect())
-        
+
         # Should have at least some metrics (python_info, process_*, etc.)
         assert len(metrics_list) > 0
 
@@ -250,7 +252,7 @@ class TestMetricsRegistry(TestCase):
         # Record some metrics
         record_deployment("success", "CANARY", "test-app", False, 30.0)
         record_http_request("GET", "/api/v1/health/", 200, 0.01)
-        
+
         # Metrics should be available
         assert deployment_total is not None
         assert http_request_duration_seconds is not None

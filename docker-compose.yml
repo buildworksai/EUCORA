@@ -1,0 +1,139 @@
+# SPDX-License-Identifier: Apache-2.0
+# Copyright (c) 2026 BuildWorks.AI
+# EUCORA Control Plane - Docker Compose Configuration
+
+version: '3.8'
+
+services:
+  db:
+    image: postgres:16-alpine
+    container_name: eucora-db
+    environment:
+      POSTGRES_DB: eucora
+      POSTGRES_USER: eucora_user
+      POSTGRES_PASSWORD: eucora_dev_password
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U eucora_user"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  redis:
+    image: redis:7-alpine
+    container_name: eucora-redis
+    ports:
+      - "6379:6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  minio:
+    image: minio/minio:latest
+    container_name: eucora-minio
+    command: server /data --console-address ":9001"
+    environment:
+      MINIO_ROOT_USER: minioadmin
+      MINIO_ROOT_PASSWORD: minioadmin
+    ports:
+      - "9000:9000"
+      - "9001:9001"
+    volumes:
+      - minio_data:/data
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:9000/minio/health/live"]
+      interval: 30s
+      timeout: 20s
+      retries: 3
+
+  web:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: eucora-web
+    command: >
+      sh -c "python manage.py migrate &&
+             python manage.py collectstatic --noinput &&
+             gunicorn config.wsgi:application --bind 0.0.0.0:8000 --workers 4 --timeout 60"
+    environment:
+      DJANGO_SETTINGS_MODULE: config.settings.development
+      DJANGO_SECRET_KEY: dev-secret-key-for-docker-only
+      DEBUG: "True"
+      POSTGRES_DB: eucora
+      POSTGRES_USER: eucora_user
+      POSTGRES_PASSWORD: eucora_dev_password
+      POSTGRES_HOST: db
+      POSTGRES_PORT: 5432
+      REDIS_URL: redis://redis:6379/0
+      MINIO_ENDPOINT: minio:9000
+      MINIO_ACCESS_KEY: minioadmin
+      MINIO_SECRET_KEY: minioadmin
+      MINIO_USE_SSL: "False"
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./backend:/app
+      - static_volume:/app/staticfiles
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      minio:
+        condition: service_healthy
+
+  celery-worker:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: eucora-celery-worker
+    command: celery -A config worker -l info -Q default,evidence,policy,connectors,deployment,integrations,agents
+    environment:
+      DJANGO_SETTINGS_MODULE: config.settings.development
+      DJANGO_SECRET_KEY: dev-secret-key-for-docker-only
+      DEBUG: "True"
+      POSTGRES_DB: eucora
+      POSTGRES_USER: eucora_user
+      POSTGRES_PASSWORD: eucora_dev_password
+      POSTGRES_HOST: db
+      POSTGRES_PORT: 5432
+      REDIS_URL: redis://redis:6379/0
+    volumes:
+      - ./backend:/app
+    depends_on:
+      - db
+      - redis
+      - web
+
+  celery-beat:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: eucora-celery-beat
+    command: celery -A config beat -l info --scheduler django_celery_beat.schedulers:DatabaseScheduler
+    environment:
+      DJANGO_SETTINGS_MODULE: config.settings.development
+      DJANGO_SECRET_KEY: dev-secret-key-for-docker-only
+      DEBUG: "True"
+      POSTGRES_DB: eucora
+      POSTGRES_USER: eucora_user
+      POSTGRES_PASSWORD: eucora_dev_password
+      POSTGRES_HOST: db
+      POSTGRES_PORT: 5432
+      REDIS_URL: redis://redis:6379/0
+    volumes:
+      - ./backend:/app
+    depends_on:
+      - db
+      - redis
+      - web
+
+volumes:
+  postgres_data:
+  minio_data:
+  static_volume:

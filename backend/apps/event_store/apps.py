@@ -8,6 +8,7 @@ from django.apps import AppConfig
 
 class EventStoreConfig(AppConfig):
     """Event Store app configuration."""
-    default_auto_field = 'django.db.models.BigAutoField'
-    name = 'apps.event_store'
-    verbose_name = 'EUCORA Event Store'
+
+    default_auto_field = "django.db.models.BigAutoField"
+    name = "apps.event_store"
+    verbose_name = "EUCORA Event Store"
