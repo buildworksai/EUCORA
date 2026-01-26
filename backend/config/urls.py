@@ -39,6 +39,7 @@ urlpatterns = [
     path("api/v1/core/", include("apps.core.urls")),  # Core wrapper endpoints for API coverage
     path("api/v1/agent-management/", include("apps.agent_management.urls")),
     path("api/v1/packaging/", include("apps.packaging_factory.urls")),
+    path("api/v1/licenses/", include("apps.license_management.urls")),
     # OpenAPI / Swagger
     path("api/schema/", SpectacularAPIView.as_view(), name="schema"),
     path("api/docs/", SpectacularSwaggerView.as_view(url_name="schema"), name="swagger-ui"),

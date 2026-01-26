@@ -22,6 +22,7 @@ import AIAgentHub from './routes/AIAgentHub';
 import AdminDemoData from './routes/AdminDemoData';
 import Notifications from './routes/Notifications';
 import Login from './routes/Login';
+import { LicenseDashboard } from './routes/licenses';
 
 function App() {
   const isAuthenticated = useAuthStore((state) => state.isAuthenticated);
@@ -76,6 +77,7 @@ function App() {
             <Route path="/audit" element={<AuditTrail />} />
             <Route path="/evidence/:id" element={<EvidenceViewer />} />
             <Route path="/ai-agents" element={<AIAgentHub />} />
+            <Route path="/licenses" element={<LicenseDashboard />} />
             <Route path="/notifications" element={<Notifications />} />
             <Route path="/settings" element={<Settings />} />
             <Route path="/admin/demo-data" element={<AdminDemoData />} />
