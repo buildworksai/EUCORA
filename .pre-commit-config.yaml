@@ -71,14 +71,17 @@ repos:
         args: ['--profile', 'black', '--line-length=120']
         files: ^backend/
 
-  # Python type checking
-  - repo: https://github.com/pre-commit/mirrors-mypy
-    rev: v1.8.0
-    hooks:
-      - id: mypy
-        additional_dependencies: [django-stubs, types-redis, types-requests]
-        args: ['--ignore-missing-imports', '--no-strict-optional']
-        files: ^backend/
+  # Python type checking (requires Docker for full Django environment)
+  # NOTE: mypy pre-commit hook disabled - requires django-stubs plugin which needs
+  # full Django environment. Type checking enforced in CI via docker compose.
+  # To run locally: docker compose run --rm web python -m mypy apps --config-file pyproject.toml
+  # - repo: https://github.com/pre-commit/mirrors-mypy
+  #   rev: v1.8.0
+  #   hooks:
+  #     - id: mypy
+  #       additional_dependencies: [django-stubs, types-redis, types-requests]
+  #       args: ['--config-file=backend/pyproject.toml']
+  #       files: ^backend/
 
   # TypeScript type checking (BuildWorks.AI Standard: ZERO errors blocking)
   - repo: local

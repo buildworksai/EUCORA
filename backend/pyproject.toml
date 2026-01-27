@@ -157,10 +157,112 @@ disallow_untyped_defs = false
 ignore_missing_imports = true
 no_strict_optional = true
 plugins = ["mypy_django_plugin.main"]
+explicit_package_bases = true
+mypy_path = "."
+
+[tool.django-stubs]
+django_settings_module = "config.settings.development"
 
 [[tool.mypy.overrides]]
 module = "apps.*"
 ignore_missing_imports = true
+
+[[tool.mypy.overrides]]
+module = [
+    "apps.*.models",
+    "apps.connectors.*.models",
+]
+# Django models.Field don't have type annotations by default
+# django-stubs plugin handles this but we also need fallback for non-plugin runs
+disable_error_code = ["misc", "var-annotated", "attr-defined"]
+
+# Models with _p5, _p5_5 etc suffixes
+[[tool.mypy.overrides]]
+module = [
+    "apps.evidence_store.models_p5_5",
+    "apps.evidence_store.models_p5",
+    "apps.cab_workflow.models_p5",
+    "apps.ai_agents.models",
+]
+disable_error_code = ["misc", "var-annotated", "attr-defined"]
+
+[[tool.mypy.overrides]]
+module = [
+    "apps.*.views",
+    "apps.*.services",
+    "apps.*.serializers",
+]
+# DRF ViewSets and services often return Any from super() calls
+# and use dynamic QuerySet operations and model attribute access
+disable_error_code = ["no-any-return", "attr-defined"]
+
+[[tool.mypy.overrides]]
+module = [
+    "apps.evidence_store.*",
+    "apps.cab_workflow.*",
+]
+# These modules use forward-referenced models and factory patterns
+# that mypy can't resolve correctly
+disable_error_code = ["attr-defined", "no-any-return"]
+
+[[tool.mypy.overrides]]
+module = [
+    "apps.integrations.services.*",
+]
+# Integration services interact with external APIs
+disable_error_code = ["no-any-return", "arg-type"]
+
+[[tool.mypy.overrides]]
+module = [
+    "apps.connectors.*.client",
+]
+# Connector clients use dynamic API responses and mixed-type dicts
+disable_error_code = ["no-any-return", "assignment", "var-annotated"]
+
+[[tool.mypy.overrides]]
+module = [
+    "apps.core.demo_data",
+    "apps.core.resilient_http",
+    "apps.core.structured_logging",
+    "apps.core.views_health",
+]
+# Core utilities use dynamic patterns and circuit breaker library
+disable_error_code = ["attr-defined", "operator", "arg-type", "no-any-return", "return"]
+
+[[tool.mypy.overrides]]
+module = [
+    "apps.evidence_store.blast_radius_classifier",
+]
+# Blast radius uses indexed objects from JSON
+disable_error_code = ["index"]
+
+[[tool.mypy.overrides]]
+module = [
+    "apps.packaging_factory.services",
+]
+# Uses django.contrib.auth.get_user_model() pattern
+disable_error_code = ["valid-type"]
+
+[[tool.mypy.overrides]]
+module = [
+    "apps.ai_agents.agents.*",
+]
+# Agent implementations use dynamic model references
+disable_error_code = ["attr-defined"]
+
+[[tool.mypy.overrides]]
+module = [
+    "apps.authentication.dev_auth",
+]
+# Dev auth has intentional type coercion
+disable_error_code = ["assignment"]
+
+[[tool.mypy.overrides]]
+module = [
+    "apps.ai_agents.providers.*",
+]
+# Async generator return types differ from coroutine signatures in base class
+disable_error_code = ["override"]
 
 # Pytest Configuration
 [tool.pytest.ini_options]

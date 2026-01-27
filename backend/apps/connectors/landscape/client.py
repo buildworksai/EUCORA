@@ -21,7 +21,7 @@ from uuid import uuid4
 
 import requests
 
-from apps.core.observability import StructuredLogger
+from apps.core.structured_logging import StructuredLogger
 
 from .auth import LandscapeAuth
 
@@ -243,7 +243,7 @@ class LandscapeConnector:
         Returns:
             Dict with computers list and pagination info
         """
-        params = {
+        params: dict[str, Any] = {
             "limit": limit,
             "offset": offset,
         }
@@ -320,7 +320,7 @@ class LandscapeConnector:
         Returns:
             List of packages
         """
-        params = {}
+        params: dict[str, Any] = {}
         if installed_only:
             params["installed"] = "true"
 
@@ -434,7 +434,7 @@ class LandscapeConnector:
         Returns:
             List of packages
         """
-        params = {"limit": limit, "offset": offset}
+        params: dict[str, Any] = {"limit": limit, "offset": offset}
         if search:
             params["search"] = search
 
@@ -488,7 +488,7 @@ class LandscapeConnector:
             )
             return cached
 
-        json_data = {
+        json_data: dict[str, Any] = {
             "computer_ids": computer_ids,
             "packages": packages,
         }
@@ -882,7 +882,7 @@ class LandscapeConnector:
         Returns:
             List of activities
         """
-        params = {"limit": limit}
+        params: dict[str, Any] = {"limit": limit}
         if status:
             params["status"] = status
         if activity_type:
@@ -955,7 +955,7 @@ class LandscapeConnector:
         Returns:
             Compliance summary with details
         """
-        params = {}
+        params: dict[str, Any] = {}
         if computer_ids:
             params["computer_ids"] = ",".join(computer_ids)
         if tags:
@@ -1001,7 +1001,7 @@ class LandscapeConnector:
         Returns:
             List of pending security updates
         """
-        params = {}
+        params: dict[str, Any] = {}
         if computer_ids:
             params["computer_ids"] = ",".join(computer_ids)
         if severity:

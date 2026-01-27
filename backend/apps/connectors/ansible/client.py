@@ -22,7 +22,7 @@ from uuid import uuid4
 
 import requests
 
-from apps.core.observability import StructuredLogger
+from apps.core.structured_logging import StructuredLogger
 
 from .auth import AnsibleAuth
 
@@ -214,7 +214,7 @@ class AnsibleConnector:
         Returns:
             List of all results
         """
-        results = []
+        results: list[Any] = []
         params = params or {}
         params["page_size"] = min(200, max_results)  # AWX max page size
 
@@ -288,7 +288,7 @@ class AnsibleConnector:
         Returns:
             List of inventories
         """
-        params = {}
+        params: dict[str, Any] = {}
         if search:
             params["search"] = search
         if organization_id:
@@ -349,7 +349,7 @@ class AnsibleConnector:
         Returns:
             List of hosts
         """
-        params = {}
+        params: dict[str, Any] = {}
         if enabled_only:
             params["enabled"] = "true"
 
@@ -497,7 +497,7 @@ class AnsibleConnector:
         Returns:
             List of job templates
         """
-        params = {}
+        params: dict[str, Any] = {}
         if search:
             params["search"] = search
         if project_id:
@@ -572,7 +572,7 @@ class AnsibleConnector:
         """
         correlation_id = correlation_id or str(uuid4())
 
-        json_data = {}
+        json_data: dict[str, Any] = {}
         if extra_vars:
             json_data["extra_vars"] = json.dumps(extra_vars)
         if limit:
@@ -772,7 +772,7 @@ class AnsibleConnector:
         Returns:
             List of jobs
         """
-        params = {"page_size": min(limit, 200)}
+        params: dict[str, Any] = {"page_size": min(limit, 200)}
         if status:
             params["status"] = status
         if job_template_id:
@@ -810,7 +810,7 @@ class AnsibleConnector:
         Returns:
             List of workflow templates
         """
-        params = {}
+        params: dict[str, Any] = {}
         if search:
             params["search"] = search
 
@@ -847,7 +847,7 @@ class AnsibleConnector:
         """
         correlation_id = correlation_id or str(uuid4())
 
-        json_data = {}
+        json_data: dict[str, Any] = {}
         if extra_vars:
             json_data["extra_vars"] = json.dumps(extra_vars)
         if inventory_id:
@@ -894,7 +894,7 @@ class AnsibleConnector:
         Returns:
             List of projects
         """
-        params = {}
+        params: dict[str, Any] = {}
         if search:
             params["search"] = search
 

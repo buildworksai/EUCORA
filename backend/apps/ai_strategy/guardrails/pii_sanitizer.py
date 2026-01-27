@@ -4,7 +4,7 @@
 PII sanitization guardrails.
 """
 import re
-from typing import Dict, List, Tuple
+from typing import Any, Dict, List, Tuple
 
 
 class PIISanitizer:
@@ -46,7 +46,7 @@ class PIISanitizer:
         self.compiled_patterns = {name: re.compile(pattern) for name, pattern in self.PATTERNS.items()}
         self.private_ip_patterns = [re.compile(pattern) for pattern in self.PRIVATE_IP_PATTERNS]
 
-    def sanitize(self, text: str) -> Tuple[str, List[str]]:
+    def sanitize(self, text: str) -> Tuple[str, List[str]]:  # noqa: C901
         """
         Sanitize PII from text.
 
@@ -128,8 +128,8 @@ class PIISanitizer:
         Returns:
             Tuple of (sanitized_dict, list_of_detected_pii_types)
         """
-        sanitized = {}
-        all_detected = []
+        sanitized: Dict[str, Any] = {}
+        all_detected: List[str] = []
 
         for key, value in data.items():
             if isinstance(value, str):

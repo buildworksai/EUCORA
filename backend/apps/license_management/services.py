@@ -7,7 +7,7 @@ import hashlib
 import json
 import logging
 import uuid
-from datetime import timedelta
+from datetime import datetime, timedelta
 from typing import Any, Dict, List, Optional, Tuple
 
 from django.db import transaction
@@ -89,7 +89,7 @@ class LicenseSummaryService:
 
     @staticmethod
     def _compute_health(
-        last_reconciled_at: Optional[timezone.datetime], snapshots: List[ConsumptionSnapshot]
+        last_reconciled_at: Optional[datetime], snapshots: List[ConsumptionSnapshot]
     ) -> Tuple[str, Optional[str], Optional[int]]:
         """Compute health status based on data freshness and alert state."""
         now = timezone.now()
@@ -262,7 +262,8 @@ class ReconciliationService:
         }
 
         # Convert UUIDs to strings for JSON serialization
-        for ent in evidence_data["entitlements"]:
+        entitlements: List[Dict[str, Any]] = evidence_data["entitlements"]
+        for ent in entitlements:
             ent["id"] = str(ent["id"])
 
         evidence_json = json.dumps(evidence_data, sort_keys=True, default=str)
@@ -330,7 +331,7 @@ class ConsumptionSignalService:
     def ingest_signal(
         source_system: str,
         raw_id: str,
-        timestamp: timezone.datetime,
+        timestamp: datetime,
         principal_type: str,
         principal_id: str,
         sku_id: str,
