@@ -193,9 +193,9 @@ class Entitlement(TimeStampedModel, CorrelationIdModel):
 
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     sku = models.ForeignKey(LicenseSKU, on_delete=models.PROTECT, related_name="entitlements", help_text="License SKU")
-    contract_id = models.CharField(max_length=100, db_index=True, help_text="Contract or PO reference")
-    entitled_quantity = models.IntegerField(help_text="Number of licenses entitled")
-    start_date = models.DateField(help_text="Entitlement start date")
+    contract_id = models.CharField(max_length=100, db_index=True, default="", help_text="Contract or PO reference")
+    entitled_quantity = models.IntegerField(default=0, help_text="Number of licenses entitled")
+    start_date = models.DateField(default=timezone.now, help_text="Entitlement start date")
     end_date = models.DateField(null=True, blank=True, help_text="Entitlement end date (null = perpetual)")
     renewal_date = models.DateField(null=True, blank=True, help_text="Next renewal date")
 
@@ -397,7 +397,7 @@ class ConsumptionSignal(TimeStampedModel):
 
     # Confidence and evidence
     confidence = models.FloatField(default=1.0, help_text="Match confidence (0.0-1.0)")
-    raw_payload_hash = models.CharField(max_length=64, help_text="SHA-256 of raw signal payload")
+    raw_payload_hash = models.CharField(max_length=64, default="", help_text="SHA-256 of raw signal payload")
     raw_payload = models.JSONField(default=dict, blank=True, help_text="Original signal payload")
 
     # Processing
@@ -448,7 +448,7 @@ class ConsumptionUnit(TimeStampedModel):
     signals = models.ManyToManyField(ConsumptionSignal, related_name="consumption_units", help_text="Source signals")
 
     # Effective period
-    effective_from = models.DateTimeField(help_text="When consumption became effective")
+    effective_from = models.DateTimeField(default=timezone.now, help_text="When consumption became effective")
     effective_to = models.DateTimeField(null=True, blank=True, help_text="When consumption ended")
 
     # Status
@@ -497,21 +497,23 @@ class ConsumptionSnapshot(TimeStampedModel):
     )
 
     # Timing
-    reconciled_at = models.DateTimeField(db_index=True, help_text="When snapshot was created")
-    ruleset_version = models.CharField(max_length=50, help_text="Version of reconciliation rules used")
+    reconciled_at = models.DateTimeField(db_index=True, default=timezone.now, help_text="When snapshot was created")
+    ruleset_version = models.CharField(max_length=50, default="v1.0", help_text="Version of reconciliation rules used")
 
     # Quantities (immutable after creation)
-    entitled = models.IntegerField(help_text="Total entitled quantity")
-    consumed = models.IntegerField(help_text="Total consumed quantity")
+    entitled = models.IntegerField(default=0, help_text="Total entitled quantity")
+    consumed = models.IntegerField(default=0, help_text="Total consumed quantity")
     reserved = models.IntegerField(default=0, help_text="Reserved quantity")
-    remaining = models.IntegerField(help_text="Remaining available (entitled - consumed - reserved)")
+    remaining = models.IntegerField(default=0, help_text="Remaining available (entitled - consumed - reserved)")
 
     # Computed metrics
-    utilization_percent = models.DecimalField(max_digits=5, decimal_places=2, help_text="Utilization percentage")
+    utilization_percent = models.DecimalField(
+        max_digits=5, decimal_places=2, default=Decimal("0.00"), help_text="Utilization percentage"
+    )
 
     # Evidence
-    evidence_pack_hash = models.CharField(max_length=64, help_text="SHA-256 of evidence pack")
-    evidence_pack_ref = models.CharField(max_length=500, help_text="MinIO path to evidence pack")
+    evidence_pack_hash = models.CharField(max_length=64, default="", help_text="SHA-256 of evidence pack")
+    evidence_pack_ref = models.CharField(max_length=500, default="", help_text="MinIO path to evidence pack")
 
     # Link to reconciliation run
     reconciliation_run = models.ForeignKey(

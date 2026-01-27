@@ -49,6 +49,7 @@ INSTALLED_APPS = [
     "apps.packaging_factory",
     "apps.ai_strategy",
     "apps.license_management",
+    "apps.application_portfolio",
 ]
 
 MIDDLEWARE = [
