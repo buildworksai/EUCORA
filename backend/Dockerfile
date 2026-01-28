@@ -27,7 +27,7 @@ COPY . .
 
 # Install Python dependencies
 RUN pip install --upgrade pip && \
-    pip install -e .
+    pip install -e ".[prod]"
 
 # Create non-root user
 RUN useradd -m -u 1000 eucora && \

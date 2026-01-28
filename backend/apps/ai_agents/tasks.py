@@ -9,7 +9,6 @@ Tasks are asynchronous to prevent blocking API requests on LLM calls.
 import logging
 
 from celery import shared_task
-from django.utils import timezone
 
 logger = logging.getLogger(__name__)
 
@@ -17,74 +16,72 @@ logger = logging.getLogger(__name__)
 @shared_task(
     name="apps.ai_agents.tasks.process_ai_conversation", bind=True, max_retries=3, time_limit=120, soft_time_limit=100
 )
-def process_ai_conversation(self, conversation_id, user_message):
+def process_ai_conversation(self, conversation_id, user_message, user_id=None):
     """
     Async task to process AI conversation and generate response.
 
     Prevents blocking API requests while waiting for LLM response.
+    Delegates to AIAgentService.ask_amani_sync() which handles provider
+    setup, conversation history, system prompts, and message persistence.
 
     Args:
-        conversation_id: UUID of AIConversation
+        conversation_id: UUID string of AIConversation (must exist in DB)
         user_message: User's input message
+        user_id: ID of the requesting User (int or str)
 
     Returns:
-        {'status': 'success' | 'failed', 'conversation_id': ..., 'message_id': ..., 'response': ...}
+        {'status': 'success' | 'failed', 'conversation_id': ..., 'response': ...}
     """
-    from apps.ai_agents.models import AIConversation, AIMessage
-    from apps.ai_agents.services import AIAgentService
+    from django.contrib.auth.models import User
+
+    from apps.ai_agents.services import get_ai_agent_service
 
     try:
-        conversation = AIConversation.objects.select_related("user", "provider").get(id=conversation_id)
-    except AIConversation.DoesNotExist:
-        logger.error(f"Conversation not found: {conversation_id}")
-        return {"status": "failed", "error": "Conversation not found"}
+        # Resolve the user who initiated the conversation
+        user = None
+        if user_id:
+            try:
+                user = User.objects.get(id=user_id)
+            except User.DoesNotExist:
+                logger.warning(f"User not found for id={user_id}, falling back to demo user")
 
-    try:
-        # Create user message record
-        user_msg = AIMessage.objects.create(
-            conversation=conversation,
-            role=AIMessage.Role.USER,
-            content=user_message,
-            token_count=len(user_message.split()),  # Rough estimate
+        # Use the service layer which handles provider setup, conversation
+        # history, system prompts, and message persistence correctly.
+        service = get_ai_agent_service()
+        result = service.ask_amani_sync(
+            user_message=user_message,
+            conversation_id=conversation_id,
+            user=user,
         )
 
-        # Get AI service and generate response
-        service = AIAgentService(conversation.provider, conversation.agent_type)
-        response = service.generate_response(
-            messages=list(conversation.messages.values_list("role", "content")),
-            system_context=conversation.context_type,
-        )
-
-        # Create assistant message record
-        assistant_msg = AIMessage.objects.create(
-            conversation=conversation,
-            role=AIMessage.Role.ASSISTANT,
-            content=response["content"],
-            token_count=response.get("token_count", len(response["content"].split())),
-            model_used=response.get("model", conversation.provider.model_name),
-            requires_human_action=response.get("requires_action", False),
-        )
+        if "error" in result:
+            logger.error(
+                f"AI service returned error: {result['error']}",
+                extra={"conversation_id": conversation_id},
+            )
+            return {
+                "status": "failed",
+                "conversation_id": conversation_id,
+                "error": result["error"],
+            }
 
         logger.info(
-            f"AI conversation processed successfully",
+            "AI conversation processed successfully",
             extra={
-                "conversation_id": str(conversation_id),
-                "agent_type": conversation.agent_type,
-                "message_id": str(assistant_msg.id),
+                "conversation_id": result.get("conversation_id", conversation_id),
             },
         )
 
         return {
             "status": "success",
-            "conversation_id": str(conversation_id),
-            "message_id": str(assistant_msg.id),
-            "response": response["content"],
-            "requires_human_action": response.get("requires_action", False),
+            "conversation_id": result.get("conversation_id", conversation_id),
+            "response": result.get("response", ""),
+            "requires_human_action": result.get("requires_human_action", False),
         }
 
     except Exception as exc:
         logger.error(
-            f"Failed to process AI conversation: {exc}", extra={"conversation_id": str(conversation_id)}, exc_info=True
+            f"Failed to process AI conversation: {exc}", extra={"conversation_id": conversation_id}, exc_info=True
         )
 
         # Retry with exponential backoff (max 3 retries)
@@ -131,7 +128,7 @@ def execute_ai_task(self, task_id):
         task.output_data = result
         task.save()
 
-        logger.info(f"AI task executed successfully", extra={"task_id": str(task_id), "task_type": task.task_type})
+        logger.info("AI task executed successfully", extra={"task_id": str(task_id), "task_type": task.task_type})
 
         return {
             "status": "success",

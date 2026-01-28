@@ -223,7 +223,7 @@ def ask_amani(request):
     """Ask Amani - General AI assistant endpoint."""
     user_message = request.data.get("message")
     conversation_id = request.data.get("conversation_id")
-    context = request.data.get("context", {})
+    _context = request.data.get("context", {})  # noqa: F841 - reserved for future context-aware routing
 
     if not user_message:
         return Response({"error": "message is required"}, status=status.HTTP_400_BAD_REQUEST)
@@ -240,18 +240,35 @@ def ask_amani(request):
         return Response({"error": "Authentication required"}, status=status.HTTP_401_UNAUTHORIZED)
 
     try:
-        # Queue async task for LLM processing
-        task_result = process_ai_conversation.delay(str(conversation_id), user_message)
+        # Get or create conversation BEFORE queuing the task.
+        # Previously this passed str(None) == "None" to the task when no
+        # conversation_id was provided, causing a ValidationError in the worker.
+        conversation = None
+        if conversation_id:
+            try:
+                conversation = AIConversation.objects.get(id=conversation_id, user=user)
+            except (AIConversation.DoesNotExist, Exception):
+                conversation = None
+
+        if conversation is None:
+            conversation = AIConversation.objects.create(
+                user=user,
+                agent_type=AIAgentType.AMANI_ASSISTANT,
+                title=user_message[:100],
+            )
+
+        # Queue async task for LLM processing with valid conversation UUID
+        task_result = process_ai_conversation.delay(str(conversation.id), user_message, str(user.id))
 
         logger.info(
-            f"AI conversation task queued for processing",
-            extra={"conversation_id": str(conversation_id), "task_id": task_result.id},
+            "AI conversation task queued for processing",
+            extra={"conversation_id": str(conversation.id), "task_id": task_result.id},
         )
 
         return Response(
             {
                 "status": "processing",
-                "conversation_id": str(conversation_id),
+                "conversation_id": str(conversation.id),
                 "task_id": task_result.id,
                 "message": "Your message is being processed. Check conversation history for response.",
             }
@@ -267,6 +284,13 @@ def ask_amani(request):
 def get_conversation(request, conversation_id):
     """Get conversation history."""
     try:
+        # Handle invalid conversation IDs early
+        if not conversation_id or conversation_id.lower() in ["none", "null", "undefined"]:
+            return Response(
+                {"error": "Invalid conversation ID", "conversation_id": None, "messages": []},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
         # In DEBUG mode, allow unauthenticated users (for demo/testing)
         # Use a default demo user if not authenticated
         user = request.user if request.user.is_authenticated else None
@@ -714,7 +738,8 @@ def request_task_revision(request, task_id):
 **User Feedback:**
 {feedback}
 
-Please provide an improved recommendation that addresses the user's feedback. Consider their corrections and suggestions carefully."""
+Please provide an improved recommendation that addresses the user's feedback.
+Consider their corrections and suggestions carefully."""
 
             result = service.ask_amani_sync(
                 user_message=refinement_message,
@@ -749,7 +774,8 @@ Please provide an improved recommendation that addresses the user's feedback. Co
 
                 # Audit log
                 logger.info(
-                    f"User {request.user.username} requested revision for AI task: {task.id}. AI responded with revision.",
+                    f"User {request.user.username} requested revision for AI task: {task.id}. "
+                    "AI responded with revision.",
                     extra={
                         "correlation_id": str(task.correlation_id),
                         "task_id": str(task.id),
