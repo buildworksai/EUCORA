@@ -1,7 +1,7 @@
 # Promotion Gates
 
-**Version**: 1.0  
-**Status**: Active  
+**Version**: 1.0
+**Status**: Active
 **Last Updated**: 2026-01-06
 
 ---
@@ -183,4 +183,3 @@ Threshold changes require:
 - [Risk Model](./risk-model.md)
 - [CAB Workflow](./cab-workflow.md)
 - [Telemetry Collection](../architecture/telemetry.md)
-

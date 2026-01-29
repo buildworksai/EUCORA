@@ -8,4 +8,4 @@ Automatically loads the correct settings based on DJANGO_SETTINGS_MODULE environ
 import os
 
 # Default to development settings if not specified
-os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'config.settings.development')
+os.environ.setdefault("DJANGO_SETTINGS_MODULE", "config.settings.development")

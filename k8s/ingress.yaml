@@ -37,4 +37,3 @@ spec:
             name: eucora-web
             port:
               number: 80
-

@@ -1,0 +1,602 @@
+# SPDX-License-Identifier: Apache-2.0
+# Copyright (c) 2026 BuildWorks.AI
+"""
+P5.5: Comprehensive tests for Defense-in-Depth REST API Endpoints.
+Tests all 14 P5.5 endpoints with authentication and authorization.
+"""
+import pytest
+from decimal import Decimal
+from datetime import timedelta
+from django.test import TestCase
+from django.utils import timezone
+from django.contrib.auth.models import User, Group
+from rest_framework.test import APIClient
+from rest_framework import status
+from uuid import uuid4
+
+from apps.evidence_store.models import EvidencePackage
+from apps.evidence_store.models_p5_5 import (
+    DeploymentIncident,
+    RiskModelVersion,
+    BlastRadiusClass,
+    TrustMaturityLevel,
+    TrustMaturityProgress
+)
+from apps.deployment_intents.models import DeploymentIntent
+
+
+class P55APITestSetup(TestCase):
+    """Setup fixtures for P5.5 API tests."""
+
+    @classmethod
+    def setUpTestData(cls):
+        """Create common test data."""
+        # Create users
+        cls.requester = User.objects.create_user(
+            username='requester',
+            email='requester@example.com',
+            password='testpass123'
+        )
+
+        cls.cab_member = User.objects.create_user(
+            username='cab_member',
+            email='cab@example.com',
+            password='testpass123'
+        )
+
+        cls.unauthorized_user = User.objects.create_user(
+            username='unauthorized',
+            email='unauthorized@example.com',
+            password='testpass123'
+        )
+
+        # Create groups
+        cab_group, _ = Group.objects.get_or_create(name='cab_member')
+        cls.cab_member.groups.add(cab_group)
+
+        # Create blast radius classes
+        BlastRadiusClass.objects.get_or_create(
+            name='CRITICAL_INFRASTRUCTURE',
+            defaults={
+            'description': 'Critical security infrastructure',
+            'business_criticality': 'CRITICAL',
+            'cab_quorum_required': 3,
+            'auto_approve_allowed': False,
+            'user_impact_max': 100000,
+            'example_applications': ['antivirus'
+            }
+        )
+
+        BlastRadiusClass.objects.get_or_create(
+            name='BUSINESS_CRITICAL',
+            defaults={
+            'description': 'Business critical applications',
+            'business_criticality': 'HIGH',
+            'cab_quorum_required': 2,
+            'auto_approve_allowed': True,
+            'user_impact_max': 50000,
+            'example_applications': ['erp'
+            }
+        )
+
+        BlastRadiusClass.objects.get_or_create(
+            name='PRODUCTIVITY_TOOLS',
+            defaults={
+            'description': 'Standard productivity tools',
+            'business_criticality': 'MEDIUM',
+            'cab_quorum_required': 1,
+            'auto_approve_allowed': True,
+            'user_impact_max': 10000,
+            'example_applications': ['office'
+            }
+        )
+
+        BlastRadiusClass.objects.get_or_create(
+            name='NON_CRITICAL',
+            defaults={
+            'description': 'Non-critical utilities',
+            'business_criticality': 'LOW',
+            'cab_quorum_required': 1,
+            'auto_approve_allowed': True,
+            'user_impact_max': 5000,
+            'example_applications': ['calculator'
+            }
+        )
+
+        # Create risk model
+        cls.risk_model = RiskModelVersion.objects.create(
+            version='1.1',
+            mode='GREENFIELD_CONSERVATIVE',
+            auto_approve_thresholds={
+                'CRITICAL_INFRASTRUCTURE': 0,
+                'BUSINESS_CRITICAL': 0,
+                'PRODUCTIVITY_TOOLS': 0,
+                'NON_CRITICAL': 0,
+            },
+            risk_factor_weights={
+                'privilege': 0.20,
+                'supply_chain': 0.15,
+                'exploitability': 0.10,
+                'data_access': 0.10,
+                'vulnerability': 0.15,
+                'blast_radius': 0.10,
+                'complexity': 0.10,
+                'history': 0.10,
+            },
+            is_active=True,
+            approved_by_cab=True,
+        )
+
+        # Create trust maturity level
+        TrustMaturityLevel.objects.get_or_create(
+            level='LEVEL_0_BASELINE',
+            defaults={
+                description='Baseline',
+                weeks_required=4,
+                max_incident_rate=Decimal('999.0'
+            }
+        ),
+            max_p1_incidents=999,
+            max_p2_incidents=999,
+            risk_model_version='1.1',
+            auto_approve_thresholds={
+                'CRITICAL_INFRASTRUCTURE': 0,
+                'BUSINESS_CRITICAL': 0,
+                'PRODUCTIVITY_TOOLS': 0,
+                'NON_CRITICAL': 0,
+            }
+        )
+
+        # Create deployment intent
+        cls.deployment = DeploymentIntent.objects.create(
+            app_name='TestApp',
+            version='1.0.0',
+            target_ring='CANARY',
+            submitter=cls.requester,
+        )
+
+        # Create evidence package
+        cls.evidence = EvidencePackage.objects.create(
+            evidence_data={
+                'test_coverage': 92,
+                'blast_radius_class': 'BUSINESS_CRITICAL',
+            },
+            risk_score=Decimal('55'),
+            risk_factors={},
+            deployment_intent_id=str(cls.deployment.id),
+            correlation_id=f'EVIDENCE-{uuid4()}',
+        )
+
+    def setUp(self):
+        """Setup for each test."""
+        self.client = APIClient()
+
+
+# ============================================================================
+# Incident Management API Tests
+# ============================================================================
+
+class TestIncidentAPIEndpoints(P55APITestSetup):
+    """Test incident management API endpoints."""
+
+    def test_create_incident_requires_auth(self):
+        """Creating incident without auth should fail."""
+        response = self.client.post(
+            '/api/v1/evidence_store/incidents/create/',
+            {
+                'deployment_intent_id': str(self.deployment.id),
+                'evidence_package_id': str(self.evidence.id),
+                'severity': 'P1',
+                'title': 'Test incident',
+                'description': 'Test',
+                'incident_date': timezone.now().isoformat(),
+                'was_auto_approved': False,
+                'risk_score_at_approval': '55.0',
+                'blast_radius_class': 'BUSINESS_CRITICAL',
+            }
+        )
+
+        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+
+    def test_create_incident_valid(self):
+        """Creating incident with valid data should succeed."""
+        self.client.force_authenticate(user=self.requester)
+
+        response = self.client.post(
+            '/api/v1/evidence_store/incidents/create/',
+            {
+                'deployment_intent_id': str(self.deployment.id),
+                'evidence_package_id': str(self.evidence.id),
+                'severity': 'P1',
+                'incident_date': timezone.now().isoformat(),
+                'detection_method': 'monitoring',
+                'title': 'Critical production failure',
+                'description': 'Service completely unavailable',
+                'was_auto_approved': False,
+                'risk_score_at_approval': '55.0',
+                'blast_radius_class': 'BUSINESS_CRITICAL',
+            }
+        )
+
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+        self.assertEqual(response.data['severity'], 'P1')
+        self.assertEqual(response.data['title'], 'Critical production failure')
+
+    def test_list_incidents(self):
+        """List incidents endpoint should return all incidents."""
+        # Create sample incidents
+        for i in range(3):
+            DeploymentIncident.objects.create(
+                deployment_intent_id=str(self.deployment.id),
+                evidence_package_id=str(self.evidence.id),
+                severity='P3',
+                incident_date=timezone.now(),
+                detection_method='monitoring',
+                title=f'Incident {i}',
+                description='Test',
+                was_auto_approved=False,
+                risk_score_at_approval=Decimal('45'),
+                blast_radius_class='PRODUCTIVITY_TOOLS',
+                created_by='test',
+            )
+
+        self.client.force_authenticate(user=self.requester)
+
+        response = self.client.get('/api/v1/evidence_store/incidents/')
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertGreaterEqual(response.data['count'], 3)
+
+    def test_list_incidents_filter_severity(self):
+        """List incidents should filter by severity."""
+        DeploymentIncident.objects.create(
+            deployment_intent_id=str(self.deployment.id),
+            evidence_package_id=str(self.evidence.id),
+            severity='P1',
+            incident_date=timezone.now(),
+            detection_method='monitoring',
+            title='P1 incident',
+            description='Test',
+            was_auto_approved=False,
+            risk_score_at_approval=Decimal('75'),
+            blast_radius_class='CRITICAL_INFRASTRUCTURE',
+            created_by='test',
+        )
+
+        self.client.force_authenticate(user=self.requester)
+
+        response = self.client.get('/api/v1/evidence_store/incidents/?severity=P1')
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.data['count'], 1)
+        self.assertEqual(response.data['results'][0]['severity'], 'P1')
+
+    def test_get_incident_by_id(self):
+        """Get incident by ID should return incident details."""
+        incident = DeploymentIncident.objects.create(
+            deployment_intent_id=str(self.deployment.id),
+            evidence_package_id=str(self.evidence.id),
+            severity='P2',
+            incident_date=timezone.now(),
+            detection_method='monitoring',
+            title='Test incident',
+            description='Test',
+            was_auto_approved=False,
+            risk_score_at_approval=Decimal('55'),
+            blast_radius_class='BUSINESS_CRITICAL',
+            created_by='test',
+        )
+
+        self.client.force_authenticate(user=self.requester)
+
+        response = self.client.get(f'/api/v1/evidence_store/incidents/{incident.id}/')
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.data['id'], str(incident.id))
+
+    def test_update_incident(self):
+        """Update incident should update fields."""
+        incident = DeploymentIncident.objects.create(
+            deployment_intent_id=str(self.deployment.id),
+            evidence_package_id=str(self.evidence.id),
+            severity='P2',
+            incident_date=timezone.now(),
+            detection_method='monitoring',
+            title='Test incident',
+            description='Test',
+            was_auto_approved=False,
+            risk_score_at_approval=Decimal('55'),
+            blast_radius_class='BUSINESS_CRITICAL',
+            created_by='test',
+        )
+
+        self.client.force_authenticate(user=self.requester)
+
+        response = self.client.patch(
+            f'/api/v1/evidence_store/incidents/{incident.id}/update/',
+            {
+                'root_cause': 'Memory leak',
+                'resolution_method': 'ROLLBACK',
+                'was_preventable': True,
+            }
+        )
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.data['root_cause'], 'Memory leak')
+
+
+# ============================================================================
+# Trust Maturity API Tests
+# ============================================================================
+
+class TestMaturityAPIEndpoints(P55APITestSetup):
+    """Test trust maturity API endpoints."""
+
+    def test_get_maturity_status(self):
+        """Get maturity status should return current level."""
+        self.client.force_authenticate(user=self.requester)
+
+        response = self.client.get('/api/v1/evidence_store/maturity/status/')
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertIn('current_level', response.data)
+        self.assertIn('risk_model_version', response.data)
+        self.assertEqual(response.data['risk_model_version'], '1.1')
+
+    def test_evaluate_maturity_progression(self):
+        """Evaluate maturity should trigger evaluation."""
+        self.client.force_authenticate(user=self.requester)
+
+        response = self.client.post(
+            '/api/v1/evidence_store/maturity/evaluate/',
+            {
+                'current_level': 'LEVEL_0_BASELINE',
+                'evaluation_period_weeks': 4,
+            }
+        )
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertIn('ready_to_progress', response.data)
+        self.assertIn('criteria_evaluation', response.data)
+
+    def test_list_maturity_evaluations(self):
+        """List evaluations should return historical evaluations."""
+        # Create sample evaluation
+        TrustMaturityProgress.objects.create(
+            evaluation_date=timezone.now(),
+            current_level='LEVEL_0_BASELINE',
+            next_level='LEVEL_1_CAUTIOUS',
+            status='CRITERIA_MET',
+            evaluation_period_weeks=4,
+            incident_rate=Decimal('0.5'),
+            p1_incidents=0,
+            p2_incidents=0,
+            p3_incidents=1,
+            p4_incidents=0,
+            total_deployments=200,
+            blocking_criteria=[],
+            cab_approved=False,
+        )
+
+        self.client.force_authenticate(user=self.requester)
+
+        response = self.client.get('/api/v1/evidence_store/maturity/evaluations/')
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertGreaterEqual(response.data['count'], 1)
+
+
+# ============================================================================
+# Blast Radius Classification API Tests
+# ============================================================================
+
+class TestBlastRadiusAPIEndpoints(P55APITestSetup):
+    """Test blast radius classification API endpoints."""
+
+    def test_classify_deployment_requires_app_name(self):
+        """Classification without app_name should fail."""
+        self.client.force_authenticate(user=self.requester)
+
+        response = self.client.post(
+            '/api/v1/evidence_store/blast-radius/classify/',
+            {}
+        )
+
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+
+    def test_classify_deployment_valid(self):
+        """Classification with valid data should succeed."""
+        self.client.force_authenticate(user=self.requester)
+
+        response = self.client.post(
+            '/api/v1/evidence_store/blast-radius/classify/',
+            {
+                'app_name': 'Windows Security Agent',
+                'requires_admin': True,
+                'target_user_count': 50000,
+                'business_criticality': 'HIGH',
+            }
+        )
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.data['app_name'], 'Windows Security Agent')
+        self.assertEqual(response.data['blast_radius_class'], 'CRITICAL_INFRASTRUCTURE')
+
+    def test_list_blast_radius_classes(self):
+        """List classes should return all definitions."""
+        self.client.force_authenticate(user=self.requester)
+
+        response = self.client.get('/api/v1/evidence_store/blast-radius/classes/')
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.data['count'], 4)
+
+        # Verify class names
+        class_names = [cls['name'] for cls in response.data['results']]
+        self.assertIn('CRITICAL_INFRASTRUCTURE', class_names)
+        self.assertIn('BUSINESS_CRITICAL', class_names)
+        self.assertIn('PRODUCTIVITY_TOOLS', class_names)
+        self.assertIn('NON_CRITICAL', class_names)
+
+
+# ============================================================================
+# Risk Model Version API Tests
+# ============================================================================
+
+class TestRiskModelAPIEndpoints(P55APITestSetup):
+    """Test risk model version API endpoints."""
+
+    def test_list_risk_model_versions(self):
+        """List risk models should return all versions."""
+        self.client.force_authenticate(user=self.requester)
+
+        response = self.client.get('/api/v1/evidence_store/risk-models/')
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertGreaterEqual(response.data['count'], 1)
+        self.assertEqual(response.data['active_version'], '1.1')
+
+    def test_get_active_risk_model(self):
+        """Get active risk model should return current version."""
+        self.client.force_authenticate(user=self.requester)
+
+        response = self.client.get('/api/v1/evidence_store/risk-models/active/')
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.data['version'], '1.1')
+        self.assertEqual(response.data['mode'], 'GREENFIELD_CONSERVATIVE')
+        self.assertTrue(response.data['is_active'])
+
+    def test_activate_risk_model_requires_cab_approval(self):
+        """Activating risk model without CAB approval should fail."""
+        # Create new risk model version
+        new_model = RiskModelVersion.objects.create(
+            version='1.2',
+            mode='CAUTIOUS',
+            auto_approve_thresholds={
+                'CRITICAL_INFRASTRUCTURE': 0,
+                'BUSINESS_CRITICAL': 5,
+                'PRODUCTIVITY_TOOLS': 20,
+                'NON_CRITICAL': 30,
+            },
+            risk_factor_weights=self.risk_model.risk_factor_weights,
+            is_active=False,
+            approved_by_cab=False,
+        )
+
+        self.client.force_authenticate(user=self.requester)
+
+        response = self.client.post(
+            f'/api/v1/evidence_store/risk-models/{new_model.version}/activate/',
+            {'cab_approved': False}
+        )
+
+        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+
+    def test_activate_risk_model_with_cab_approval(self):
+        """Activating risk model with CAB approval should succeed."""
+        # Create new risk model version
+        new_model = RiskModelVersion.objects.create(
+            version='1.2',
+            mode='CAUTIOUS',
+            auto_approve_thresholds={
+                'CRITICAL_INFRASTRUCTURE': 0,
+                'BUSINESS_CRITICAL': 5,
+                'PRODUCTIVITY_TOOLS': 20,
+                'NON_CRITICAL': 30,
+            },
+            risk_factor_weights=self.risk_model.risk_factor_weights,
+            is_active=False,
+            approved_by_cab=False,
+        )
+
+        self.client.force_authenticate(user=self.cab_member)
+
+        response = self.client.post(
+            f'/api/v1/evidence_store/risk-models/{new_model.version}/activate/',
+            {
+                'cab_approved': True,
+                'cab_approval_notes': 'Approved for Level 1 maturity progression',
+            }
+        )
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.data['version']['version'], '1.2')
+
+        # Verify old model is deactivated
+        self.risk_model.refresh_from_db()
+        self.assertFalse(self.risk_model.is_active)
+
+        # Verify new model is activated
+        new_model.refresh_from_db()
+        self.assertTrue(new_model.is_active)
+
+    def test_activate_already_active_model_fails(self):
+        """Activating already-active model should fail."""
+        self.client.force_authenticate(user=self.cab_member)
+
+        response = self.client.post(
+            f'/api/v1/evidence_store/risk-models/{self.risk_model.version}/activate/',
+            {'cab_approved': True}
+        )
+
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+
+
+# ============================================================================
+# API Authentication and Authorization Tests
+# ============================================================================
+
+class TestAPIAuthenticationAuthorization(P55APITestSetup):
+    """Test API authentication and authorization."""
+
+    def test_all_endpoints_require_auth(self):
+        """All endpoints should require authentication."""
+        endpoints = [
+            ('/api/v1/evidence_store/incidents/', 'GET'),
+            ('/api/v1/evidence_store/maturity/status/', 'GET'),
+            ('/api/v1/evidence_store/blast-radius/classes/', 'GET'),
+            ('/api/v1/evidence_store/risk-models/', 'GET'),
+        ]
+
+        for endpoint, method in endpoints:
+            if method == 'GET':
+                response = self.client.get(endpoint)
+            elif method == 'POST':
+                response = self.client.post(endpoint, {})
+
+            self.assertEqual(
+                response.status_code,
+                status.HTTP_403_FORBIDDEN,
+                f'{endpoint} should require authentication'
+            )
+
+    def test_pagination_parameters(self):
+        """Endpoints should support limit/offset pagination."""
+        # Create sample incidents
+        for i in range(10):
+            DeploymentIncident.objects.create(
+                deployment_intent_id=str(self.deployment.id),
+                evidence_package_id=str(self.evidence.id),
+                severity='P3',
+                incident_date=timezone.now(),
+                detection_method='monitoring',
+                title=f'Incident {i}',
+                description='Test',
+                was_auto_approved=False,
+                risk_score_at_approval=Decimal('40'),
+                blast_radius_class='PRODUCTIVITY_TOOLS',
+                created_by='test',
+            )
+
+        self.client.force_authenticate(user=self.requester)
+
+        # Test limit
+        response = self.client.get('/api/v1/evidence_store/incidents/?limit=5')
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(len(response.data['results']), 5)
+
+        # Test offset
+        response = self.client.get('/api/v1/evidence_store/incidents/?offset=5&limit=5')
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(len(response.data['results']), 5)

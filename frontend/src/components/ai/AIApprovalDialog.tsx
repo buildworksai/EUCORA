@@ -2,10 +2,10 @@
 // Copyright (c) 2026 BuildWorks.AI
 /**
  * AI Approval Dialog Component.
- * 
+ *
  * Provides human-in-the-loop approval workflow for AI recommendations.
  * All AI-generated actions require explicit human approval before execution.
- * 
+ *
  * Features:
  * - Approve: Accept the AI recommendation as-is
  * - Reject: Decline the recommendation with a reason
@@ -67,17 +67,17 @@ export function AIApprovalDialog({
     const [rejectionReason, setRejectionReason] = useState('');
     const [feedbackText, setFeedbackText] = useState('');
     const [mode, setMode] = useState<'view' | 'approve' | 'reject' | 'feedback'>('view');
-    
+
     const { mutate: approveTask, isPending: isApproving } = useApproveTask();
     const { mutate: rejectTask, isPending: isRejecting } = useRejectTask();
     const { mutate: requestRevision, isPending: isRequestingRevision } = useRequestRevision();
-    
+
     const canApprove = user?.is_staff || user?.is_superuser || user?.role === 'admin';
     const isPending = isApproving || isRejecting || isRequestingRevision;
-    
+
     const handleApprove = () => {
         if (!task) return;
-        
+
         approveTask(
             { taskId: task.id, comment },
             {
@@ -91,8 +91,8 @@ export function AIApprovalDialog({
                     onApproved?.(task);
                 },
                 onError: (error: unknown) => {
-                    const errorMessage = error instanceof Error 
-                        ? error.message 
+                    const errorMessage = error instanceof Error
+                        ? error.message
                         : (error && typeof error === 'object' && 'response' in error && error.response && typeof error.response === 'object' && 'data' in error.response && error.response.data && typeof error.response.data === 'object' && 'error' in error.response.data && typeof error.response.data.error === 'string'
                             ? error.response.data.error
                             : 'An error occurred');
@@ -103,13 +103,13 @@ export function AIApprovalDialog({
             }
         );
     };
-    
+
     const handleReject = () => {
         if (!task || !rejectionReason.trim()) {
             toast.error('Please provide a reason for rejection');
             return;
         }
-        
+
         rejectTask(
             { taskId: task.id, reason: rejectionReason },
             {
@@ -123,8 +123,8 @@ export function AIApprovalDialog({
                     onRejected?.(task);
                 },
                 onError: (error: unknown) => {
-                    const errorMessage = error instanceof Error 
-                        ? error.message 
+                    const errorMessage = error instanceof Error
+                        ? error.message
                         : (error && typeof error === 'object' && 'response' in error && error.response && typeof error.response === 'object' && 'data' in error.response && error.response.data && typeof error.response.data === 'object' && 'error' in error.response.data && typeof error.response.data.error === 'string'
                             ? error.response.data.error
                             : 'An error occurred');
@@ -135,36 +135,36 @@ export function AIApprovalDialog({
             }
         );
     };
-    
+
     const handleRequestRevision = () => {
         if (!task || !feedbackText.trim()) {
             toast.error('Please provide feedback for improvement');
             return;
         }
-        
+
         requestRevision(
             { taskId: task.id, feedback: feedbackText },
             {
                 onSuccess: (response) => {
                     toast.success('Revision requested', {
-                        description: response.task.revised_recommendation 
+                        description: response.task.revised_recommendation
                             ? 'AI has generated a revised recommendation based on your feedback.'
                             : 'Your feedback has been recorded. AI will generate a revised recommendation.',
                     });
-                    
+
                     // If AI responded with a revision, call the callback
                     if (response.task.revised_recommendation) {
                         onRevisionRequested?.(task, response.task.revised_recommendation);
                     }
-                    
+
                     setFeedbackText('');
                     setMode('view');
                     // Keep dialog open to show the revised recommendation
                     // onOpenChange(false);
                 },
                 onError: (error: unknown) => {
-                    const errorMessage = error instanceof Error 
-                        ? error.message 
+                    const errorMessage = error instanceof Error
+                        ? error.message
                         : (error && typeof error === 'object' && 'response' in error && error.response && typeof error.response === 'object' && 'data' in error.response && error.response.data && typeof error.response.data === 'object' && 'error' in error.response.data && typeof error.response.data.error === 'string'
                             ? error.response.data.error
                             : 'An error occurred');
@@ -175,7 +175,7 @@ export function AIApprovalDialog({
             }
         );
     };
-    
+
     const resetAndClose = () => {
         setComment('');
         setRejectionReason('');
@@ -183,9 +183,9 @@ export function AIApprovalDialog({
         setMode('view');
         onOpenChange(false);
     };
-    
+
     if (!task) return null;
-    
+
     const statusColors: Record<string, string> = {
         'awaiting_approval': 'bg-eucora-gold/20 text-eucora-gold border-eucora-gold/30',
         'revision_requested': 'bg-purple-500/20 text-purple-500 border-purple-500/30',
@@ -195,23 +195,23 @@ export function AIApprovalDialog({
         'completed': 'bg-eucora-green/20 text-eucora-green border-eucora-green/30',
         'failed': 'bg-destructive/20 text-destructive border-destructive/30',
     };
-    
+
     // Safely get status display text
     const statusDisplay = task.status ? task.status.replace('_', ' ') : 'pending';
     const agentDisplay = task.agent_type_display || task.agent_type || 'AI Agent';
     const taskTypeDisplay = task.task_type ? task.task_type.replace('_', ' ') : 'recommendation';
-    
+
     // Type guards for conditional rendering
     const hasInputData: boolean = !!(task.input_data && typeof task.input_data === 'object' && task.input_data !== null && Object.keys(task.input_data).length > 0);
     const hasOutputData: boolean = !!(task.output_data && typeof task.output_data === 'object' && task.output_data !== null && Object.keys(task.output_data).length > 0 && !('approval' in task.output_data) && !('rejection' in task.output_data));
-    
+
     // Extract revision data with proper typing
     type RevisionType = { feedback?: string; revised_recommendation?: string; timestamp?: string; requested_by?: string; ai_response?: string; revision_number?: number; requested_at?: string };
     const revisionsRaw: unknown = task.output_data?.revisions;
     const isRevisionsArray: boolean = Array.isArray(revisionsRaw);
     const revisions: RevisionType[] = isRevisionsArray ? (revisionsRaw as RevisionType[]) : [];
     const hasRevisions: boolean = revisions.length > 0;
-    
+
     return (
         <Dialog open={open} onOpenChange={resetAndClose}>
             <DialogContent className="sm:max-w-[600px] glass border-border/50">
@@ -233,7 +233,7 @@ export function AIApprovalDialog({
                         </div>
                     </div>
                 </DialogHeader>
-                
+
                 <ScrollArea className="max-h-[400px] pr-4">
                     <div className="space-y-4 py-4">
                         {/* Task Info */}
@@ -242,12 +242,12 @@ export function AIApprovalDialog({
                                 <FileText className="h-4 w-4 text-muted-foreground" />
                                 <span>{task.title}</span>
                             </div>
-                            
+
                             <div className="p-4 rounded-lg bg-muted/30 border border-border/50">
                                 <p className="text-sm whitespace-pre-wrap">{task.description}</p>
                             </div>
                         </div>
-                        
+
                         {/* Metadata */}
                         <div className="grid grid-cols-2 gap-4 text-sm">
                             <div className="flex items-center gap-2 text-muted-foreground">
@@ -269,7 +269,7 @@ export function AIApprovalDialog({
                                 <span>Type: {taskTypeDisplay}</span>
                             </div>
                         </div>
-                        
+
                         {hasInputData ? (
                             <>
                                 <Separator />
@@ -285,7 +285,7 @@ export function AIApprovalDialog({
                                 </div>
                             </>
                         ) : null}
-                        
+
                         {hasOutputData ? (
                             <>
                                 <Separator />
@@ -301,9 +301,9 @@ export function AIApprovalDialog({
                                 </div>
                             </>
                         ) : null}
-                        
+
                         <Separator />
-                        
+
                         {/* Warning Banner */}
                         <div className="flex items-start gap-3 p-4 rounded-lg bg-eucora-gold/10 border border-eucora-gold/30">
                             <AlertTriangle className="h-5 w-5 text-eucora-gold shrink-0 mt-0.5" />
@@ -317,7 +317,7 @@ export function AIApprovalDialog({
                                 </p>
                             </div>
                         </div>
-                        
+
                         {/* Revision History */}
                         {hasRevisions ? (
                             <>
@@ -329,8 +329,8 @@ export function AIApprovalDialog({
                                     </div>
                                     <div className="space-y-2 max-h-[200px] overflow-y-auto">
                                         {revisions.map((revision, index: number) => (
-                                            <div 
-                                                key={index} 
+                                            <div
+                                                key={index}
                                                 className="p-3 rounded-lg bg-purple-500/10 border border-purple-500/30 text-sm"
                                             >
                                                 <div className="flex items-center justify-between mb-2">
@@ -361,7 +361,7 @@ export function AIApprovalDialog({
                                 </div>
                             </>
                         ) : null}
-                        
+
                         {/* Approve/Reject/Feedback Inputs */}
                         {((task.status === 'awaiting_approval' || task.status === 'revision_requested') && canApprove) ? (
                             <>
@@ -377,7 +377,7 @@ export function AIApprovalDialog({
                                         />
                                     </div>
                                 ) : null}
-                                
+
                                 {mode === 'reject' ? (
                                     <div className="space-y-2">
                                         <Label htmlFor="rejection-reason" className="text-destructive">
@@ -393,7 +393,7 @@ export function AIApprovalDialog({
                                         />
                                     </div>
                                 ) : null}
-                                
+
                                 {mode === 'feedback' ? (
                                     <div className="space-y-3 p-4 rounded-lg bg-purple-500/10 border border-purple-500/30">
                                         <div className="flex items-center gap-2">
@@ -403,7 +403,7 @@ export function AIApprovalDialog({
                                             </Label>
                                         </div>
                                         <p className="text-xs text-muted-foreground">
-                                            Tell the AI what to improve, correct, or change in the recommendation. 
+                                            Tell the AI what to improve, correct, or change in the recommendation.
                                             The AI will generate a revised suggestion based on your feedback.
                                         </p>
                                         <Textarea
@@ -422,7 +422,7 @@ export function AIApprovalDialog({
                                 ) : null}
                             </>
                         ) : null}
-                        
+
                         {/* Already Processed Info */}
                         {task.output_data?.approval ? (
                             <div className="p-4 rounded-lg bg-eucora-green/10 border border-eucora-green/30">
@@ -442,7 +442,7 @@ export function AIApprovalDialog({
                                 )}
                             </div>
                         ) : null}
-                        
+
                         {task.output_data?.rejection ? (
                             <div className="p-4 rounded-lg bg-destructive/10 border border-destructive/30">
                                 <div className="flex items-center gap-2 text-destructive font-medium">
@@ -461,7 +461,7 @@ export function AIApprovalDialog({
                                 </p>
                             </div>
                         ) : null}
-                        
+
                         {/* No permission message */}
                         {task.status === 'awaiting_approval' && !canApprove && (
                             <div className="p-4 rounded-lg bg-muted/30 border border-border/50 text-center">
@@ -475,7 +475,7 @@ export function AIApprovalDialog({
                         )}
                     </div>
                 </ScrollArea>
-                
+
                 <DialogFooter className="flex-col sm:flex-row gap-2">
                     {(task.status === 'awaiting_approval' || task.status === 'revision_requested') && canApprove ? (
                         <>
@@ -512,7 +512,7 @@ export function AIApprovalDialog({
                                     </Button>
                                 </>
                             )}
-                            
+
                             {mode === 'approve' && (
                                 <>
                                     <Button
@@ -541,7 +541,7 @@ export function AIApprovalDialog({
                                     </Button>
                                 </>
                             )}
-                            
+
                             {mode === 'reject' && (
                                 <>
                                     <Button
@@ -570,7 +570,7 @@ export function AIApprovalDialog({
                                     </Button>
                                 </>
                             )}
-                            
+
                             {mode === 'feedback' && (
                                 <>
                                     <Button
@@ -610,4 +610,3 @@ export function AIApprovalDialog({
 }
 
 export default AIApprovalDialog;
-

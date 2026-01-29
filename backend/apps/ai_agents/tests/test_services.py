@@ -3,11 +3,13 @@
 """
 Tests for AI agent services.
 """
-import pytest
 from types import SimpleNamespace
-from apps.ai_agents.models import AIModelProvider, AIAgentType, AIConversation, AIMessage
-from apps.ai_agents.services import AIAgentService
+
+import pytest
+
 from apps.ai_agents import services
+from apps.ai_agents.models import AIAgentType, AIConversation, AIMessage, AIModelProvider
+from apps.ai_agents.services import AIAgentService
 
 
 class FakeProvider:

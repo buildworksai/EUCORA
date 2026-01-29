@@ -1,6 +1,6 @@
 /**
  * TanStack Query client configuration.
- * 
+ *
  * Handles server state (deployments, evidence packs, etc.).
  */
 import { QueryClient } from '@tanstack/react-query';

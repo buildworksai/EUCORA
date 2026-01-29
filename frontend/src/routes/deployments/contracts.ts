@@ -53,11 +53,11 @@ export const ENDPOINTS = {
 
 /**
  * Example usage:
- * 
+ *
  * ```typescript
  * import { ENDPOINTS, type DeploymentListResponse } from './contracts';
  * import { api } from '@/lib/api/client';
- * 
+ *
  * const response = await api.get<DeploymentListResponse>(ENDPOINTS.DEPLOYMENTS_LIST);
  * ```
  */

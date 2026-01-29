@@ -23,7 +23,7 @@ else
     PYTHON_CMD="python3"
     MANAGE_PY="$BACKEND_DIR/manage.py"
     echo "💻 Running in local environment"
-    
+
     if [ -d "$BACKEND_DIR/venv" ]; then
         source "$BACKEND_DIR/venv/bin/activate"
     elif [ -d "$PROJECT_ROOT/venv" ]; then
@@ -66,14 +66,14 @@ try:
     stats = demo_data_stats()
     total = sum(stats.values())
     demo_mode = get_demo_mode_enabled()
-    
+
     print(f"Demo Mode: {'✅ ENABLED' if demo_mode else '❌ DISABLED'}")
     print(f"Total Demo Items: {total:,}")
     print(f"  Assets: {stats['assets']:,}")
     print(f"  Applications: {stats['applications']:,}")
     print(f"  Deployments: {stats['deployments']:,}")
     print(f"  Events: {stats['events']:,}")
-    
+
     if total == 0:
         print("\n⚠️  NO DEMO DATA FOUND - Will seed minimum dataset")
         sys.exit(1)

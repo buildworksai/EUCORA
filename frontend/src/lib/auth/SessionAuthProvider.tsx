@@ -34,11 +34,11 @@ export function SessionAuthProvider({ children }: { children: ReactNode }) {
   // Check session validity on mount and periodically
   useEffect(() => {
     checkSession();
-    
+
     const interval = setInterval(() => {
       checkSession();
     }, 5 * 60 * 1000); // Check every 5 minutes
-    
+
     return () => clearInterval(interval);
   }, [checkSession]);
 
@@ -67,4 +67,3 @@ export function useSessionAuth() {
   }
   return context;
 }
-

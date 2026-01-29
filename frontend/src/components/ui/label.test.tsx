@@ -29,4 +29,3 @@ describe('Label', () => {
     expect(label).toHaveClass('custom-class');
   });
 });
-

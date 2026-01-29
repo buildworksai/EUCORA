@@ -1,6 +1,6 @@
 /**
  * Global UI state (theme, sidebar, notifications).
- * 
+ *
  * Zustand is the ONLY allowed client state container (Redux banned).
  */
 import { create } from 'zustand';

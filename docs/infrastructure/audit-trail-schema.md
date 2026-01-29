@@ -1,7 +1,7 @@
 # Audit Trail Schema
 
-**Version**: 1.0  
-**Status**: Active  
+**Version**: 1.0
+**Status**: Active
 **Last Updated**: 2026-01-06
 
 ---
@@ -154,7 +154,7 @@ class DeploymentEvent(models.Model):
     event_data = models.JSONField()
     actor = models.CharField(max_length=255)
     created_at = models.DateTimeField(auto_now_add=True)
-    
+
     class Meta:
         indexes = [
             models.Index(fields=['correlation_id', 'created_at']),
@@ -245,4 +245,3 @@ def forward_to_siem(event):
 - [Event Store](../architecture/event-store.md)
 - [Approval Audit Schema](../architecture/approval-audit-schema.md)
 - [SIEM Integration](./siem-integration.md)
-

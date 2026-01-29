@@ -57,4 +57,3 @@ describe('Input', () => {
     expect(handleChange).toHaveBeenCalled();
   });
 });
-

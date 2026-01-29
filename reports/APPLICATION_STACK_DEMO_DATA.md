@@ -1,7 +1,7 @@
 # Application Stack Demo Data Implementation
 
-**Date**: 2026-01-21  
-**SPDX-License-Identifier**: Apache-2.0  
+**Date**: 2026-01-21
+**SPDX-License-Identifier**: Apache-2.0
 **Copyright**: © 2026 BuildWorks.AI
 
 ## Summary
@@ -207,5 +207,5 @@ for app_def in application_definitions:
 
 ---
 
-**Implementation Complete**: Backend demo data ready for UI testing.  
+**Implementation Complete**: Backend demo data ready for UI testing.
 **Test via**: http://localhost:5173/deployments/stack (after login)

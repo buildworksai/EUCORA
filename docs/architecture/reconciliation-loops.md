@@ -1,7 +1,7 @@
 # Reconciliation Loops
 
-**Version**: 1.0  
-**Status**: Active  
+**Version**: 1.0
+**Status**: Active
 **Last Updated**: 2026-01-06
 
 ---
@@ -70,18 +70,18 @@ def reconciliation_loop():
     active_intents = DeploymentIntent.objects.filter(
         status__in=['PENDING', 'IN_PROGRESS', 'COMPLETED']
     )
-    
+
     for intent in active_intents:
         # Query execution plane state
         actual_state = query_execution_plane(intent)
-        
+
         # Compare to desired state
         drift = compare_states(intent, actual_state)
-        
+
         if drift:
             # Emit drift event
             emit_drift_event(intent, drift)
-            
+
             # Trigger remediation if policy allows
             if should_remediate(drift):
                 trigger_remediation(intent, drift)
@@ -107,26 +107,26 @@ def reconciliation_loop():
 
 ### 1. Missing Assignment
 
-**Severity**: High  
-**Detection**: Intent exists but no execution plane assignment found  
+**Severity**: High
+**Detection**: Intent exists but no execution plane assignment found
 **Remediation**: Create assignment via connector
 
 ### 2. Version Mismatch
 
-**Severity**: Medium  
-**Detection**: Wrong version deployed  
+**Severity**: Medium
+**Detection**: Wrong version deployed
 **Remediation**: Update assignment to correct version
 
 ### 3. Scope Mismatch
 
-**Severity**: High  
-**Detection**: Assignment scope differs from intent  
+**Severity**: High
+**Detection**: Assignment scope differs from intent
 **Remediation**: Update assignment scope (may require CAB approval)
 
 ### 4. Compliance Drift
 
-**Severity**: Medium  
-**Detection**: Devices not compliant with intent  
+**Severity**: Medium
+**Detection**: Devices not compliant with intent
 **Remediation**: Trigger compliance remediation scripts
 
 ---
@@ -220,4 +220,3 @@ All reconciliation events are stored in append-only event store:
 - [Execution Plane Connectors](./execution-plane-connectors.md)
 - [Event Store](../architecture/event-store.md)
 - [CAB Workflow](./cab-workflow.md)
-

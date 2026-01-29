@@ -25,9 +25,7 @@ class Migration(migrations.Migration):
                 ),
                 (
                     "created_at",
-                    models.DateTimeField(
-                        db_index=True, default=django.utils.timezone.now, editable=False
-                    ),
+                    models.DateTimeField(db_index=True, default=django.utils.timezone.now, editable=False),
                 ),
                 ("updated_at", models.DateTimeField(auto_now=True)),
                 (
@@ -40,15 +38,11 @@ class Migration(migrations.Migration):
                 ),
                 (
                     "factors",
-                    models.JSONField(
-                        help_text="List of risk factors with weights and rubrics"
-                    ),
+                    models.JSONField(help_text="List of risk factors with weights and rubrics"),
                 ),
                 (
                     "threshold",
-                    models.IntegerField(
-                        default=50, help_text="CAB approval threshold (0-100)"
-                    ),
+                    models.IntegerField(default=50, help_text="CAB approval threshold (0-100)"),
                 ),
                 (
                     "is_active",
@@ -59,9 +53,7 @@ class Migration(migrations.Migration):
                 ),
                 (
                     "description",
-                    models.TextField(
-                        blank=True, help_text="Description of changes in this version"
-                    ),
+                    models.TextField(blank=True, help_text="Description of changes in this version"),
                 ),
             ],
             options={
@@ -84,9 +76,7 @@ class Migration(migrations.Migration):
                 ),
                 (
                     "created_at",
-                    models.DateTimeField(
-                        db_index=True, default=django.utils.timezone.now, editable=False
-                    ),
+                    models.DateTimeField(db_index=True, default=django.utils.timezone.now, editable=False),
                 ),
                 ("updated_at", models.DateTimeField(auto_now=True)),
                 (
@@ -95,9 +85,7 @@ class Migration(migrations.Migration):
                 ),
                 (
                     "risk_model_version",
-                    models.CharField(
-                        help_text="Risk model version used", max_length=10
-                    ),
+                    models.CharField(help_text="Risk model version used", max_length=10),
                 ),
                 (
                     "risk_score",
@@ -116,9 +104,7 @@ class Migration(migrations.Migration):
                 "verbose_name": "Risk Assessment",
                 "verbose_name_plural": "Risk Assessments",
                 "indexes": [
-                    models.Index(
-                        fields=["risk_score"], name="policy_engi_risk_sc_61fe34_idx"
-                    ),
+                    models.Index(fields=["risk_score"], name="policy_engi_risk_sc_61fe34_idx"),
                     models.Index(
                         fields=["deployment_intent_id"],
                         name="policy_engi_deploym_154037_idx",

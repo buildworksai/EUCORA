@@ -1,7 +1,7 @@
 # Intune Connector Error Handling
 
-**Version**: 1.0  
-**Status**: Active  
+**Version**: 1.0
+**Status**: Active
 **Last Updated**: 2026-01-06
 
 ---
@@ -99,7 +99,7 @@ idempotent_key = f"{deployment_intent_id}-create-assignment-{timestamp}"
 
 ### Rate Limiting
 
-**Detection**: HTTP 429 response  
+**Detection**: HTTP 429 response
 **Headers**: `Retry-After` header indicates wait time
 
 **Handling**:
@@ -184,4 +184,3 @@ def get_all_pages(url, headers):
 - [Intune Connector Spec](./connector-spec.md)
 - [Rollback Procedures](./rollback-procedures.md)
 - [Execution Plane Connectors](../../architecture/execution-plane-connectors.md)
-

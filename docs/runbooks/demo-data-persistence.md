@@ -1,7 +1,7 @@
 # Demo Data Persistence Guide
 
-**SPDX-License-Identifier: Apache-2.0**  
-**Version**: 1.0.0  
+**SPDX-License-Identifier: Apache-2.0**
+**Version**: 1.0.0
 **Last Updated**: January 8, 2026
 
 ---
@@ -40,7 +40,7 @@ The `entrypoint.sh` script:
 ```bash
 # Container starts → No demo data found → Seeds default amounts:
 # - 100 assets
-# - 10 applications  
+# - 10 applications
 # - 20 deployments
 # - 5 users
 # - 100 events
@@ -175,7 +175,7 @@ docker-compose up -d
    ```bash
    # Check if volume exists
    docker volume ls | grep postgres
-   
+
    # If missing, recreate
    docker-compose down
    docker-compose up -d
@@ -189,7 +189,7 @@ docker-compose up -d
    ```bash
    # Check container status
    docker-compose ps
-   
+
    # Ensure db container is running
    docker-compose up -d db
    ```
@@ -232,10 +232,10 @@ print(f'Applications: {stats[\"applications\"]:,}')
 
 ## Summary
 
-✅ **Demo data now persists across container restarts**  
-✅ **Seeding is idempotent - only adds missing records**  
-✅ **Entrypoint script preserves existing data**  
-✅ **Database volume ensures persistence**  
+✅ **Demo data now persists across container restarts**
+✅ **Seeding is idempotent - only adds missing records**
+✅ **Entrypoint script preserves existing data**
+✅ **Database volume ensures persistence**
 ⚠️ **Only use `--clear-existing` when you want to reset**
 
 ---

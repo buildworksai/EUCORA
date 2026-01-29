@@ -21,4 +21,3 @@ export function LoadingButton({ loading, children, disabled, className, ...props
     </Button>
   );
 }
-

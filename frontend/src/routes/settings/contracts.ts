@@ -70,11 +70,11 @@ export const ENDPOINTS = {
 
 /**
  * Example usage:
- * 
+ *
  * ```typescript
  * import { ENDPOINTS, type UserProfile } from './contracts';
  * import { api } from '@/lib/api/client';
- * 
+ *
  * const response = await api.get<UserProfile>(ENDPOINTS.PROFILE);
  * ```
  */

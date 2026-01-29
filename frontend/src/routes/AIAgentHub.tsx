@@ -8,8 +8,8 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { 
-    Package, FileCheck, AlertTriangle, Rocket, Shield, 
+import {
+    Package, FileCheck, AlertTriangle, Rocket, Shield,
     Activity, Clock, CheckCircle, XCircle, Play,
     Sparkles, Brain, Loader2
 } from 'lucide-react';
@@ -87,9 +87,9 @@ export default function AIAgentHub() {
     const { data: stats, isLoading: statsLoading } = useAIAgentStats();
     const { data: tasksData, isLoading: tasksLoading } = useAIAgentTasks();
     const [, setSelectedAgent] = useState<string | null>(null); // Reserved for future use
-    
+
     const tasks = tasksData?.tasks || [];
-    
+
     return (
         <div className="space-y-8">
             {/* Header */}
@@ -109,7 +109,7 @@ export default function AIAgentHub() {
                     All actions require human approval
                 </Badge>
             </div>
-            
+
             {/* Stats */}
             <div className="grid gap-4 md:grid-cols-4">
                 <Card className="glass">
@@ -173,13 +173,13 @@ export default function AIAgentHub() {
                     </CardContent>
                 </Card>
             </div>
-            
+
             <Tabs defaultValue="agents" className="space-y-6">
                 <TabsList className="glass">
                     <TabsTrigger value="agents">Available Agents</TabsTrigger>
                     <TabsTrigger value="tasks">Recent Tasks</TabsTrigger>
                 </TabsList>
-                
+
                 <TabsContent value="agents">
                     {/* Agent Cards */}
                     <div>
@@ -207,8 +207,8 @@ export default function AIAgentHub() {
                                                 </li>
                                             ))}
                                         </ul>
-                                        <Button 
-                                            className="w-full mt-4 group-hover:bg-eucora-teal group-hover:text-white transition-colors" 
+                                        <Button
+                                            className="w-full mt-4 group-hover:bg-eucora-teal group-hover:text-white transition-colors"
                                             variant="outline"
                                             onClick={() => setSelectedAgent(agent.id)}
                                         >
@@ -221,7 +221,7 @@ export default function AIAgentHub() {
                         </div>
                     </div>
                 </TabsContent>
-                
+
                 <TabsContent value="tasks">
                     {/* Recent Tasks */}
                     <div>
@@ -281,4 +281,3 @@ export default function AIAgentHub() {
         </div>
     );
 }
-

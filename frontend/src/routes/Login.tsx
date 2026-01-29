@@ -61,7 +61,7 @@ export default function Login() {
       password: data.password,
       rememberMe: data.rememberMe,
     });
-    
+
     if (success) {
       navigate('/dashboard');
     }
@@ -69,12 +69,12 @@ export default function Login() {
 
   const fillDemoCredentials = () => {
     setValue('email', 'demo@eucora.com');
-    setValue('password', 'admin@134');
+    setValue('password', import.meta.env.VITE_DEMO_PASSWORD || 'admin@134');
   };
 
   const fillAdminCredentials = () => {
     setValue('email', 'admin@eucora.com');
-    setValue('password', 'admin@134');
+    setValue('password', import.meta.env.VITE_DEMO_PASSWORD || 'admin@134');
   };
 
   return (
@@ -84,14 +84,14 @@ export default function Login() {
         <div className="absolute inset-0 z-0">
           {/* Gradient base */}
           <div className="absolute inset-0 bg-gradient-to-br from-[#0d1526] via-[#0a0f1a] to-[#060a12]" />
-          
+
           {/* Animated orbs */}
           <div className="absolute top-1/4 -left-20 w-96 h-96 bg-eucora-deepBlue/20 rounded-full blur-3xl animate-pulse-slow" />
           <div className="absolute bottom-1/4 -right-20 w-80 h-80 bg-eucora-teal/15 rounded-full blur-3xl animate-pulse-slow" style={{ animationDelay: '1s' }} />
           <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] bg-eucora-deepBlue/5 rounded-full blur-3xl" />
-          
+
           {/* Grid pattern overlay */}
-          <div 
+          <div
             className="absolute inset-0 opacity-[0.03]"
             style={{
               backgroundImage: `
@@ -101,7 +101,7 @@ export default function Login() {
               backgroundSize: '60px 60px',
             }}
           />
-          
+
           {/* Floating particles */}
           <div className="absolute top-20 left-1/4 w-2 h-2 bg-eucora-teal/40 rounded-full animate-bounce" style={{ animationDuration: '3s' }} />
           <div className="absolute top-40 right-1/3 w-1.5 h-1.5 bg-eucora-gold/30 rounded-full animate-bounce" style={{ animationDuration: '4s', animationDelay: '0.5s' }} />
@@ -121,7 +121,7 @@ export default function Login() {
                   </div>
                 </div>
               </div>
-              
+
               {/* Title */}
               <div className="space-y-2">
                 <CardTitle className="text-3xl font-bold tracking-tight text-white">
@@ -268,22 +268,24 @@ export default function Login() {
             </CardFooter>
           </Card>
 
-          {/* Credential Hints */}
-          <div className="mt-4 p-4 rounded-lg bg-eucora-teal/5 border border-eucora-teal/20" style={{ transitionDelay: '300ms' }}>
-            <p className="text-xs text-eucora-teal font-medium mb-2">Demo Credentials</p>
-            <div className="grid grid-cols-2 gap-4 text-xs text-gray-400">
-              <div>
-                <p className="font-medium text-gray-300">Admin Access</p>
-                <p>admin@eucora.com</p>
-                <p>admin@134</p>
-              </div>
-              <div>
-                <p className="font-medium text-gray-300">Demo Access</p>
-                <p>demo@eucora.com</p>
-                <p>admin@134</p>
+          {/* Credential Hints - Only shown in demo mode */}
+          {import.meta.env.VITE_DEMO_MODE === 'true' && (
+            <div className="mt-4 p-4 rounded-lg bg-eucora-teal/5 border border-eucora-teal/20" style={{ transitionDelay: '300ms' }}>
+              <p className="text-xs text-eucora-teal font-medium mb-2">Demo Credentials</p>
+              <div className="grid grid-cols-2 gap-4 text-xs text-gray-400">
+                <div>
+                  <p className="font-medium text-gray-300">Admin Access</p>
+                  <p>admin@eucora.com</p>
+                  <p>{import.meta.env.VITE_DEMO_PASSWORD || 'admin@134'}</p>
+                </div>
+                <div>
+                  <p className="font-medium text-gray-300">Demo Access</p>
+                  <p>demo@eucora.com</p>
+                  <p>{import.meta.env.VITE_DEMO_PASSWORD || 'admin@134'}</p>
+                </div>
               </div>
             </div>
-          </div>
+          )}
         </div>
       </div>
     </ThemeProvider>

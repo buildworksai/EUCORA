@@ -139,4 +139,3 @@ kubectl logs -f deployment/eucora-api -n eucora
 # Check events
 kubectl get events -n eucora --sort-by='.lastTimestamp'
 ```
-

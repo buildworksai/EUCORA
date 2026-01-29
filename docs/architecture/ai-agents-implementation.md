@@ -265,4 +265,3 @@ const response = await sendMessage({
 - Architecture Overview: `docs/architecture/architecture-overview.md`
 - CLAUDE.md: Governance and architectural principles
 - AGENTS.md: Agent role definitions and quality standards
-

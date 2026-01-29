@@ -1,7 +1,7 @@
 # Demo Data Admin Login Fix
 
-**SPDX-License-Identifier: Apache-2.0**  
-**Copyright (c) 2026 BuildWorks.AI**  
+**SPDX-License-Identifier: Apache-2.0**
+**Copyright (c) 2026 BuildWorks.AI**
 **Date**: 2026-01-06
 
 ## Issue
@@ -132,9 +132,7 @@ All hooks use `/api/v1/admin/` endpoints which are now properly configured.
 
 **Status**: ✅ **ALL ISSUES RESOLVED**
 
-**Next Steps**: 
+**Next Steps**:
 - Test admin login and demo data display
 - Verify demo data seeding works correctly
 - Test demo mode toggle functionality
-
-

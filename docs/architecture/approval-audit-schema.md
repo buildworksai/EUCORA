@@ -1,7 +1,7 @@
 # Approval Audit Schema
 
-**Version**: 1.0  
-**Status**: Active  
+**Version**: 1.0
+**Status**: Active
 **Last Updated**: 2026-01-06
 
 ---
@@ -159,7 +159,7 @@ class ApprovalRecord(models.Model):
     risk_score = models.IntegerField(null=True, blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
-    
+
     class Meta:
         indexes = [
             models.Index(fields=['correlation_id', 'approval_date']),
@@ -187,7 +187,7 @@ class ApprovalRecord(models.Model):
         if self.pk is not None:
             raise ValueError('ApprovalRecord is append-only, updates not allowed')
         super().save(*args, **kwargs)
-    
+
     def delete(self, *args, **kwargs):
         raise ValueError('ApprovalRecord is append-only, deletes not allowed')
 ```
@@ -250,4 +250,3 @@ All approval actions generate immutable events:
 - [Exception Management](./exception-management.md)
 - [Event Store](../architecture/event-store.md)
 - [Risk Model](./risk-model.md)
-

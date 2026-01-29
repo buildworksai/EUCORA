@@ -8,6 +8,7 @@ from django.apps import AppConfig
 
 class ConnectorsConfig(AppConfig):
     """Connectors app configuration."""
-    default_auto_field = 'django.db.models.BigAutoField'
-    name = 'apps.connectors'
-    verbose_name = 'EUCORA Connectors'
+
+    default_auto_field = "django.db.models.BigAutoField"
+    name = "apps.connectors"
+    verbose_name = "EUCORA Connectors"

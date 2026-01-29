@@ -123,7 +123,7 @@ export default function AIProvidersTab() {
   const handleDeleteProvider = (providerId: string) => {
     const existingProvider = providers.find((item) => item.id === providerId);
     if (!existingProvider) return;
-    
+
     if (userIsDemo) {
       toast.info('Configuration changes are disabled in demo mode');
       return;

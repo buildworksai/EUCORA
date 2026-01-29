@@ -1,7 +1,7 @@
 # Packaging Pipelines
 
-**Version**: 1.0  
-**Status**: Active  
+**Version**: 1.0
+**Status**: Active
 **Last Updated**: 2026-01-06
 
 ---
@@ -50,7 +50,7 @@ Packaging pipelines are **reproducible build processes** that transform source a
 
 ### 3. SBOM Generation Stage
 
-**Format**: SPDX or CycloneDX  
+**Format**: SPDX or CycloneDX
 **Tool**: syft, cyclonedx-cli, or enterprise-standard tool
 
 **Outputs**:
@@ -60,7 +60,7 @@ Packaging pipelines are **reproducible build processes** that transform source a
 
 ### 4. Vulnerability Scanning Stage
 
-**Tools**: Trivy, Grype, Snyk, or enterprise-standard scanner  
+**Tools**: Trivy, Grype, Snyk, or enterprise-standard scanner
 **Additional**: Malware scanning (ClamAV, Windows Defender)
 
 **Outputs**:
@@ -87,7 +87,7 @@ Packaging pipelines are **reproducible build processes** that transform source a
 
 ### 6. Artifact Storage Stage
 
-**Storage**: Immutable object store (MinIO/S3)  
+**Storage**: Immutable object store (MinIO/S3)
 **Metadata**:
 - SHA-256 hash
 - Signing metadata
@@ -236,4 +236,3 @@ All artifacts include provenance metadata:
 - [SBOM Generation](./sbom-generation.md)
 - [Vulnerability Scan Policy](./vuln-scan-policy.md)
 - [Evidence Pack Schema](../architecture/evidence-pack-schema.md)
-

@@ -55,15 +55,15 @@ export function useUploadEvidencePack() {
       formData.append('app_name', data.app_name);
       formData.append('version', data.version);
       formData.append('artifact', data.artifact);
-      
+
       if (data.sbom_data) {
         formData.append('sbom_data', JSON.stringify(data.sbom_data));
       }
-      
+
       if (data.vulnerability_scan_results) {
         formData.append('vulnerability_scan_results', JSON.stringify(data.vulnerability_scan_results));
       }
-      
+
       if (data.rollback_plan) {
         formData.append('rollback_plan', data.rollback_plan);
       }
@@ -75,7 +75,7 @@ export function useUploadEvidencePack() {
     },
     onSuccess: ({ correlation_id, is_validated }) => {
       queryClient.invalidateQueries({ queryKey: ['evidence', correlation_id] });
-      
+
       if (!is_validated) {
         toast.warning('Evidence pack uploaded but validation failed', {
           description: 'Please review SBOM, vulnerability scan, and rollback plan',
@@ -97,4 +97,3 @@ export function useUploadEvidencePack() {
     },
   });
 }
-

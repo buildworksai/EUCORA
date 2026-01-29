@@ -73,10 +73,10 @@ To force seeding instead of restoring:
 
 ## Benefits
 
-✅ **10-30x faster** (2-5 seconds vs 30-60 seconds)  
-✅ **Consistent data** (same CAB Portal items every time)  
-✅ **No Celery dependency** (works even if Celery is down)  
-✅ **Automatic fallback** (seeds if backup missing)  
+✅ **10-30x faster** (2-5 seconds vs 30-60 seconds)
+✅ **Consistent data** (same CAB Portal items every time)
+✅ **No Celery dependency** (works even if Celery is down)
+✅ **Automatic fallback** (seeds if backup missing)
 
 ## After Container Rebuild
 

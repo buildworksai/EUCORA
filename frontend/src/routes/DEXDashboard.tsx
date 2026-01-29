@@ -44,7 +44,7 @@ export default function DEXDashboard() {
     const assetsWithSentiment = assets.filter(a => a.user_sentiment != null);
 
     // Calculate stats from API data - only include assets with actual data
-    const avgDexScore = assetsWithDex.length > 0 
+    const avgDexScore = assetsWithDex.length > 0
         ? (assetsWithDex.reduce((acc, curr) => acc + (curr.dex_score || 0), 0) / assetsWithDex.length).toFixed(2)
         : '0.00';
     const avgBootTime = assetsWithBootTime.length > 0
@@ -148,7 +148,7 @@ export default function DEXDashboard() {
                         ) : (
                             <>
                                 <div className="text-2xl font-bold">
-                                    {assets.length > 0 
+                                    {assets.length > 0
                                         ? ((sentimentCounts['Positive'] || 0) / assets.length * 100).toFixed(0)
                                         : '0'
                                     }%

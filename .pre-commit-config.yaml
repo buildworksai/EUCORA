@@ -15,6 +15,7 @@ repos:
         name: Check YAML syntax
       - id: check-json
         name: Check JSON syntax
+        exclude: '(tsconfig.*\.json|\.tsbuildinfo)$'
       - id: check-merge-conflict
         name: Check for merge conflicts
       - id: check-added-large-files
@@ -50,7 +51,7 @@ repos:
     rev: 25.1.0
     hooks:
       - id: black
-        language_version: python3.12
+        language_version: python3.13
         args: ['--line-length=120']
         files: ^backend/
 
@@ -70,14 +71,17 @@ repos:
         args: ['--profile', 'black', '--line-length=120']
         files: ^backend/
 
-  # Python type checking
-  - repo: https://github.com/pre-commit/mirrors-mypy
-    rev: v1.8.0
-    hooks:
-      - id: mypy
-        additional_dependencies: [django-stubs, types-redis, types-requests]
-        args: ['--ignore-missing-imports', '--no-strict-optional']
-        files: ^backend/
+  # Python type checking (requires Docker for full Django environment)
+  # NOTE: mypy pre-commit hook disabled - requires django-stubs plugin which needs
+  # full Django environment. Type checking enforced in CI via docker compose.
+  # To run locally: docker compose run --rm web python -m mypy apps --config-file pyproject.toml
+  # - repo: https://github.com/pre-commit/mirrors-mypy
+  #   rev: v1.8.0
+  #   hooks:
+  #     - id: mypy
+  #       additional_dependencies: [django-stubs, types-redis, types-requests]
+  #       args: ['--config-file=backend/pyproject.toml']
+  #       files: ^backend/
 
   # TypeScript type checking (BuildWorks.AI Standard: ZERO errors blocking)
   - repo: local
@@ -103,9 +107,24 @@ repos:
         pass_filenames: false
         always_run: true
 
+  # Test Coverage Check (BuildWorks.AI Standard: 90% target, currently 70% baseline)
+  # NOTE: Set to 70% as current baseline. Raise by 2% weekly until 90%.
+  # Update this threshold as coverage improves per WEEK-BY-WEEK-EXECUTION-PLAN.md
+  # IMPORTANT: This runs only on pre-push to avoid slow commits. CI enforces on every PR.
+  - repo: local
+    hooks:
+      - id: pytest-coverage
+        name: pytest coverage check (≥70%)
+        entry: bash -c 'if command -v docker &> /dev/null && docker ps &> /dev/null; then docker compose run --rm api pytest --cov=apps --cov-fail-under=70 -q --tb=no 2>/dev/null || (echo "COVERAGE BELOW 70%" && exit 1); else echo "Docker not running - coverage check skipped (will be enforced in CI)"; fi'
+        language: system
+        types: [python]
+        files: ^backend/
+        pass_filenames: false
+        stages: [pre-push]  # Run on push only, not every commit (too slow)
+
   # Secrets detection
   - repo: https://github.com/Yelp/detect-secrets
-    rev: v1.4.0
+    rev: v1.5.0
     hooks:
       - id: detect-secrets
         args: ['--baseline', '.secrets.baseline']
@@ -121,6 +140,6 @@ repos:
 
 # Configuration
 default_language_version:
-  python: python3.12
+  python: python3.13
 
 fail_fast: false

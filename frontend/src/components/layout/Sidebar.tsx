@@ -4,11 +4,12 @@ import { useUIStore } from '@/lib/stores/uiStore';
 import { useAuthStore } from '@/lib/stores/authStore';
 import { isAdmin, isDemo, hasPermission } from '@/types/auth';
 import { cn } from '@/lib/utils';
-import { 
-    LayoutDashboard, Box, ShieldCheck, Settings, Database, Activity, 
-    HeartPulse, Sparkles, Shield, Users, Bell, Package
+import {
+    LayoutDashboard, Box, ShieldCheck, Settings, Database, Activity,
+    HeartPulse, Sparkles, Shield, Users, Bell, Package, FileKey
 } from 'lucide-react';
 import { NavLink } from 'react-router-dom';
+import { LicenseSummaryWidget } from '@/components/licenses';
 
 interface NavItem {
     href: string;
@@ -27,6 +28,7 @@ const navItems: NavItem[] = [
     { href: '/deployments/stack', label: 'Application Stack', icon: Package, resource: 'deployments' },
     { href: '/cab', label: 'CAB Portal', icon: Activity, resource: 'cab' },
     { href: '/ai-agents', label: 'AI Agents', icon: Sparkles, resource: 'ai' },
+    { href: '/licenses', label: 'Licenses', icon: FileKey, resource: 'licenses' },
     { href: '/audit', label: 'Audit Trail', icon: Database, resource: 'audit' },
     { href: '/notifications', label: 'Notifications', icon: Bell, resource: 'notifications' },
     { href: '/settings', label: 'Settings', icon: Settings, resource: 'settings' },
@@ -45,15 +47,15 @@ export function Sidebar() {
         if (userIsAdmin) return true;
 
         if (item.adminOnly) return false;
-        
+
         // Demo users see all read-only pages
         if (userIsDemo) return true;
-        
+
         // Check permission for resource
         if (item.resource) {
             return hasPermission(user, item.resource, 'read');
         }
-        
+
         return true;
     });
 
@@ -97,8 +99,18 @@ export function Sidebar() {
                 ))}
             </nav>
 
+            {/* Compact License Widget (collapsed sidebar) */}
+            {!isSidebarOpen && (
+                <div className="mt-auto px-3 w-full">
+                    <LicenseSummaryWidget compact className="mb-2" />
+                </div>
+            )}
+
             {/* Footer Status */}
             <div className={`mt-auto px-6 w-full ${!isSidebarOpen && "hidden"}`}>
+                {/* License Summary Widget (D8.5 Implementation) */}
+                <LicenseSummaryWidget className="mb-3" />
+
                 <div className="p-4 rounded-xl bg-white/5 border border-white/5">
                     <div className="flex items-center justify-between mb-2">
                         <span className="text-xs font-semibold text-muted-foreground uppercase">System Status</span>
@@ -115,7 +127,7 @@ export function Sidebar() {
                         </div>
                     </div>
                 </div>
-                
+
                 {/* User Role Indicator */}
                 <div className="mt-3 p-3 rounded-lg bg-white/5">
                     <div className="flex items-center gap-2 text-xs">
@@ -137,7 +149,7 @@ export function Sidebar() {
                         )}
                     </div>
                 </div>
-                
+
                 <div className="mt-4 text-[10px] text-center text-muted-foreground/50">
                     Built by BuildWorks.AI
                 </div>

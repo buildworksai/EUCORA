@@ -1,7 +1,7 @@
 # Ansible Rollback Procedures
 
-**Version**: 1.0  
-**Status**: Active  
+**Version**: 1.0
+**Status**: Active
 **Last Updated**: 2026-01-06
 
 ---
@@ -56,4 +56,3 @@ Rollback strategies for Ansible deployments.
 
 - [Ansible Connector Spec](./connector-spec.md)
 - [Error Handling](./error-handling.md)
-

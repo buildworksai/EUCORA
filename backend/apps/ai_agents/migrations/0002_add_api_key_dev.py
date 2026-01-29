@@ -13,8 +13,6 @@ class Migration(migrations.Migration):
         migrations.AddField(
             model_name="aimodelprovider",
             name="api_key_dev",
-            field=models.CharField(
-                blank=True, help_text="DEV ONLY: Direct API key storage", max_length=512
-            ),
+            field=models.CharField(blank=True, help_text="DEV ONLY: Direct API key storage", max_length=512),
         ),
     ]

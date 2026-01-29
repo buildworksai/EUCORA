@@ -4,10 +4,11 @@
 Tests for AI agents API views.
 """
 import pytest
-from rest_framework.test import APIClient
 from django.contrib.auth.models import User
 from django.utils import timezone
-from apps.ai_agents.models import AIModelProvider, AIConversation, AIMessage, AIAgentTask, AIAgentType
+from rest_framework.test import APIClient
+
+from apps.ai_agents.models import AIAgentTask, AIAgentType, AIConversation, AIMessage, AIModelProvider
 
 
 @pytest.fixture
@@ -26,22 +27,32 @@ def _clear_ai_data(db):
 
 @pytest.fixture
 def admin_user(db):
-    return User.objects.create_user(
+    user, created = User.objects.get_or_create(
         username="admin",
-        email="admin@example.com",
-        password="adminpass",
-        is_staff=True,
-        is_superuser=True,
+        defaults={
+            "email": "admin@example.com",
+            "is_staff": True,
+            "is_superuser": True,
+        },
     )
+    if created:
+        user.set_password("adminpass")
+        user.save()
+    return user
 
 
 @pytest.fixture
 def normal_user(db):
-    return User.objects.create_user(
+    user, created = User.objects.get_or_create(
         username="user",
-        email="user@example.com",
-        password="userpass",
+        defaults={
+            "email": "user@example.com",
+        },
     )
+    if created:
+        user.set_password("userpass")
+        user.save()
+    return user
 
 
 @pytest.mark.django_db
@@ -60,8 +71,9 @@ def test_list_providers(api_client):
 
 
 @pytest.mark.django_db
-def test_configure_provider_validation(api_client, normal_user):
-    api_client.force_authenticate(normal_user)
+def test_configure_provider_validation(api_client, admin_user):
+    # Admin user should get 400 for missing provider_type (validation error)
+    api_client.force_authenticate(admin_user)
     response = api_client.post("/api/v1/ai/providers/configure/", {}, format="json")
     assert response.status_code == 400
 
@@ -128,6 +140,7 @@ def test_ask_amani_success(api_client, normal_user, monkeypatch):
             return {"conversation_id": "conv", "response": "ok", "requires_action": False}
 
     from apps.ai_agents import views
+
     monkeypatch.setattr(views, "get_ai_agent_service", lambda: FakeService())
 
     response = api_client.post("/api/v1/ai/amani/ask/", {"message": "hi"}, format="json")
@@ -143,6 +156,7 @@ def test_ask_amani_error_status(api_client, normal_user, monkeypatch):
             return {"error": "Invalid API key"}
 
     from apps.ai_agents import views
+
     monkeypatch.setattr(views, "get_ai_agent_service", lambda: FakeService())
 
     response = api_client.post("/api/v1/ai/amani/ask/", {"message": "hi"}, format="json")
@@ -158,6 +172,7 @@ def test_ask_amani_service_error(api_client, normal_user, monkeypatch):
             return {"error": "Service unavailable"}
 
     from apps.ai_agents import views
+
     monkeypatch.setattr(views, "get_ai_agent_service", lambda: FakeService())
 
     response = api_client.post("/api/v1/ai/amani/ask/", {"message": "hi"}, format="json")
@@ -410,6 +425,7 @@ def test_request_task_revision_success(api_client, admin_user, monkeypatch):
             return {"response": "Revised"}
 
     from apps.ai_agents import views
+
     monkeypatch.setattr(views, "get_ai_agent_service", lambda: FakeService())
 
     response = api_client.post(
@@ -440,6 +456,7 @@ def test_request_task_revision_ai_error(api_client, admin_user, monkeypatch):
             return {"error": "provider down"}
 
     from apps.ai_agents import views
+
     monkeypatch.setattr(views, "get_ai_agent_service", lambda: FakeService())
 
     response = api_client.post(
@@ -469,6 +486,7 @@ def test_request_task_revision_ai_exception(api_client, admin_user, monkeypatch)
             raise Exception("boom")
 
     from apps.ai_agents import views
+
     monkeypatch.setattr(views, "get_ai_agent_service", lambda: FakeService())
 
     response = api_client.post(

@@ -1,7 +1,7 @@
 # Quality Gates
 
-**Version**: 1.0  
-**Status**: Active  
+**Version**: 1.0
+**Status**: Active
 **Last Updated**: 2026-01-06
 
 ---
@@ -18,36 +18,36 @@ Quality gates are **non-negotiable** checks that **block** commits, builds, or d
 
 ### 1. Type Safety
 
-**Backend**: mypy with django-stubs  
-**Frontend**: TypeScript compilation  
-**Enforcement**: Block commit if type errors  
+**Backend**: mypy with django-stubs
+**Frontend**: TypeScript compilation
+**Enforcement**: Block commit if type errors
 **Tolerance**: Zero new errors beyond baseline
 
 ### 2. Linting
 
-**Backend**: flake8 with `--max-warnings 0`  
-**Frontend**: ESLint with `--max-warnings 0`  
-**Enforcement**: Block commit if warnings  
+**Backend**: flake8 with `--max-warnings 0`
+**Frontend**: ESLint with `--max-warnings 0`
+**Enforcement**: Block commit if warnings
 **Tolerance**: Zero warnings
 
 ### 3. Code Formatting
 
-**Backend**: black (auto-format)  
-**Frontend**: Prettier (auto-format)  
-**Enforcement**: Auto-format on commit  
+**Backend**: black (auto-format)
+**Frontend**: Prettier (auto-format)
+**Enforcement**: Auto-format on commit
 **Tolerance**: All code must be formatted
 
 ### 4. Secrets Detection
 
-**Tool**: detect-secrets  
-**Enforcement**: Block commit if secrets detected  
+**Tool**: detect-secrets
+**Enforcement**: Block commit if secrets detected
 **Tolerance**: Zero hardcoded secrets
 
 ### 5. Test Coverage
 
-**Backend**: pytest with `--cov-fail-under=90`  
-**Frontend**: Vitest with ≥90% thresholds  
-**Enforcement**: Block commit if coverage < 90%  
+**Backend**: pytest with `--cov-fail-under=90`
+**Frontend**: Vitest with ≥90% thresholds
+**Enforcement**: Block commit if coverage < 90%
 **Tolerance**: ≥90% coverage required
 
 ---
@@ -166,4 +166,3 @@ For **critical** issues requiring temporary bypass:
 - [Pre-Commit Hooks](../infrastructure/ci-cd-pipelines.md)
 - [CAB Workflow](./cab-workflow.md)
 - [Promotion Gates](./promotion-gates.md)
-

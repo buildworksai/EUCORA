@@ -25,9 +25,7 @@ class Migration(migrations.Migration):
                 ),
                 (
                     "created_at",
-                    models.DateTimeField(
-                        db_index=True, default=django.utils.timezone.now, editable=False
-                    ),
+                    models.DateTimeField(db_index=True, default=django.utils.timezone.now, editable=False),
                 ),
                 ("updated_at", models.DateTimeField(auto_now=True)),
                 ("name", models.CharField(db_index=True, max_length=255)),
@@ -70,9 +68,7 @@ class Migration(migrations.Migration):
                 ("license_type", models.CharField(blank=True, max_length=100)),
                 (
                     "default_risk_score",
-                    models.IntegerField(
-                        default=30, help_text="Default risk score (0-100)"
-                    ),
+                    models.IntegerField(default=30, help_text="Default risk score (0-100)"),
                 ),
             ],
             options={
@@ -80,16 +76,12 @@ class Migration(migrations.Migration):
                 "verbose_name_plural": "Applications",
                 "ordering": ["name", "version"],
                 "indexes": [
-                    models.Index(
-                        fields=["name", "version"], name="connectors__name_bd47ca_idx"
-                    ),
+                    models.Index(fields=["name", "version"], name="connectors__name_bd47ca_idx"),
                     models.Index(
                         fields=["platform", "category"],
                         name="connectors__platfor_88ffe6_idx",
                     ),
-                    models.Index(
-                        fields=["vendor"], name="connectors__vendor_1d1e6a_idx"
-                    ),
+                    models.Index(fields=["vendor"], name="connectors__vendor_1d1e6a_idx"),
                 ],
                 "unique_together": {("name", "version", "platform")},
             },
@@ -108,16 +100,12 @@ class Migration(migrations.Migration):
                 ),
                 (
                     "created_at",
-                    models.DateTimeField(
-                        db_index=True, default=django.utils.timezone.now, editable=False
-                    ),
+                    models.DateTimeField(db_index=True, default=django.utils.timezone.now, editable=False),
                 ),
                 ("updated_at", models.DateTimeField(auto_now=True)),
                 (
                     "name",
-                    models.CharField(
-                        db_index=True, help_text="Device name/hostname", max_length=255
-                    ),
+                    models.CharField(db_index=True, help_text="Device name/hostname", max_length=255),
                 ),
                 (
                     "asset_id",
@@ -190,9 +178,7 @@ class Migration(migrations.Migration):
                 ),
                 (
                     "disk_encryption",
-                    models.BooleanField(
-                        default=False, help_text="Disk encryption enabled"
-                    ),
+                    models.BooleanField(default=False, help_text="Disk encryption enabled"),
                 ),
                 (
                     "firewall_enabled",
@@ -200,9 +186,7 @@ class Migration(migrations.Migration):
                 ),
                 (
                     "compliance_score",
-                    models.IntegerField(
-                        default=0, help_text="Compliance score (0-100)"
-                    ),
+                    models.IntegerField(default=0, help_text="Compliance score (0-100)"),
                 ),
                 (
                     "last_checkin",
@@ -223,9 +207,7 @@ class Migration(migrations.Migration):
                 ),
                 (
                     "boot_time",
-                    models.IntegerField(
-                        blank=True, help_text="Boot time in seconds", null=True
-                    ),
+                    models.IntegerField(blank=True, help_text="Boot time in seconds", null=True),
                 ),
                 (
                     "carbon_footprint",
@@ -270,26 +252,18 @@ class Migration(migrations.Migration):
                 "verbose_name_plural": "Assets",
                 "ordering": ["-created_at"],
                 "indexes": [
-                    models.Index(
-                        fields=["type", "status"], name="connectors__type_5fcb0d_idx"
-                    ),
-                    models.Index(
-                        fields=["os", "status"], name="connectors__os_bb00c2_idx"
-                    ),
+                    models.Index(fields=["type", "status"], name="connectors__type_5fcb0d_idx"),
+                    models.Index(fields=["os", "status"], name="connectors__os_bb00c2_idx"),
                     models.Index(
                         fields=["location", "status"],
                         name="connectors__locatio_7763f0_idx",
                     ),
-                    models.Index(
-                        fields=["owner", "status"], name="connectors__owner_bee2c8_idx"
-                    ),
+                    models.Index(fields=["owner", "status"], name="connectors__owner_bee2c8_idx"),
                     models.Index(
                         fields=["compliance_score"],
                         name="connectors__complia_c34ebd_idx",
                     ),
-                    models.Index(
-                        fields=["last_checkin"], name="connectors__last_ch_69d77d_idx"
-                    ),
+                    models.Index(fields=["last_checkin"], name="connectors__last_ch_69d77d_idx"),
                 ],
             },
         ),

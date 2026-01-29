@@ -11,4 +11,3 @@ This app manages integrations with:
 - Monitoring systems (Datadog, Splunk, Elastic)
 - Security scanners (Trivy, Grype, Snyk, Defender for Endpoint)
 """
-

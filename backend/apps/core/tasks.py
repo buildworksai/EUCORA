@@ -3,14 +3,16 @@
 """
 Celery tasks for demo data operations.
 """
-from celery import shared_task
 import logging
+
+from celery import shared_task
+
 from apps.core.demo_data import seed_demo_data
 
 logger = logging.getLogger(__name__)
 
 
-@shared_task(bind=True, name='apps.core.tasks.seed_demo_data_task')
+@shared_task(bind=True, name="apps.core.tasks.seed_demo_data_task")
 def seed_demo_data_task(
     self,
     assets: int = 50000,
@@ -23,7 +25,7 @@ def seed_demo_data_task(
 ):
     """
     Background task to seed demo data.
-    
+
     Args:
         assets: Number of assets to create
         applications: Number of applications to create
@@ -32,16 +34,16 @@ def seed_demo_data_task(
         events: Number of events to create
         clear_existing: Whether to clear existing demo data first
         batch_size: Batch size for bulk operations
-    
+
     Returns:
         Dict with seed results
     """
     try:
         logger.info(
-            f'Starting demo data seed task: assets={assets}, applications={applications}, '
-            f'deployments={deployments}, users={users}, events={events}, clear_existing={clear_existing}'
+            f"Starting demo data seed task: assets={assets}, applications={applications}, "
+            f"deployments={deployments}, users={users}, events={events}, clear_existing={clear_existing}"
         )
-        
+
         results = seed_demo_data(
             assets=assets,
             applications=applications,
@@ -51,9 +53,9 @@ def seed_demo_data_task(
             clear_existing=clear_existing,
             batch_size=batch_size,
         )
-        
-        logger.info(f'Demo data seed task completed successfully: {results}')
-        return {'status': 'success', 'counts': results}
+
+        logger.info(f"Demo data seed task completed successfully: {results}")
+        return {"status": "success", "counts": results}
     except Exception as e:
-        logger.error(f'Error in demo data seed task: {e}', exc_info=True)
+        logger.error(f"Error in demo data seed task: {e}", exc_info=True)
         raise  # Re-raise to trigger Celery retry mechanism

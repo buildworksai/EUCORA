@@ -1,6 +1,6 @@
 # Integration Setup Runbook
 
-**SPDX-License-Identifier: Apache-2.0**  
+**SPDX-License-Identifier: Apache-2.0**
 **Copyright (c) 2026 BuildWorks.AI**
 
 ## Overview
@@ -253,7 +253,5 @@ ServiceNow fields are automatically mapped to Asset model:
 
 ---
 
-**Last Updated**: 2026-01-06  
+**Last Updated**: 2026-01-06
 **Version**: 1.0
-
-

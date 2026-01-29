@@ -1,7 +1,7 @@
 # Demo Data Troubleshooting Guide
 
-**SPDX-License-Identifier: Apache-2.0**  
-**Version**: 1.0.0  
+**SPDX-License-Identifier: Apache-2.0**
+**Version**: 1.0.0
 **Last Updated**: January 8, 2026
 
 ---
@@ -25,7 +25,7 @@
    ```bash
    # In Docker
    docker-compose exec eucora-api python manage.py shell -c "from apps.core.utils import get_demo_mode_enabled; print(get_demo_mode_enabled())"
-   
+
    # Local
    python3 backend/manage.py shell -c "from apps.core.utils import get_demo_mode_enabled; print(get_demo_mode_enabled())"
    ```
@@ -36,7 +36,7 @@
    ```bash
    # Using script (recommended)
    ./scripts/utilities/seed-demo-data.sh
-   
+
    # Using Docker
    docker-compose exec eucora-api python manage.py seed_demo_data \
      --assets 100 \
@@ -46,7 +46,7 @@
      --events 100 \
      --batch-size 50 \
      --clear-existing
-   
+
    # Using management command directly
    python3 backend/manage.py seed_demo_data \
      --assets 100 \
@@ -62,7 +62,7 @@
    ```bash
    # In Docker
    docker-compose exec eucora-api python manage.py shell -c "from apps.core.utils import set_demo_mode_enabled; set_demo_mode_enabled(True)"
-   
+
    # Local
    python3 backend/manage.py shell -c "from apps.core.utils import set_demo_mode_enabled; set_demo_mode_enabled(True)"
    ```
@@ -102,7 +102,7 @@
    ```bash
    # Docker
    docker-compose logs eucora-api | tail -50
-   
+
    # Local
    # Check Django server output
    ```
@@ -157,7 +157,7 @@
    ```bash
    curl http://localhost:8000/api/v1/admin/demo-data-stats
    ```
-   
+
    Should return:
    ```json
    {

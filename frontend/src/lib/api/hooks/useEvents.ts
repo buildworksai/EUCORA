@@ -49,4 +49,3 @@ export function useEvents(filters?: EventFilters) {
     refetchInterval: 300000, // Poll every 5 minutes for new events
   });
 }
-

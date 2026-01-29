@@ -26,9 +26,9 @@ export function Topbar() {
     const { user, logout } = useAuthStore();
     const { data: pendingApprovals = [] } = usePendingApprovals();
     const { data: deployments = [] } = useDeployments();
-    
+
     // Calculate notification count
-    const notificationCount = pendingApprovals.length + 
+    const notificationCount = pendingApprovals.length +
         deployments.filter(d => d.status === 'AWAITING_CAB' || d.status === 'DEPLOYING').length;
 
     const handleLogout = async () => {
@@ -38,7 +38,7 @@ export function Topbar() {
 
     const getRoleBadge = () => {
         if (!user) return null;
-        
+
         switch (user.role) {
             case 'admin':
                 return (
@@ -142,7 +142,7 @@ export function Topbar() {
                                             </div>
                                         </DropdownMenuItem>
                                     ))}
-                                    
+
                                     {/* Deployments in progress */}
                                     {deployments
                                         .filter(d => d.status === 'DEPLOYING' || d.status === 'AWAITING_CAB')

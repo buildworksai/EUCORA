@@ -124,7 +124,7 @@ export const MOCK_USERS: Record<string, User & { password: string }> = {
   'admin@eucora.com': {
     id: '1',
     email: 'admin@eucora.com',
-    password: 'admin@134',
+    password: import.meta.env.VITE_DEMO_PASSWORD || 'admin@134',
     firstName: 'System',
     lastName: 'Administrator',
     role: 'admin',
@@ -139,7 +139,7 @@ export const MOCK_USERS: Record<string, User & { password: string }> = {
   'demo@eucora.com': {
     id: '2',
     email: 'demo@eucora.com',
-    password: 'admin@134',
+    password: import.meta.env.VITE_DEMO_PASSWORD || 'admin@134',
     firstName: 'Demo',
     lastName: 'User',
     role: 'demo',
@@ -160,7 +160,7 @@ export function hasPermission(
   action: 'read' | 'write' | 'delete' | 'admin'
 ): boolean {
   if (!user) return false;
-  
+
   return user.permissions.some(
     (p) =>
       (p.resource === '*' || p.resource === resource) &&
@@ -175,4 +175,3 @@ export function isAdmin(user: User | null): boolean {
 export function isDemo(user: User | null): boolean {
   return user?.role === 'demo';
 }
-

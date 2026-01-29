@@ -1,8 +1,8 @@
 # BuildWorks.AI Compliance Plan for EUCORA
 
-**SPDX-License-Identifier: Apache-2.0**  
-**Version**: 1.2.0  
-**Date**: 2026-01-08  
+**SPDX-License-Identifier: Apache-2.0**
+**Version**: 1.2.0
+**Date**: 2026-01-08
 **Status**: ADOPTION PLAN — Documentation Phases Complete
 
 ---
@@ -609,6 +609,6 @@ Before proceeding with code modifications, explicit approval is required for:
 
 ---
 
-**Classification**: ADOPTION PLAN — Pending Approval  
-**Authority**: BuildWorks.AI Standards (SARAISE Reference) + EUCORA CLAUDE.md  
+**Classification**: ADOPTION PLAN — Pending Approval
+**Authority**: BuildWorks.AI Standards (SARAISE Reference) + EUCORA CLAUDE.md
 **Enforcement**: Will be enforced upon approval and implementation

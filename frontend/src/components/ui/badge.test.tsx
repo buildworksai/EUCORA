@@ -33,4 +33,3 @@ describe('Badge', () => {
     expect(ref.current).toBeInstanceOf(HTMLDivElement);
   });
 });
-

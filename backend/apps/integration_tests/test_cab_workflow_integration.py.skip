@@ -1,0 +1,475 @@
+# SPDX-License-Identifier: Apache-2.0
+# Copyright (c) 2026 BuildWorks.AI
+"""
+Integration tests for CAB workflow with risk-based approval gates.
+
+Tests CAB workflow integration with:
+- Risk assessment thresholds
+- Blast radius classification
+- Approval decision enforcement
+- Exception handling
+- Ring progression gates
+"""
+import pytest
+from unittest.mock import Mock, patch
+from django.test import TestCase, TransactionTestCase
+from django.contrib.auth import get_user_model
+from django.utils import timezone
+from decimal import Decimal
+
+from apps.deployment_intents.models import DeploymentIntent, RingDeployment
+from apps.evidence_pack.models import EvidencePack, ArtifactMetadata, SBOMDocument, VulnerabilityScanResult
+from apps.risk_assessment.models import RiskAssessment, RiskModelVersion
+from apps.cab_workflow.models import CABApprovalRequest, CABApprovalDecision, CABMeeting
+from apps.cab_workflow.services import CABWorkflowService
+from apps.incident_management.models import IncidentReport, BlastRadiusClassification
+
+User = get_user_model()
+
+
+class TestCABWorkflowIntegration(TransactionTestCase):
+    """Test CAB workflow integration with risk-based gates."""
+
+    def setUp(self):
+        """Setup test data."""
+        # Create users
+        self.requester = User.objects.create_user(username='requester', password='test123')
+        self.cab_member_1 = User.objects.create_user(username='cab_member_1', password='test123')
+        self.cab_member_2 = User.objects.create_user(username='cab_member_2', password='test123')
+        self.security_reviewer = User.objects.create_user(username='security', password='test123')
+
+        # Create risk model
+        self.risk_model = RiskModelVersion.objects.create(
+            version='1.0',
+            is_active=True,
+            factors={
+                'privilege_impact': {'weight': 20},
+                'supply_chain_trust': {'weight': 15},
+                'exploitability': {'weight': 10},
+                'data_access': {'weight': 10},
+                'sbom_vulnerability': {'weight': 15},
+                'blast_radius': {'weight': 10},
+                'operational_complexity': {'weight': 10},
+                'history': {'weight': 10},
+            },
+            thresholds={'low': 30, 'medium': 50, 'high': 70, 'critical': 90},
+            created_by=self.requester
+        )
+
+        # Create deployment intent
+        self.deployment_intent = DeploymentIntent.objects.create(
+            name='Test Deployment',
+            description='Test deployment for CAB workflow',
+            target_ring=RingDeployment.CANARY,
+            target_scope=['BU:Engineering'],
+            correlation_id='CAB-TEST-001',
+            created_by=self.requester
+        )
+
+        # Create evidence pack
+        self.evidence_pack = self._create_evidence_pack()
+
+    def test_low_risk_bypasses_cab(self):
+        """Low-risk deployments (score < 50) should bypass CAB approval."""
+        # Create low-risk assessment
+        risk_assessment = RiskAssessment.objects.create(
+            deployment_intent=self.deployment_intent,
+            evidence_pack=self.evidence_pack,
+            risk_model_version=self.risk_model,
+            total_score=Decimal('35.0'),
+            risk_level='LOW',
+            factor_scores={},
+            assessed_by=self.requester
+        )
+
+        # Check CAB requirement
+        service = CABWorkflowService()
+        cab_required = service.is_cab_approval_required(
+            risk_assessment=risk_assessment,
+            target_ring=RingDeployment.CANARY
+        )
+
+        self.assertFalse(cab_required)
+
+    def test_high_risk_requires_cab(self):
+        """High-risk deployments (score > 50) require CAB approval."""
+        # Create high-risk assessment
+        risk_assessment = RiskAssessment.objects.create(
+            deployment_intent=self.deployment_intent,
+            evidence_pack=self.evidence_pack,
+            risk_model_version=self.risk_model,
+            total_score=Decimal('65.0'),
+            risk_level='HIGH',
+            factor_scores={},
+            assessed_by=self.requester
+        )
+
+        # Check CAB requirement
+        service = CABWorkflowService()
+        cab_required = service.is_cab_approval_required(
+            risk_assessment=risk_assessment,
+            target_ring=RingDeployment.CANARY
+        )
+
+        self.assertTrue(cab_required)
+
+    def test_cab_approval_process_with_conditions(self):
+        """Test complete CAB approval process with conditional approval."""
+        # High-risk assessment
+        risk_assessment = RiskAssessment.objects.create(
+            deployment_intent=self.deployment_intent,
+            evidence_pack=self.evidence_pack,
+            risk_model_version=self.risk_model,
+            total_score=Decimal('72.0'),
+            risk_level='HIGH',
+            factor_scores={},
+            assessed_by=self.requester
+        )
+
+        # Submit CAB request
+        service = CABWorkflowService()
+        cab_request = service.submit_cab_approval_request(
+            deployment_intent=self.deployment_intent,
+            risk_assessment=risk_assessment,
+            evidence_pack=self.evidence_pack,
+            target_ring=RingDeployment.PILOT,
+            requested_by=self.requester,
+            correlation_id='CAB-APPROVAL-001'
+        )
+
+        self.assertEqual(cab_request.status, 'PENDING')
+
+        # CAB approves with conditions
+        conditions = [
+            'Deploy only during business hours',
+            'Maintain 24/7 on-call support',
+            'Monitor for 48 hours before Ring 3'
+        ]
+
+        decision = CABApprovalDecision.objects.create(
+            approval_request=cab_request,
+            approver=self.cab_member_1,
+            decision='APPROVED_WITH_CONDITIONS',
+            conditions=conditions,
+            justification='Approved with enhanced monitoring requirements',
+            approval_date=timezone.now()
+        )
+
+        # Update request status
+        cab_request.status = 'APPROVED'
+        cab_request.approved_at = timezone.now()
+        cab_request.save()
+
+        # Validate approval
+        is_approved = service.validate_cab_approval(
+            deployment_intent=self.deployment_intent,
+            target_ring=RingDeployment.PILOT,
+            correlation_id='CAB-APPROVAL-001'
+        )
+
+        self.assertTrue(is_approved)
+        self.assertEqual(cab_request.status, 'APPROVED')
+        self.assertEqual(len(decision.conditions), 3)
+
+    def test_cab_rejection_blocks_deployment(self):
+        """Test that CAB rejection blocks deployment."""
+        # High-risk assessment
+        risk_assessment = RiskAssessment.objects.create(
+            deployment_intent=self.deployment_intent,
+            evidence_pack=self.evidence_pack,
+            risk_model_version=self.risk_model,
+            total_score=Decimal('78.0'),
+            risk_level='HIGH',
+            factor_scores={},
+            assessed_by=self.requester
+        )
+
+        # Submit CAB request
+        service = CABWorkflowService()
+        cab_request = service.submit_cab_approval_request(
+            deployment_intent=self.deployment_intent,
+            risk_assessment=risk_assessment,
+            evidence_pack=self.evidence_pack,
+            target_ring=RingDeployment.PILOT,
+            requested_by=self.requester,
+            correlation_id='CAB-REJECTION-001'
+        )
+
+        # CAB rejects
+        decision = CABApprovalDecision.objects.create(
+            approval_request=cab_request,
+            approver=self.cab_member_1,
+            decision='REJECTED',
+            justification='Insufficient testing evidence, re-submit after additional validation',
+            approval_date=timezone.now()
+        )
+
+        cab_request.status = 'REJECTED'
+        cab_request.save()
+
+        # Validate approval (should fail)
+        is_approved = service.validate_cab_approval(
+            deployment_intent=self.deployment_intent,
+            target_ring=RingDeployment.PILOT,
+            correlation_id='CAB-REJECTION-001'
+        )
+
+        self.assertFalse(is_approved)
+        self.assertEqual(cab_request.status, 'REJECTED')
+
+    def test_blast_radius_enforcement(self):
+        """Test blast radius classification affects CAB approval requirements."""
+        # Medium-risk assessment (normally bypass CAB)
+        risk_assessment = RiskAssessment.objects.create(
+            deployment_intent=self.deployment_intent,
+            evidence_pack=self.evidence_pack,
+            risk_model_version=self.risk_model,
+            total_score=Decimal('48.0'),
+            risk_level='MEDIUM',
+            factor_scores={},
+            assessed_by=self.requester
+        )
+
+        # Create incident with business-critical blast radius
+        incident = IncidentReport.objects.create(
+            deployment_intent=self.deployment_intent,
+            incident_type='COMPATIBILITY_ISSUE',
+            severity='MEDIUM',
+            description='Potential compatibility issues with critical systems',
+            affected_devices=0,
+            reported_by=self.security_reviewer,
+            correlation_id='INCIDENT-001'
+        )
+
+        blast_radius = BlastRadiusClassification.objects.create(
+            deployment_intent=self.deployment_intent,
+            incident_report=incident,
+            classification='BUSINESS_CRITICAL',
+            affected_scope=['BU:Finance', 'BU:Legal'],
+            affected_device_count=0,
+            potential_device_count=500,
+            justification='Deployment affects business-critical financial systems',
+            classified_by=self.security_reviewer
+        )
+
+        # Check CAB requirement (should require approval due to blast radius)
+        service = CABWorkflowService()
+        cab_required = service.is_cab_approval_required_with_blast_radius(
+            risk_assessment=risk_assessment,
+            blast_radius_classification=blast_radius,
+            target_ring=RingDeployment.PILOT
+        )
+
+        self.assertTrue(cab_required)
+
+    def test_ring_progression_requires_separate_cab_approvals(self):
+        """Test that each ring progression requires separate CAB approval for high-risk."""
+        # High-risk assessment
+        risk_assessment = RiskAssessment.objects.create(
+            deployment_intent=self.deployment_intent,
+            evidence_pack=self.evidence_pack,
+            risk_model_version=self.risk_model,
+            total_score=Decimal('68.0'),
+            risk_level='HIGH',
+            factor_scores={},
+            assessed_by=self.requester
+        )
+
+        service = CABWorkflowService()
+
+        # Ring 1 (Canary) approval
+        cab_request_ring1 = service.submit_cab_approval_request(
+            deployment_intent=self.deployment_intent,
+            risk_assessment=risk_assessment,
+            evidence_pack=self.evidence_pack,
+            target_ring=RingDeployment.CANARY,
+            requested_by=self.requester,
+            correlation_id='RING1-APPROVAL'
+        )
+
+        CABApprovalDecision.objects.create(
+            approval_request=cab_request_ring1,
+            approver=self.cab_member_1,
+            decision='APPROVED',
+            justification='Approved for Ring 1',
+            approval_date=timezone.now()
+        )
+
+        cab_request_ring1.status = 'APPROVED'
+        cab_request_ring1.approved_at = timezone.now()
+        cab_request_ring1.save()
+
+        # Validate Ring 1 approval
+        ring1_approved = service.validate_cab_approval(
+            deployment_intent=self.deployment_intent,
+            target_ring=RingDeployment.CANARY,
+            correlation_id='RING1-APPROVAL'
+        )
+        self.assertTrue(ring1_approved)
+
+        # Ring 2 (Pilot) requires separate approval
+        ring2_approved = service.validate_cab_approval(
+            deployment_intent=self.deployment_intent,
+            target_ring=RingDeployment.PILOT,
+            correlation_id='RING2-CHECK'
+        )
+        self.assertFalse(ring2_approved)  # No approval for Ring 2 yet
+
+        # Submit Ring 2 approval
+        cab_request_ring2 = service.submit_cab_approval_request(
+            deployment_intent=self.deployment_intent,
+            risk_assessment=risk_assessment,
+            evidence_pack=self.evidence_pack,
+            target_ring=RingDeployment.PILOT,
+            requested_by=self.requester,
+            correlation_id='RING2-APPROVAL'
+        )
+
+        CABApprovalDecision.objects.create(
+            approval_request=cab_request_ring2,
+            approver=self.cab_member_1,
+            decision='APPROVED',
+            justification='Ring 1 successful, approve Ring 2',
+            approval_date=timezone.now()
+        )
+
+        cab_request_ring2.status = 'APPROVED'
+        cab_request_ring2.approved_at = timezone.now()
+        cab_request_ring2.save()
+
+        # Now Ring 2 should be approved
+        ring2_approved_after = service.validate_cab_approval(
+            deployment_intent=self.deployment_intent,
+            target_ring=RingDeployment.PILOT,
+            correlation_id='RING2-CHECK-AFTER'
+        )
+        self.assertTrue(ring2_approved_after)
+
+    def test_privileged_tooling_always_requires_cab(self):
+        """Test that privileged tooling always requires CAB regardless of risk score."""
+        # Low-risk assessment (would normally bypass CAB)
+        risk_assessment = RiskAssessment.objects.create(
+            deployment_intent=self.deployment_intent,
+            evidence_pack=self.evidence_pack,
+            risk_model_version=self.risk_model,
+            total_score=Decimal('40.0'),
+            risk_level='LOW',
+            factor_scores={'privilege_impact': 1.0},  # Admin privileges
+            assessed_by=self.requester
+        )
+
+        # Mark as privileged tooling
+        self.deployment_intent.is_privileged_tooling = True
+        self.deployment_intent.save()
+
+        # Check CAB requirement
+        service = CABWorkflowService()
+        cab_required = service.is_cab_approval_required(
+            risk_assessment=risk_assessment,
+            target_ring=RingDeployment.CANARY,
+            is_privileged=True
+        )
+
+        self.assertTrue(cab_required)
+
+    def test_exception_approval_workflow(self):
+        """Test security exception approval workflow."""
+        # Risk assessment with vulnerabilities
+        risk_assessment = RiskAssessment.objects.create(
+            deployment_intent=self.deployment_intent,
+            evidence_pack=self.evidence_pack,
+            risk_model_version=self.risk_model,
+            total_score=Decimal('58.0'),
+            risk_level='MEDIUM',
+            factor_scores={},
+            assessed_by=self.requester
+        )
+
+        # Update vulnerability scan with exception
+        vuln_scan = self.evidence_pack.vulnerability_scan
+        vuln_scan.scan_pass = False
+        vuln_scan.policy_decision = 'EXCEPTION_APPROVED'
+        vuln_scan.exception_justification = 'Compensating controls: WAF rules + network segmentation'
+        vuln_scan.exception_approved_by = self.security_reviewer
+        vuln_scan.exception_expiry_date = timezone.now() + timezone.timedelta(days=90)
+        vuln_scan.save()
+
+        # Submit CAB request with exception
+        service = CABWorkflowService()
+        cab_request = service.submit_cab_approval_request(
+            deployment_intent=self.deployment_intent,
+            risk_assessment=risk_assessment,
+            evidence_pack=self.evidence_pack,
+            target_ring=RingDeployment.PILOT,
+            requested_by=self.requester,
+            correlation_id='EXCEPTION-APPROVAL'
+        )
+
+        # CAB reviews and approves with exception acknowledgment
+        decision = CABApprovalDecision.objects.create(
+            approval_request=cab_request,
+            approver=self.cab_member_1,
+            decision='APPROVED_WITH_CONDITIONS',
+            conditions=['Security exception expires in 90 days', 'Re-scan required before expiry'],
+            justification='Approved with acknowledged security exception and compensating controls',
+            approval_date=timezone.now()
+        )
+
+        cab_request.status = 'APPROVED'
+        cab_request.approved_at = timezone.now()
+        cab_request.save()
+
+        # Validate approval
+        is_approved = service.validate_cab_approval(
+            deployment_intent=self.deployment_intent,
+            target_ring=RingDeployment.PILOT,
+            correlation_id='EXCEPTION-APPROVAL'
+        )
+
+        self.assertTrue(is_approved)
+        self.assertEqual(vuln_scan.policy_decision, 'EXCEPTION_APPROVED')
+
+    # Helper methods
+
+    def _create_evidence_pack(self) -> EvidencePack:
+        """Create complete evidence pack."""
+        evidence_pack = EvidencePack.objects.create(
+            deployment_intent=self.deployment_intent,
+            status='COMPLETE',
+            generated_by=self.requester,
+            correlation_id='EVIDENCE-001'
+        )
+
+        ArtifactMetadata.objects.create(
+            evidence_pack=evidence_pack,
+            artifact_name='test_app.zip',
+            artifact_hash_sha256='test_hash_123',
+            artifact_size_bytes=1024000,
+            signing_status='SIGNED',
+            signing_certificate_thumbprint='CERT123'
+        )
+
+        SBOMDocument.objects.create(
+            evidence_pack=evidence_pack,
+            format='SPDX',
+            version='2.3',
+            document_hash='sbom_hash_123',
+            component_count=25,
+            license_info={'licenses': ['MIT']},
+            supplier_info={'supplier': 'Test Vendor'}
+        )
+
+        VulnerabilityScanResult.objects.create(
+            evidence_pack=evidence_pack,
+            scanner_name='Trivy',
+            scanner_version='0.48.0',
+            scan_timestamp=timezone.now(),
+            critical_count=0,
+            high_count=0,
+            medium_count=0,
+            low_count=0,
+            scan_pass=True,
+            policy_decision='PASS'
+        )
+
+        return evidence_pack

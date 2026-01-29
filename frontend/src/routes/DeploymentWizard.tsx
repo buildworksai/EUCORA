@@ -60,7 +60,7 @@ export default function DeploymentWizard() {
     const handleNext = async () => {
         // Validate current step before proceeding
         let fieldsToValidate: (keyof DeploymentFormData)[] = [];
-        
+
         if (step === 1) {
             fieldsToValidate = ['appName', 'version'];
         } else if (step === 2) {

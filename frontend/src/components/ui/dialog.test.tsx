@@ -15,7 +15,7 @@ describe('Dialog', () => {
         </DialogContent>
       </Dialog>
     );
-    
+
     expect(screen.getByText('Test Dialog')).toBeInTheDocument();
     expect(screen.getByText('Test description')).toBeInTheDocument();
   });
@@ -30,10 +30,10 @@ describe('Dialog', () => {
         </DialogContent>
       </Dialog>
     );
-    
+
     const trigger = screen.getByRole('button', { name: /open dialog/i });
     await user.click(trigger);
-    
+
     expect(screen.getByText('Dialog Title')).toBeInTheDocument();
   });
 
@@ -46,12 +46,11 @@ describe('Dialog', () => {
         </DialogContent>
       </Dialog>
     );
-    
+
     const closeButton = screen.getByRole('button', { name: /close/i });
     await user.click(closeButton);
-    
+
     // Dialog should be closed (content not visible)
     expect(screen.queryByText('Dialog Title')).not.toBeInTheDocument();
   });
 });
-
