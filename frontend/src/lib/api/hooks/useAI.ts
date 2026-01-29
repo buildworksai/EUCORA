@@ -90,7 +90,7 @@ export function useModelProviders() {
 // Configure AI model provider
 export function useConfigureProvider() {
     const queryClient = useQueryClient();
-    
+
     return useMutation({
         mutationFn: async (data: {
             provider_type: string;
@@ -113,7 +113,7 @@ export function useConfigureProvider() {
 // Delete AI model provider by ID
 export function useDeleteProvider() {
     const queryClient = useQueryClient();
-    
+
     return useMutation({
         mutationFn: async (providerId: string) => {
             return await api.delete(`${API_BASE}/providers/${providerId}/delete/`);
@@ -127,7 +127,7 @@ export function useDeleteProvider() {
 // Delete all providers of a specific type
 export function useDeleteProviderByType() {
     const queryClient = useQueryClient();
-    
+
     return useMutation({
         mutationFn: async (providerType: string) => {
             return await api.delete(`${API_BASE}/providers/type/${providerType}/delete/`);
@@ -141,7 +141,7 @@ export function useDeleteProviderByType() {
 // Ask Amani
 export function useAmaniChat() {
     const queryClient = useQueryClient();
-    
+
     return useMutation({
         mutationFn: async (data: {
             message: string;
@@ -230,7 +230,7 @@ export function useAIAgentTask(taskId: string | null) {
 // Approve task
 export function useApproveTask() {
     const queryClient = useQueryClient();
-    
+
     return useMutation({
         mutationFn: async ({ taskId, comment }: { taskId: string; comment?: string }) => {
             return await api.post(`${API_BASE}/tasks/${taskId}/approve/`, { comment });
@@ -247,7 +247,7 @@ export function useApproveTask() {
 // Reject task
 export function useRejectTask() {
     const queryClient = useQueryClient();
-    
+
     return useMutation({
         mutationFn: async ({ taskId, reason }: { taskId: string; reason: string }) => {
             return await api.post(`${API_BASE}/tasks/${taskId}/reject/`, { reason });
@@ -280,7 +280,7 @@ export interface RevisionResponse {
 
 export function useRequestRevision() {
     const queryClient = useQueryClient();
-    
+
     return useMutation({
         mutationFn: async ({ taskId, feedback }: { taskId: string; feedback: string }): Promise<RevisionResponse> => {
             return await api.post(`${API_BASE}/tasks/${taskId}/request-revision/`, { feedback });
@@ -302,7 +302,7 @@ export interface CreateTaskResponse {
 
 export function useCreateTaskFromMessage() {
     const queryClient = useQueryClient();
-    
+
     return useMutation<CreateTaskResponse, Error, {
         title: string;
         description: string;
@@ -326,11 +326,10 @@ export function useCreateTaskFromMessage() {
 // Send message helper (for use in components)
 export function useSendMessage() {
     const { mutateAsync: askAmani } = useAmaniChat();
-    
+
     return {
         sendMessage: async (message: string, conversationId?: string, context?: Record<string, unknown>) => {
             return await askAmani({ message, conversation_id: conversationId, context });
         },
     };
 }
-

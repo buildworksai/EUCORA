@@ -10,39 +10,41 @@ Handles async task processing for:
 - Reconciliation loops
 """
 import os
+
 from celery import Celery
 from django.conf import settings
 
 # Set default Django settings module
-os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'config.settings.development')
+os.environ.setdefault("DJANGO_SETTINGS_MODULE", "config.settings.development")
 
-app = Celery('eucora')
+app = Celery("eucora")
 
 # Load configuration from Django settings
-app.config_from_object('django.conf:settings', namespace='CELERY')
+app.config_from_object("django.conf:settings", namespace="CELERY")
 
 # Auto-discover tasks from all installed apps
 app.autodiscover_tasks()
 
 # Task routing configuration
 app.conf.task_routes = {
-    'apps.evidence_store.tasks.*': {'queue': 'evidence'},
-    'apps.policy_engine.tasks.*': {'queue': 'policy'},
-    'apps.connectors.tasks.*': {'queue': 'connectors'},
-    'apps.deployment_intents.tasks.*': {'queue': 'deployment'},
-    'apps.integrations.tasks.*': {'queue': 'integrations'},
+    "apps.evidence_store.tasks.*": {"queue": "evidence"},
+    "apps.policy_engine.tasks.*": {"queue": "policy"},
+    "apps.connectors.tasks.*": {"queue": "connectors"},
+    "apps.deployment_intents.tasks.*": {"queue": "deployment"},
+    "apps.integrations.tasks.*": {"queue": "integrations"},
+    "apps.agent_management.tasks.*": {"queue": "agents"},
 }
 
 # Task result backend
-app.conf.result_backend = settings.CACHES['default']['LOCATION']
+app.conf.result_backend = settings.CACHES["default"]["LOCATION"]
 
 # Task serialization
-app.conf.task_serializer = 'json'
-app.conf.result_serializer = 'json'
-app.conf.accept_content = ['json']
+app.conf.task_serializer = "json"
+app.conf.result_serializer = "json"
+app.conf.accept_content = ["json"]
 
 # Timezone
-app.conf.timezone = 'UTC'
+app.conf.timezone = "UTC"
 app.conf.enable_utc = True
 
 # Task execution settings
@@ -54,22 +56,30 @@ app.conf.task_soft_time_limit = 25 * 60  # 25 minutes
 
 # Beat schedule for periodic tasks
 app.conf.beat_schedule = {
-    'reconciliation-loop': {
-        'task': 'apps.deployment_intents.tasks.reconciliation_loop',
-        'schedule': 3600.0,  # Every hour
+    "reconciliation-loop": {
+        "task": "apps.deployment_intents.tasks.reconciliation_loop",
+        "schedule": 3600.0,  # Every hour
     },
-    'cleanup-old-events': {
-        'task': 'apps.event_store.tasks.cleanup_old_events',
-        'schedule': 86400.0,  # Daily
+    "cleanup-old-events": {
+        "task": "apps.event_store.tasks.cleanup_old_events",
+        "schedule": 86400.0,  # Daily
     },
-    'sync-all-integrations': {
-        'task': 'apps.integrations.tasks.sync_all_integrations',
-        'schedule': 900.0,  # Every 15 minutes
+    "sync-all-integrations": {
+        "task": "apps.integrations.tasks.sync_all_integrations",
+        "schedule": 900.0,  # Every 15 minutes
+    },
+    "check-agent-health": {
+        "task": "apps.agent_management.tasks.check_agent_health",
+        "schedule": 300.0,  # Every 5 minutes
+    },
+    "timeout-stale-tasks": {
+        "task": "apps.agent_management.tasks.timeout_stale_tasks",
+        "schedule": 600.0,  # Every 10 minutes
     },
 }
+
 
 @app.task(bind=True)
 def debug_task(self):
     """Debug task for testing Celery setup."""
-    print(f'Request: {self.request!r}')
-
+    print(f"Request: {self.request!r}")

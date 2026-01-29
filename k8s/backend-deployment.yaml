@@ -71,4 +71,3 @@ spec:
       - name: media-files
         persistentVolumeClaim:
           claimName: eucora-media-pvc
-

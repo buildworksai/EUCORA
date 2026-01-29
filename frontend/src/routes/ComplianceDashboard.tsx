@@ -8,7 +8,7 @@ import { Loader2 } from 'lucide-react';
 export default function ComplianceDashboard() {
     const [timeRange, setTimeRange] = useState('90d');
     const { data: stats, isLoading } = useComplianceStats();
-    
+
     // Use API data if available, otherwise show loading or fallback
     const complianceTrend = stats?.compliance_trend || [];
     const vulnerabilityData = stats?.vulnerability_data || [];

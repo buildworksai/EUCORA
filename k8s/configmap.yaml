@@ -18,4 +18,3 @@ data:
   LOG_LEVEL: "INFO"
   CELERY_TIMEZONE: "UTC"
   CELERY_ENABLE_UTC: "true"
-

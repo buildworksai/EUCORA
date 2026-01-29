@@ -216,7 +216,19 @@ out/
 .nyc_output
 
 k8s/secrets.yaml
-.secrets.baseline
+# Keep secrets baseline for pre-commit (mark false positives)
+!.secrets.baseline
 
 # Investigations MCP storage - contains sensitive investigation data
 .investigations/
+
+# Generated security/coverage reports (keep for reference but regenerate in CI)
+backend/bandit-report.json
+backend/safety-report.json
+backend/safety-report-raw.txt
+backend/npm-audit-report.json
+backend/coverage.json
+
+# Celery beat schedule (generated)
+celerybeat-schedule
+celerybeat-schedule.*

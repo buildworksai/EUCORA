@@ -36,10 +36,10 @@ describe('Select', () => {
         </SelectContent>
       </Select>
     );
-    
+
     const trigger = screen.getByRole('combobox');
     await user.click(trigger);
-    
+
     expect(screen.getByText('Option 1')).toBeInTheDocument();
     expect(screen.getByText('Option 2')).toBeInTheDocument();
   });
@@ -56,12 +56,11 @@ describe('Select', () => {
         </SelectContent>
       </Select>
     );
-    
+
     const trigger = screen.getByRole('combobox');
     await user.click(trigger);
     await user.click(screen.getByText('Option 1'));
-    
+
     expect(screen.getByText('Option 1')).toBeInTheDocument();
   });
 });
-

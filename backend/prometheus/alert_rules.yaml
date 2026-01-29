@@ -1,0 +1,213 @@
+# SPDX-License-Identifier: Apache-2.0
+# Copyright (c) 2026 BuildWorks.AI
+# Prometheus alert rules for EUCORA Control Plane
+# Alert severity levels: critical (System down), warning (Degraded performance), info (Informational)
+# Alert naming convention: AlertName for consistency
+
+groups:
+  - name: circuit_breaker
+    interval: 30s
+    rules:
+      - alert: CircuitBreakerOpen
+        expr: circuit_breaker_state{} == 1
+        for: 1m
+        labels:
+          severity: critical
+          component: resilience
+        annotations:
+          summary: "Circuit breaker OPEN for {{ $labels.service }}/{{ $labels.connector_type }}"
+          description: "Circuit breaker is open. Connector {{ $labels.connector_type }} to {{ $labels.service }} is unavailable. Check recent errors."
+
+      - alert: CircuitBreakerHalfOpen
+        expr: circuit_breaker_state{} == 2
+        for: 2m
+        labels:
+          severity: warning
+          component: resilience
+        annotations:
+          summary: "Circuit breaker HALF-OPEN for {{ $labels.service }}/{{ $labels.connector_type }}"
+          description: "Circuit breaker is half-open (testing recovery). Connector: {{ $labels.connector_type }}"
+
+
+  - name: deployment
+    interval: 1m
+    rules:
+      - alert: LowDeploymentSuccessRate
+        expr: |
+          (sum(rate(deployment_total{status="success"}[1h])) /
+           sum(rate(deployment_total[1h]))) < 0.97
+        for: 5m
+        labels:
+          severity: warning
+          component: deployment
+        annotations:
+          summary: "Deployment success rate below 97%"
+          description: "Success rate: {{ $value | humanizePercentage }}. Investigate deployment failures."
+
+      - alert: DeploymentApprovalBacklog
+        expr: |
+          count(deployment_total{status="pending_approval"} >= 1) > 5
+        for: 15m
+        labels:
+          severity: warning
+          component: deployment
+        annotations:
+          summary: "{{ $value }} deployments pending CAB approval"
+          description: "Deployment approval backlog detected. Review CAB queue."
+
+      - alert: HighDeploymentLatency
+        expr: |
+          histogram_quantile(0.95, deployment_duration_seconds) > 600
+        for: 10m
+        labels:
+          severity: warning
+          component: deployment
+        annotations:
+          summary: "High deployment latency (p95 > 10 minutes)"
+          description: "Ring: {{ $labels.ring }}, App: {{ $labels.app_name }}, p95: {{ $value | humanizeDuration }}"
+
+
+  - name: risk_scoring
+    interval: 30m
+    rules:
+      - alert: HighRiskScoreDistribution
+        expr: |
+          histogram_quantile(0.75, risk_score_distribution{requires_cab="True"}) > 75
+        for: 1h
+        labels:
+          severity: warning
+          component: governance
+        annotations:
+          summary: "High risk scores detected (p75 > 75)"
+          description: "Risk assessment shows elevated scores. Review security posture."
+
+      - alert: ExcessiveCABApprovals
+        expr: |
+          (sum(increase(ring_promotion_total{status="cab_approved"}[24h])) > 20)
+        for: 1h
+        labels:
+          severity: info
+          component: governance
+        annotations:
+          summary: "Elevated CAB approvals in 24 hours"
+          description: "{{ $value }} CAB approvals. Monitor exception trends."
+
+
+  - name: celery_tasks
+    interval: 1m
+    rules:
+      - alert: HighTaskFailureRate
+        expr: |
+          (sum(rate(celery_task_duration_seconds{status="failed"}[5m])) /
+           sum(rate(celery_task_duration_seconds[5m]))) > 0.05
+        for: 5m
+        labels:
+          severity: warning
+          component: async
+        annotations:
+          summary: "High Celery task failure rate (>5%)"
+          description: "Task: {{ $labels.task_name }}, Failure rate: {{ $value | humanizePercentage }}"
+
+      - alert: TaskExecutionTimeoutTrend
+        expr: |
+          (count(increase(celery_task_duration_seconds{status="timeout"}[1h])) > 5)
+        for: 10m
+        labels:
+          severity: warning
+          component: async
+        annotations:
+          summary: "Multiple task timeouts detected"
+          description: "{{ $value }} tasks timed out in 1 hour. Check resource availability."
+
+
+  - name: http_api
+    interval: 30s
+    rules:
+      - alert: HighAPILatency
+        expr: |
+          histogram_quantile(0.95, http_request_duration_seconds) > 1.0
+        for: 5m
+        labels:
+          severity: warning
+          component: api
+        annotations:
+          summary: "High API latency (p95 > 1 second)"
+          description: "Endpoint: {{ $labels.endpoint }}, p95: {{ $value | humanizeDuration }}"
+
+      - alert: HighHTTPErrorRate
+        expr: |
+          (sum(rate(http_requests_total{status=~"5.."}[5m])) /
+           sum(rate(http_requests_total[5m]))) > 0.01
+        for: 5m
+        labels:
+          severity: warning
+          component: api
+        annotations:
+          summary: "High HTTP 5xx error rate (>1%)"
+          description: "Error rate: {{ $value | humanizePercentage }}. Check API logs."
+
+
+  - name: connectors
+    interval: 30s
+    rules:
+      - alert: ConnectorUnhealthy
+        expr: connector_health{} == 0
+        for: 2m
+        labels:
+          severity: critical
+          component: connectors
+        annotations:
+          summary: "Connector {{ $labels.connector_type }} is unhealthy"
+          description: "Connector cannot reach its backend. Check connectivity and credentials."
+
+      - alert: HighConnectorLatency
+        expr: |
+          histogram_quantile(0.95, connector_operation_duration_seconds{status="success"}) > 30
+        for: 5m
+        labels:
+          severity: warning
+          component: connectors
+        annotations:
+          summary: "High connector operation latency (p95 > 30s)"
+          description: "Connector: {{ $labels.connector_type }}, Operation: {{ $labels.operation }}"
+
+      - alert: ConnectorOperationFailures
+        expr: |
+          (sum(rate(connector_operation_duration_seconds{status="failed"}[5m])) /
+           sum(rate(connector_operation_duration_seconds[5m]))) > 0.05
+        for: 5m
+        labels:
+          severity: warning
+          component: connectors
+        annotations:
+          summary: "High connector operation failure rate"
+          description: "Connector: {{ $labels.connector_type }}, Failure rate: {{ $value | humanizePercentage }}"
+
+
+  - name: database
+    interval: 1m
+    rules:
+      - alert: SlowDatabaseQueries
+        expr: |
+          histogram_quantile(0.95, db_query_duration_seconds) > 1.0
+        for: 5m
+        labels:
+          severity: warning
+          component: database
+        annotations:
+          summary: "Slow database queries (p95 > 1 second)"
+          description: "Query type: {{ $labels.query_type }}, p95: {{ $value | humanizeDuration }}"
+
+
+  - name: promotion_gates
+    interval: 30m
+    rules:
+      - alert: LowPromotionGateSuccessRate
+        expr: promotion_gate_success_rate{} < 0.95
+        for: 30m
+        labels:
+          severity: warning
+          component: promotion
+        annotations:
+          summary: "Low promotion gate success rate for ring {{ $labels.ring }}"
+          description: "Success rate: {{ $value | humanizePercentage }}. May indicate issues blocking promotions."

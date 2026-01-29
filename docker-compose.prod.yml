@@ -1,9 +1,9 @@
 # SPDX-License-Identifier: Apache-2.0
 # Copyright (c) 2026 BuildWorks.AI
 # Production Docker Compose configuration for EUCORA
-# 
+#
 # Usage: docker compose -f docker-compose.prod.yml up -d
-# 
+#
 # Environment variables must be set via .env.prod or external secret management
 
 version: '3.8'
@@ -243,4 +243,3 @@ volumes:
 networks:
   default:
     name: eucora-prod-network
-

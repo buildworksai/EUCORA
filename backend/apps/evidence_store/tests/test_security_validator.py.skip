@@ -1,0 +1,357 @@
+# SPDX-License-Identifier: Apache-2.0
+# Copyright (c) 2026 BuildWorks.AI
+"""
+P5.5: Comprehensive tests for Security Validator.
+Tests artifact hash verification, evidence immutability, and deployment blocking.
+"""
+import pytest
+import hashlib
+from decimal import Decimal
+from django.test import TestCase
+from django.contrib.auth.models import User
+from uuid import uuid4
+
+from apps.evidence_store.models import EvidencePackage
+from apps.evidence_store.security_validator import DeploymentSecurityValidator, SecurityValidationError
+from apps.deployment_intents.models import DeploymentIntent
+
+
+class SecurityValidatorTestSetup(TestCase):
+    """Setup fixtures for security validator tests."""
+
+    @classmethod
+    def setUpTestData(cls):
+        """Create common test data."""
+        cls.user = User.objects.create_user(
+            username='testuser',
+            email='test@example.com',
+            password='testpass123'
+        )
+
+        # Create valid artifact binary
+        cls.artifact_content = b"This is a test artifact binary content"
+        cls.artifact_hash = hashlib.sha256(cls.artifact_content).hexdigest()
+
+        # Create evidence package
+        evidence_id = uuid4()
+        cls.evidence = EvidencePackage.objects.create(
+            id=evidence_id,
+            evidence_data={
+                'artifact_hash': cls.artifact_hash,
+                'sbom_hash': hashlib.sha256(b'sbom content').hexdigest(),
+                'test_coverage': 92,
+                'security_issues': 0,
+            },
+            risk_score=Decimal('45'),
+            risk_factors={
+                'coverage': 0,
+                'security': 0,
+            },
+            deployment_intent_id='',
+            correlation_id=f'EVIDENCE-{evidence_id}',
+        )
+
+        # Create deployment intent
+        cls.deployment = DeploymentIntent.objects.create(
+            app_name='TestApp',
+            version='1.0.0',
+            target_ring='CANARY',
+            evidence_pack_id=str(cls.evidence.id),
+            submitter=cls.user,
+        )
+
+        cls.evidence.deployment_intent_id = str(cls.deployment.id)
+        cls.evidence.save(update_fields=['deployment_intent_id'])
+
+        cls.validator = DeploymentSecurityValidator()
+
+
+class TestArtifactHashVerification(SecurityValidatorTestSetup):
+    """Test artifact hash verification."""
+
+    def test_artifact_hash_match_passes(self):
+        """Valid artifact with matching hash should pass validation."""
+        result = self.validator.validate_artifact_hash(
+            evidence_package_id=str(self.evidence.id),
+            artifact_binary=self.artifact_content,
+            correlation_id=f'DEPLOY-{uuid4()}'
+        )
+
+        self.assertTrue(result['valid'])
+        self.assertEqual(result['computed_hash'], self.artifact_hash)
+        self.assertEqual(result['expected_hash'], self.artifact_hash)
+
+    def test_artifact_hash_mismatch_fails(self):
+        """Artifact with mismatched hash should fail validation."""
+        tampered_content = b"This is tampered content"
+
+        with self.assertRaises(SecurityValidationError) as context:
+            self.validator.validate_artifact_hash(
+                evidence_package_id=str(self.evidence.id),
+                artifact_binary=tampered_content,
+                correlation_id=f'DEPLOY-{uuid4()}'
+            )
+
+        self.assertEqual(context.exception.reason_code, 'ARTIFACT_HASH_MISMATCH')
+        self.assertIn('substitution attack', str(context.exception).lower())
+
+    def test_artifact_hash_missing_fails(self):
+        """Evidence without artifact hash should fail validation."""
+        # Create evidence without artifact_hash
+        evidence_no_hash = EvidencePackage.objects.create(
+            evidence_data={'test_coverage': 90},
+            risk_score=Decimal('40'),
+            risk_factors={},
+            deployment_intent_id=str(self.deployment.id),
+            correlation_id=f'EVIDENCE-{uuid4()}',
+        )
+
+        with self.assertRaises(SecurityValidationError) as context:
+            self.validator.validate_artifact_hash(
+                evidence_package_id=str(evidence_no_hash.id),
+                artifact_binary=self.artifact_content,
+                correlation_id=f'DEPLOY-{uuid4()}'
+            )
+
+        self.assertEqual(context.exception.reason_code, 'ARTIFACT_HASH_MISSING')
+
+    def test_artifact_hash_empty_binary_fails(self):
+        """Empty artifact binary should fail validation."""
+        with self.assertRaises(SecurityValidationError) as context:
+            self.validator.validate_artifact_hash(
+                evidence_package_id=str(self.evidence.id),
+                artifact_binary=b'',
+                correlation_id=f'DEPLOY-{uuid4()}'
+            )
+
+        self.assertEqual(context.exception.reason_code, 'ARTIFACT_BINARY_EMPTY')
+
+
+class TestEvidenceImmutabilityVerification(SecurityValidatorTestSetup):
+    """Test evidence immutability verification."""
+
+    def test_evidence_immutability_valid(self):
+        """Evidence with valid content hash should pass."""
+        result = self.validator.validate_evidence_immutability(
+            evidence_package_id=str(self.evidence.id),
+            correlation_id=f'DEPLOY-{uuid4()}'
+        )
+
+        self.assertTrue(result['valid'])
+        self.assertIsNotNone(result['content_hash'])
+
+    def test_evidence_immutability_tampered_fails(self):
+        """Tampered evidence should fail validation."""
+        # Store original content hash
+        original_hash = self.evidence.compute_content_hash()
+        self.evidence.content_hash = original_hash
+        self.evidence.save(update_fields=['content_hash'])
+
+        # Tamper with evidence_data
+        self.evidence.evidence_data['test_coverage'] = 50
+        self.evidence.save(update_fields=['evidence_data'])
+
+        with self.assertRaises(SecurityValidationError) as context:
+            self.validator.validate_evidence_immutability(
+                evidence_package_id=str(self.evidence.id),
+                correlation_id=f'DEPLOY-{uuid4()}'
+            )
+
+        self.assertEqual(context.exception.reason_code, 'EVIDENCE_TAMPERED')
+        self.assertIn('tamper', str(context.exception).lower())
+
+    def test_evidence_immutability_missing_hash(self):
+        """Evidence without content hash should compute and store it."""
+        # Create evidence without content_hash
+        evidence_no_hash = EvidencePackage.objects.create(
+            evidence_data={'test_coverage': 90},
+            risk_score=Decimal('40'),
+            risk_factors={},
+            deployment_intent_id=str(self.deployment.id),
+            correlation_id=f'EVIDENCE-{uuid4()}',
+        )
+
+        result = self.validator.validate_evidence_immutability(
+            evidence_package_id=str(evidence_no_hash.id),
+            correlation_id=f'DEPLOY-{uuid4()}'
+        )
+
+        # Should compute and store hash
+        evidence_no_hash.refresh_from_db()
+        self.assertIsNotNone(evidence_no_hash.content_hash)
+        self.assertTrue(result['valid'])
+
+
+class TestSBOMIntegrityVerification(SecurityValidatorTestSetup):
+    """Test SBOM integrity verification."""
+
+    def test_sbom_hash_valid(self):
+        """SBOM with valid hash should pass."""
+        sbom_content = b'sbom content'
+        sbom_hash = hashlib.sha256(sbom_content).hexdigest()
+
+        self.evidence.evidence_data['sbom_hash'] = sbom_hash
+        self.evidence.save(update_fields=['evidence_data'])
+
+        result = self.validator.validate_sbom_integrity(
+            evidence_package_id=str(self.evidence.id),
+            sbom_binary=sbom_content,
+            correlation_id=f'DEPLOY-{uuid4()}'
+        )
+
+        self.assertTrue(result['valid'])
+        self.assertEqual(result['computed_hash'], sbom_hash)
+
+    def test_sbom_hash_mismatch_fails(self):
+        """SBOM with mismatched hash should fail."""
+        sbom_hash = hashlib.sha256(b'original sbom').hexdigest()
+        self.evidence.evidence_data['sbom_hash'] = sbom_hash
+        self.evidence.save(update_fields=['evidence_data'])
+
+        tampered_sbom = b'tampered sbom content'
+
+        with self.assertRaises(SecurityValidationError) as context:
+            self.validator.validate_sbom_integrity(
+                evidence_package_id=str(self.evidence.id),
+                sbom_binary=tampered_sbom,
+                correlation_id=f'DEPLOY-{uuid4()}'
+            )
+
+        self.assertEqual(context.exception.reason_code, 'SBOM_HASH_MISMATCH')
+
+    def test_sbom_hash_missing_fails(self):
+        """Evidence without SBOM hash should fail."""
+        # Remove SBOM hash
+        del self.evidence.evidence_data['sbom_hash']
+        self.evidence.save(update_fields=['evidence_data'])
+
+        with self.assertRaises(SecurityValidationError) as context:
+            self.validator.validate_sbom_integrity(
+                evidence_package_id=str(self.evidence.id),
+                sbom_binary=b'sbom content',
+                correlation_id=f'DEPLOY-{uuid4()}'
+            )
+
+        self.assertEqual(context.exception.reason_code, 'SBOM_HASH_MISSING')
+
+
+class TestBlastRadiusValidation(SecurityValidatorTestSetup):
+    """Test blast radius classification validation."""
+
+    def test_blast_radius_present_passes(self):
+        """Evidence with blast radius classification should pass."""
+        self.evidence.evidence_data['blast_radius_class'] = 'PRODUCTIVITY_TOOLS'
+        self.evidence.save(update_fields=['evidence_data'])
+
+        result = self.validator.validate_blast_radius_classification(
+            evidence_package_id=str(self.evidence.id),
+            correlation_id=f'DEPLOY-{uuid4()}'
+        )
+
+        self.assertTrue(result['valid'])
+        self.assertEqual(result['blast_radius_class'], 'PRODUCTIVITY_TOOLS')
+
+    def test_blast_radius_missing_fails(self):
+        """Evidence without blast radius should fail."""
+        with self.assertRaises(SecurityValidationError) as context:
+            self.validator.validate_blast_radius_classification(
+                evidence_package_id=str(self.evidence.id),
+                correlation_id=f'DEPLOY-{uuid4()}'
+            )
+
+        self.assertEqual(context.exception.reason_code, 'BLAST_RADIUS_MISSING')
+
+    def test_blast_radius_invalid_class_fails(self):
+        """Evidence with invalid blast radius class should fail."""
+        self.evidence.evidence_data['blast_radius_class'] = 'INVALID_CLASS'
+        self.evidence.save(update_fields=['evidence_data'])
+
+        with self.assertRaises(SecurityValidationError) as context:
+            self.validator.validate_blast_radius_classification(
+                evidence_package_id=str(self.evidence.id),
+                correlation_id=f'DEPLOY-{uuid4()}'
+            )
+
+        self.assertEqual(context.exception.reason_code, 'BLAST_RADIUS_INVALID')
+
+
+class TestDeploymentBlocking(SecurityValidatorTestSetup):
+    """Test deployment blocking logic."""
+
+    def test_validation_failure_blocks_deployment(self):
+        """Failed validation should block deployment and create event."""
+        correlation_id = f'DEPLOY-{uuid4()}'
+
+        # Attempt validation with tampered artifact
+        tampered_content = b'tampered content'
+
+        with self.assertRaises(SecurityValidationError):
+            self.validator.validate_before_deployment(
+                evidence_package_id=str(self.evidence.id),
+                artifact_binary=tampered_content,
+                correlation_id=correlation_id
+            )
+
+        # Check that deployment event was created
+        from apps.cab_workflow.models import DeploymentEvent
+        events = DeploymentEvent.objects.filter(correlation_id=correlation_id)
+
+        self.assertGreater(events.count(), 0)
+        event = events.first()
+        self.assertEqual(event.event_type, 'SECURITY_VALIDATION_FAILED')
+        self.assertIn('ARTIFACT_HASH_MISMATCH', event.event_data.get('reason_code', ''))
+
+    def test_all_validations_pass(self):
+        """All validations passing should allow deployment."""
+        correlation_id = f'DEPLOY-{uuid4()}'
+
+        # Add required fields
+        self.evidence.evidence_data['blast_radius_class'] = 'PRODUCTIVITY_TOOLS'
+        self.evidence.evidence_data['sbom_hash'] = hashlib.sha256(b'sbom').hexdigest()
+        self.evidence.save(update_fields=['evidence_data'])
+
+        result = self.validator.validate_before_deployment(
+            evidence_package_id=str(self.evidence.id),
+            artifact_binary=self.artifact_content,
+            correlation_id=correlation_id,
+            sbom_binary=b'sbom'
+        )
+
+        self.assertTrue(result['valid'])
+        self.assertTrue(result['artifact_hash_valid'])
+        self.assertTrue(result['evidence_immutability_valid'])
+        self.assertTrue(result['sbom_integrity_valid'])
+        self.assertTrue(result['blast_radius_valid'])
+
+
+class TestSecurityValidatorErrorCodes(SecurityValidatorTestSetup):
+    """Test security validator error codes and messages."""
+
+    def test_error_code_uniqueness(self):
+        """All error codes should be unique."""
+        error_codes = [
+            'ARTIFACT_HASH_MISMATCH',
+            'ARTIFACT_HASH_MISSING',
+            'ARTIFACT_BINARY_EMPTY',
+            'EVIDENCE_TAMPERED',
+            'SBOM_HASH_MISMATCH',
+            'SBOM_HASH_MISSING',
+            'BLAST_RADIUS_MISSING',
+            'BLAST_RADIUS_INVALID',
+        ]
+
+        self.assertEqual(len(error_codes), len(set(error_codes)))
+
+    def test_error_messages_descriptive(self):
+        """Error messages should be descriptive and actionable."""
+        with self.assertRaises(SecurityValidationError) as context:
+            self.validator.validate_artifact_hash(
+                evidence_package_id=str(self.evidence.id),
+                artifact_binary=b'wrong content',
+                correlation_id=f'DEPLOY-{uuid4()}'
+            )
+
+        error_msg = str(context.exception)
+        self.assertIn('hash', error_msg.lower())
+        self.assertIn('mismatch', error_msg.lower())
+        self.assertGreater(len(error_msg), 20)  # Sufficiently detailed

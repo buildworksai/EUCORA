@@ -3,4 +3,4 @@
 """
 Deployment Intents app for orchestration and state machine.
 """
-default_app_config = 'apps.deployment_intents.apps.DeploymentIntentsConfig'
+default_app_config = "apps.deployment_intents.apps.DeploymentIntentsConfig"

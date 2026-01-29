@@ -89,4 +89,3 @@ export function useAsset(assetId: string) {
     staleTime: 60000,
   });
 }
-

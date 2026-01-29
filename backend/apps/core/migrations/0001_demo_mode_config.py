@@ -12,16 +12,16 @@ class Migration(migrations.Migration):
 
     operations = [
         migrations.CreateModel(
-            name='DemoModeConfig',
+            name="DemoModeConfig",
             fields=[
-                ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('created_at', models.DateTimeField(db_index=True, default=django.utils.timezone.now, editable=False)),
-                ('updated_at', models.DateTimeField(auto_now=True)),
-                ('is_enabled', models.BooleanField(default=False, help_text='Whether demo mode is enabled')),
+                ("id", models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name="ID")),
+                ("created_at", models.DateTimeField(db_index=True, default=django.utils.timezone.now, editable=False)),
+                ("updated_at", models.DateTimeField(auto_now=True)),
+                ("is_enabled", models.BooleanField(default=False, help_text="Whether demo mode is enabled")),
             ],
             options={
-                'verbose_name': 'Demo Mode Config',
-                'verbose_name_plural': 'Demo Mode Config',
+                "verbose_name": "Demo Mode Config",
+                "verbose_name_plural": "Demo Mode Config",
             },
         ),
     ]

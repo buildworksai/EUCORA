@@ -3,4 +3,4 @@
 """
 CAB Workflow app for approval workflows.
 """
-default_app_config = 'apps.cab_workflow.apps.CABWorkflowConfig'
+default_app_config = "apps.cab_workflow.apps.CABWorkflowConfig"

@@ -55,11 +55,11 @@ export const ENDPOINTS = {
 
 /**
  * Example usage:
- * 
+ *
  * ```typescript
  * import { ENDPOINTS, type AIAgentListResponse } from './contracts';
  * import { api } from '@/lib/api/client';
- * 
+ *
  * const response = await api.get<AIAgentListResponse>(ENDPOINTS.AI_AGENTS_LIST);
  * ```
  */

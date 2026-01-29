@@ -1,6 +1,6 @@
 /**
  * API type definitions (generated from Django OpenAPI schema).
- * 
+ *
  * Generate command: npx openapi-typescript http://localhost:8000/api/schema/ -o src/types/api.ts
  */
 
@@ -44,8 +44,6 @@ export interface DeploymentEvent {
     id: number;
     correlation_id: string;
     event_type: string;
-    metadata: Record<string, unknown>;
-    error_classification: 'NONE' | 'TRANSIENT' | 'PERMANENT' | 'POLICY_VIOLATION';
-    created_at: string;
-    // TODO: Fix unknown logic error
-}
+    event_data: Record<string, unknown>;
+    actor: string;
+    created_at: string;}

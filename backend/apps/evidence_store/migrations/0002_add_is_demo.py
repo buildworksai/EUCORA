@@ -6,13 +6,13 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('evidence_store', '0001_initial'),
+        ("evidence_store", "0001_initial"),
     ]
 
     operations = [
         migrations.AddField(
-            model_name='evidencepack',
-            name='is_demo',
-            field=models.BooleanField(db_index=True, default=False, help_text='Whether this is demo data'),
+            model_name="evidencepack",
+            name="is_demo",
+            field=models.BooleanField(db_index=True, default=False, help_text="Whether this is demo data"),
         ),
     ]

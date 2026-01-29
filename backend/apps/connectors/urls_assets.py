@@ -4,11 +4,12 @@
 Assets URL configuration (without prefix) for clean /api/v1/assets/ paths.
 """
 from django.urls import path
+
 from . import views
 
-app_name = 'assets'
+app_name = "assets"
 
 urlpatterns = [
-    path('', views.list_assets, name='list'),
-    path('<str:asset_id>/', views.get_asset, name='detail'),
+    path("", views.list_assets, name="list"),
+    path("<str:asset_id>/", views.get_asset, name="detail"),
 ]

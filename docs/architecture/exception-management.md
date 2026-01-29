@@ -1,7 +1,7 @@
 # Exception Management
 
-**Version**: 1.0  
-**Status**: Active  
+**Version**: 1.0
+**Status**: Active
 **Last Updated**: 2026-01-06
 
 ---
@@ -18,7 +18,7 @@ Exception management provides a **controlled workflow** for approving deviations
 
 ### 1. Vulnerability Scan Exception
 
-**Use Case**: Package has High/Critical vulnerabilities but deployment is approved  
+**Use Case**: Package has High/Critical vulnerabilities but deployment is approved
 **Requires**:
 - Security Reviewer approval
 - Expiry date (default: 90 days)
@@ -45,7 +45,7 @@ Exception management provides a **controlled workflow** for approving deviations
 
 ### 2. Unsigned Package Exception
 
-**Use Case**: Package cannot be signed (legacy, third-party constraints)  
+**Use Case**: Package cannot be signed (legacy, third-party constraints)
 **Requires**:
 - Security Reviewer approval
 - Expiry date
@@ -54,7 +54,7 @@ Exception management provides a **controlled workflow** for approving deviations
 
 ### 3. Cross-Boundary Deployment Exception
 
-**Use Case**: Deploying app across acquisition boundaries  
+**Use Case**: Deploying app across acquisition boundaries
 **Requires**:
 - CAB approval
 - Security Reviewer approval
@@ -64,7 +64,7 @@ Exception management provides a **controlled workflow** for approving deviations
 
 ### 4. Promotion Gate Override Exception
 
-**Use Case**: Bypassing promotion gate thresholds  
+**Use Case**: Bypassing promotion gate thresholds
 **Requires**:
 - CAB approval
 - Justification
@@ -77,7 +77,7 @@ Exception management provides a **controlled workflow** for approving deviations
 
 ### 1. Exception Request
 
-**Initiated By**: Packaging Engineer, Publisher, or Platform Admin  
+**Initiated By**: Packaging Engineer, Publisher, or Platform Admin
 **Required Fields**:
 - Exception type
 - Justification
@@ -242,4 +242,3 @@ Track:
 - [CAB Workflow](./cab-workflow.md)
 - [Evidence Pack Schema](./evidence-pack-schema.md)
 - [Security & Compliance](../infrastructure/secrets-management.md)
-

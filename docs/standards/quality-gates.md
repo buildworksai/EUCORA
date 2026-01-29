@@ -1,8 +1,8 @@
 # EUCORA Quality Gates
 
-**SPDX-License-Identifier: Apache-2.0**  
-**Version**: 1.0.0  
-**Last Updated**: January 8, 2026  
+**SPDX-License-Identifier: Apache-2.0**
+**Version**: 1.0.0
+**Last Updated**: January 8, 2026
 **Authority**: MANDATORY — No Exceptions
 
 ---
@@ -268,5 +268,5 @@ For **critical** issues requiring temporary bypass:
 
 ---
 
-**Classification**: PROPRIETARY — MANDATORY  
+**Classification**: PROPRIETARY — MANDATORY
 **Enforcement**: ABSOLUTE — No exceptions permitted

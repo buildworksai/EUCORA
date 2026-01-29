@@ -76,4 +76,3 @@ describe('ComponentName', () => {
 - Functions: ≥90%
 - Branches: ≥90%
 - Statements: ≥90%
-

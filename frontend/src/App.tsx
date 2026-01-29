@@ -14,6 +14,7 @@ import DEXDashboard from './routes/DEXDashboard';
 import ComplianceDashboard from './routes/ComplianceDashboard';
 import CABPortal from './routes/CABPortal';
 import DeploymentWizard from './routes/DeploymentWizard';
+import DeploymentsSidebar from './routes/deployments/DeploymentsSidebar';
 import AuditTrail from './routes/AuditTrail';
 import EvidenceViewer from './routes/EvidenceViewer';
 import Settings from './routes/settings';
@@ -21,6 +22,7 @@ import AIAgentHub from './routes/AIAgentHub';
 import AdminDemoData from './routes/AdminDemoData';
 import Notifications from './routes/Notifications';
 import Login from './routes/Login';
+import { LicenseDashboard } from './routes/licenses';
 
 function App() {
   const isAuthenticated = useAuthStore((state) => state.isAuthenticated);
@@ -30,12 +32,12 @@ function App() {
   React.useEffect(() => {
     // Check immediately
     checkSession();
-    
+
     // Check every 5 minutes
     const interval = setInterval(() => {
       checkSession();
     }, 5 * 60 * 1000);
-    
+
     return () => clearInterval(interval);
   }, [checkSession]);
 
@@ -71,9 +73,11 @@ function App() {
             <Route path="/compliance" element={<ComplianceDashboard />} />
             <Route path="/cab" element={<CABPortal />} />
             <Route path="/deploy" element={<DeploymentWizard />} />
+            <Route path="/deployments/stack" element={<DeploymentsSidebar />} />
             <Route path="/audit" element={<AuditTrail />} />
             <Route path="/evidence/:id" element={<EvidenceViewer />} />
             <Route path="/ai-agents" element={<AIAgentHub />} />
+            <Route path="/licenses" element={<LicenseDashboard />} />
             <Route path="/notifications" element={<Notifications />} />
             <Route path="/settings" element={<Settings />} />
             <Route path="/admin/demo-data" element={<AdminDemoData />} />

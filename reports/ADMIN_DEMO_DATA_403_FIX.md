@@ -98,4 +98,3 @@ curl http://localhost:8000/api/v1/admin/csrf-token
 - ✅ CSRF token endpoint added
 - ✅ All endpoints tested and working
 - ✅ Security maintained (CSRF exemption only in development)
-

@@ -1,7 +1,7 @@
 # Jamf Pro Connector Error Handling
 
-**Version**: 1.0  
-**Status**: Active  
+**Version**: 1.0
+**Status**: Active
 **Last Updated**: 2026-01-06
 
 ---
@@ -56,4 +56,3 @@ This document defines **error classification** and **retry logic** for the Jamf 
 
 - [Jamf Connector Spec](./connector-spec.md)
 - [Rollback Procedures](./rollback-procedures.md)
-

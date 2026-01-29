@@ -3,10 +3,12 @@
 """
 Tests for AI providers and base class.
 """
-import pytest
 from types import SimpleNamespace
+
+import pytest
+
+from apps.ai_agents.providers import anthropic_provider, groq_provider, openai_provider
 from apps.ai_agents.providers.base import BaseModelProvider
-from apps.ai_agents.providers import openai_provider, anthropic_provider, groq_provider
 
 
 class DummyProvider(BaseModelProvider):
@@ -36,11 +38,12 @@ async def test_openai_provider_chat_and_stream(monkeypatch):
         def __aiter__(self):
             async def _gen():
                 yield SimpleNamespace(choices=[SimpleNamespace(delta=SimpleNamespace(content="Hi"))])
+
             return _gen()
 
     class FakeCompletions:
         async def create(self, *args, **kwargs):
-            if kwargs.get('stream'):
+            if kwargs.get("stream"):
                 return FakeStream()
             return SimpleNamespace(choices=[SimpleNamespace(message=SimpleNamespace(content="Hello"))])
 
@@ -84,10 +87,12 @@ async def test_anthropic_provider_chat_and_stream(monkeypatch):
                 async def __aenter__(self):
                     async def _gen():
                         yield "Stream"
+
                     return SimpleNamespace(text_stream=_gen())
 
                 async def __aexit__(self, exc_type, exc, tb):
                     return False
+
             return FakeStream()
 
     class FakeClient:
@@ -117,11 +122,12 @@ async def test_groq_provider_chat_and_stream(monkeypatch):
         def __aiter__(self):
             async def _gen():
                 yield SimpleNamespace(choices=[SimpleNamespace(delta=SimpleNamespace(content="Hi"))])
+
             return _gen()
 
     class FakeCompletions:
         async def create(self, *args, **kwargs):
-            if kwargs.get('stream'):
+            if kwargs.get("stream"):
                 return FakeStream()
             return SimpleNamespace(choices=[SimpleNamespace(message=SimpleNamespace(content="Groq"))])
 

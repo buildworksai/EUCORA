@@ -43,10 +43,10 @@ describe('EmptyState', () => {
         }}
       />
     );
-    
+
     const button = screen.getByRole('button', { name: /add item/i });
     expect(button).toBeInTheDocument();
-    
+
     await user.click(button);
     expect(handleClick).toHaveBeenCalledTimes(1);
   });
@@ -62,4 +62,3 @@ describe('EmptyState', () => {
     expect(button).not.toBeInTheDocument();
   });
 });
-

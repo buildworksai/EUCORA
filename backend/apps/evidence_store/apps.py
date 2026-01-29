@@ -8,6 +8,7 @@ from django.apps import AppConfig
 
 class EvidenceStoreConfig(AppConfig):
     """Evidence Store app configuration."""
-    default_auto_field = 'django.db.models.BigAutoField'
-    name = 'apps.evidence_store'
-    verbose_name = 'EUCORA Evidence Store'
+
+    default_auto_field = "django.db.models.BigAutoField"
+    name = "apps.evidence_store"
+    verbose_name = "EUCORA Evidence Store"

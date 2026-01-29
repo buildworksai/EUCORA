@@ -49,6 +49,8 @@ export default function DeploymentWizard() {
         mode: 'onChange',
     });
 
+    // React Hook Form exposes watch as a mutable API; lint rule needs explicit opt-out here.
+    // eslint-disable-next-line react-hooks/incompatible-library
     const watchedValues = form.watch();
     const appName = watchedValues.appName || '';
 
@@ -58,7 +60,7 @@ export default function DeploymentWizard() {
     const handleNext = async () => {
         // Validate current step before proceeding
         let fieldsToValidate: (keyof DeploymentFormData)[] = [];
-        
+
         if (step === 1) {
             fieldsToValidate = ['appName', 'version'];
         } else if (step === 2) {
@@ -180,15 +182,15 @@ export default function DeploymentWizard() {
                                     <FormField
                                         control={form.control}
                                         name="evidenceFile"
-                                        render={({ field: { value, onChange, ...field } }) => (
+                                        render={({ field: { onChange, ...field } }) => (
                                             <FormItem>
                                                 <FormLabel>Artifact File (Optional)</FormLabel>
                                                 <FormControl>
                                                     <div className="border-2 border-dashed rounded-lg p-6 flex flex-col items-center justify-center text-muted-foreground hover:bg-muted/50 transition-colors cursor-pointer">
                                                         <UploadCloud className="h-10 w-10 mb-2" />
                                                         <span className="text-sm">Drag and drop package binaries (MSI, EXE, INTUNEWIN)</span>
-                                                        <Input
-                                                            {...field}
+                                                        <input
+                                                            {...(field as React.InputHTMLAttributes<HTMLInputElement>)}
                                                             type="file"
                                                             accept=".msi,.exe,.intunewin"
                                                             onChange={(e) => {

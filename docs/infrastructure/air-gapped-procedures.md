@@ -1,7 +1,7 @@
 # Air-Gapped Procedures
 
-**Version**: 1.0  
-**Status**: Active  
+**Version**: 1.0
+**Status**: Active
 **Last Updated**: 2026-01-06
 
 ---
@@ -238,4 +238,3 @@ if ($signature.Status -ne "Valid") {
 - [Distribution Decision Matrix](./distribution-decision-matrix.md)
 - [Signing Procedures](./signing-procedures.md)
 - [Audit Trail Schema](./audit-trail-schema.md)
-

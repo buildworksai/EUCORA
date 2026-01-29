@@ -72,4 +72,3 @@ describe('Card Components', () => {
     expect(screen.getByText('Footer')).toBeInTheDocument();
   });
 });
-

@@ -34,4 +34,3 @@ describe('LoadingButton', () => {
     expect(spinner).not.toBeInTheDocument();
   });
 });
-

@@ -23,20 +23,24 @@ vi.mock('react-router-dom', async () => {
   };
 });
 
-vi.mock('recharts', () => ({
-  AreaChart: ({ children }: any) => <div>{children}</div>,
-  Area: ({ children }: any) => <div>{children}</div>,
-  BarChart: ({ children }: any) => <div>{children}</div>,
-  Bar: ({ children }: any) => <div>{children}</div>,
-  XAxis: () => <div />,
-  YAxis: () => <div />,
-  Tooltip: () => <div />,
-  ResponsiveContainer: ({ children }: any) => <div>{children}</div>,
-  PieChart: ({ children }: any) => <div>{children}</div>,
-  Pie: ({ children }: any) => <div>{children}</div>,
-  Cell: () => <div />,
-  Legend: () => <div />,
-}));
+vi.mock('recharts', () => {
+  const ChartStub = ({ children }: { children?: React.ReactNode }) => <div>{children}</div>;
+  const EmptyStub = () => <div />;
+  return {
+    AreaChart: ChartStub,
+    Area: ChartStub,
+    BarChart: ChartStub,
+    Bar: ChartStub,
+    XAxis: EmptyStub,
+    YAxis: EmptyStub,
+    Tooltip: EmptyStub,
+    ResponsiveContainer: ChartStub,
+    PieChart: ChartStub,
+    Pie: ChartStub,
+    Cell: EmptyStub,
+    Legend: EmptyStub,
+  };
+});
 
 vi.mock('@/lib/stores/authStore', () => ({
   useAuthStore: () => ({

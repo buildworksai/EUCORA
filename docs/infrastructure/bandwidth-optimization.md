@@ -1,7 +1,7 @@
 # Bandwidth Optimization
 
-**Version**: 1.0  
-**Status**: Active  
+**Version**: 1.0
+**Status**: Active
 **Last Updated**: 2026-01-06
 
 ---
@@ -18,7 +18,7 @@ This document defines **bandwidth optimization strategies** for intermittent and
 
 ### Delivery Optimization
 
-**Default**: Enabled for all Intune deployments  
+**Default**: Enabled for all Intune deployments
 **Mechanism**: Peer-to-peer caching between devices
 
 **Benefits**:
@@ -33,7 +33,7 @@ This document defines **bandwidth optimization strategies** for intermittent and
 
 ### Microsoft Connected Cache
 
-**Use Case**: Sites with >100 devices  
+**Use Case**: Sites with >100 devices
 **Mechanism**: On-premises caching server
 
 **Benefits**:
@@ -48,7 +48,7 @@ This document defines **bandwidth optimization strategies** for intermittent and
 
 ### SCCM Distribution Points
 
-**Use Case**: Intermittent or air-gapped sites  
+**Use Case**: Intermittent or air-gapped sites
 **Mechanism**: Local content distribution
 
 **Benefits**:
@@ -67,7 +67,7 @@ This document defines **bandwidth optimization strategies** for intermittent and
 
 ### Jamf Distribution Points
 
-**Use Case**: Intermittent sites with Jamf  
+**Use Case**: Intermittent sites with Jamf
 **Mechanism**: Local content caching
 
 **Benefits**:
@@ -82,7 +82,7 @@ This document defines **bandwidth optimization strategies** for intermittent and
 
 ### Intune Caching
 
-**Use Case**: Intermittent sites with Intune  
+**Use Case**: Intermittent sites with Intune
 **Mechanism**: Device-side caching
 
 **Benefits**:
@@ -100,7 +100,7 @@ This document defines **bandwidth optimization strategies** for intermittent and
 
 ### APT Mirrors
 
-**Use Case**: Intermittent or air-gapped sites  
+**Use Case**: Intermittent or air-gapped sites
 **Mechanism**: Local APT repository mirror
 
 **Benefits**:
@@ -115,7 +115,7 @@ This document defines **bandwidth optimization strategies** for intermittent and
 
 ### Landscape Scheduling
 
-**Use Case**: Bandwidth-constrained sites  
+**Use Case**: Bandwidth-constrained sites
 **Mechanism**: Scheduled updates during off-peak hours
 
 **Benefits**:
@@ -129,20 +129,20 @@ This document defines **bandwidth optimization strategies** for intermittent and
 
 ### Online Sites
 
-**Windows**: Delivery Optimization (default)  
-**macOS**: Intune/Jamf standard caching  
+**Windows**: Delivery Optimization (default)
+**macOS**: Intune/Jamf standard caching
 **Linux**: Central APT repo (no optimization needed)
 
 ### Intermittent Sites
 
-**Windows**: Delivery Optimization + Connected Cache (if >100 devices) or SCCM DP  
-**macOS**: Jamf DP or Intune caching  
+**Windows**: Delivery Optimization + Connected Cache (if >100 devices) or SCCM DP
+**macOS**: Jamf DP or Intune caching
 **Linux**: Site APT mirror + Landscape scheduling
 
 ### Air-Gapped Sites
 
-**Windows**: SCCM DP (mandatory)  
-**macOS**: Jamf DP via import  
+**Windows**: SCCM DP (mandatory)
+**macOS**: Jamf DP via import
 **Linux**: APT mirror via import
 
 ---
@@ -191,4 +191,3 @@ This document defines **bandwidth optimization strategies** for intermittent and
 - [Site Classification](./site-classification.md)
 - [Distribution Decision Matrix](./distribution-decision-matrix.md)
 - [Co-Management](./co-management.md)
-

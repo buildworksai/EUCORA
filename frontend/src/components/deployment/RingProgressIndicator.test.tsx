@@ -51,4 +51,3 @@ describe('RingProgressIndicator', () => {
     expect(screen.getByText('Failed Ring')).toBeInTheDocument();
   });
 });
-

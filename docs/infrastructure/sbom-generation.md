@@ -1,7 +1,7 @@
 # SBOM Generation
 
-**Version**: 1.0  
-**Status**: Active  
+**Version**: 1.0
+**Status**: Active
 **Last Updated**: 2026-01-06
 
 ---
@@ -219,4 +219,3 @@ cyclonedx-bom -o package.cdx.json package.deb
 - [Packaging Pipelines](./packaging-pipelines.md)
 - [Vulnerability Scan Policy](./vuln-scan-policy.md)
 - [Evidence Pack Schema](../architecture/evidence-pack-schema.md)
-

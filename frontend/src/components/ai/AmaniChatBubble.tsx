@@ -11,8 +11,8 @@
  */
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { useLocation } from 'react-router-dom';
-import { 
-    X, Send, Sparkles, Minimize2, Maximize2, Settings2, 
+import {
+    X, Send, Sparkles, Minimize2, Maximize2, Settings2,
     MessageSquare, RotateCcw, ChevronDown, Info, Keyboard,
     Package, Shield, Rocket, Database, Activity, BarChart3,
     FileCheck, AlertTriangle, Zap
@@ -300,17 +300,17 @@ export function AmaniChatBubble() {
     const [approvalDialogOpen, setApprovalDialogOpen] = useState(false);
     const messagesEndRef = useRef<HTMLDivElement>(null);
     const inputRef = useRef<HTMLInputElement>(null);
-    
+
     const { mutateAsync: sendMessage, isPending: isLoading } = useAmaniChat();
     const { data: conversationData } = useConversation(conversationId);
     const { mutateAsync: createTask } = useCreateTaskFromMessage();
     const { data: pendingApprovalsData } = usePendingApprovals();
-    
+
     // Get current page context
     const currentPath = location.pathname;
     const pageContext = PAGE_CONTEXT[currentPath] || DEFAULT_CONTEXT;
     const PageIcon = pageContext.icon;
-    
+
     // Keyboard shortcut to open chat (Ctrl+K or Cmd+K)
     useEffect(() => {
         const handleKeyDown = (e: KeyboardEvent) => {
@@ -323,18 +323,18 @@ export function AmaniChatBubble() {
                 setIsOpen(false);
             }
         };
-        
+
         window.addEventListener('keydown', handleKeyDown);
         return () => window.removeEventListener('keydown', handleKeyDown);
     }, [isOpen]);
-    
+
     // Focus input when chat opens
     useEffect(() => {
         if (isOpen && inputRef.current) {
             setTimeout(() => inputRef.current?.focus(), 100);
         }
     }, [isOpen]);
-    
+
     // Load conversation history when conversationId changes
     useEffect(() => {
         if (conversationData?.messages) {
@@ -351,30 +351,30 @@ export function AmaniChatBubble() {
             }, 0);
         }
     }, [conversationData]);
-    
+
     const scrollToBottom = useCallback(() => {
         messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
     }, []);
-    
+
     useEffect(() => {
         scrollToBottom();
     }, [messages, scrollToBottom]);
-    
+
     const handleSend = async () => {
         if (!input.trim() || isLoading) return;
-        
+
         const userMessage: Message = {
             id: crypto.randomUUID(),
             role: 'user',
             content: input,
             timestamp: new Date()
         };
-        
+
         setMessages(prev => [...prev, userMessage]);
         const currentInput = input;
         setInput('');
         setShowContextHelp(false);
-        
+
         try {
             const response = await sendMessage({
                 message: currentInput,
@@ -385,17 +385,17 @@ export function AmaniChatBubble() {
                     custom_system_prompt: systemPrompt !== DEFAULT_SYSTEM_PROMPT ? systemPrompt : undefined,
                 },
             });
-            
+
             if (response.error) {
                 toast.error(response.error);
                 return;
             }
-            
+
             // Update conversation ID if this is a new conversation
             if (!conversationId && response.conversation_id) {
                 setConversationId(response.conversation_id);
             }
-            
+
             const assistantMessage: Message = {
                 id: response.message_id,
                 role: 'assistant',
@@ -403,11 +403,11 @@ export function AmaniChatBubble() {
                 timestamp: new Date(),
                 requiresAction: response.requires_action
             };
-            
+
             setMessages(prev => [...prev, assistantMessage]);
         } catch (error: unknown) {
-            const errorMessage = error instanceof Error 
-                ? error.message 
+            const errorMessage = error instanceof Error
+                ? error.message
                 : (error && typeof error === 'object' && 'response' in error && error.response && typeof error.response === 'object' && 'data' in error.response && error.response.data && typeof error.response.data === 'object' && 'error' in error.response.data && typeof error.response.data.error === 'string'
                     ? error.response.data.error
                     : 'Failed to send message');
@@ -416,29 +416,29 @@ export function AmaniChatBubble() {
             setMessages(prev => prev.filter(m => m.id !== userMessage.id));
         }
     };
-    
+
     const handleNewConversation = () => {
         setMessages([]);
         setConversationId(null);
         setShowContextHelp(true);
     };
-    
+
     const handleSaveSystemPrompt = () => {
         setSystemPrompt(tempSystemPrompt);
         localStorage.setItem('amani_system_prompt', tempSystemPrompt);
         setShowSettings(false);
         toast.success('System prompt updated');
     };
-    
+
     const handleResetSystemPrompt = () => {
         setTempSystemPrompt(DEFAULT_SYSTEM_PROMPT);
     };
-    
+
     const handleSuggestionClick = (suggestion: string) => {
         setInput(suggestion);
         inputRef.current?.focus();
     };
-    
+
     // Handle clicking on "Requires Human Approval" badge
     const handleApprovalClick = async (message: Message) => {
         try {
@@ -453,7 +453,7 @@ export function AmaniChatBubble() {
                     return;
                 }
             }
-            
+
             // Create a new task for this AI recommendation
             const result = await createTask({
                 title: `AI Recommendation: ${message.content.substring(0, 50)}...`,
@@ -470,26 +470,26 @@ export function AmaniChatBubble() {
                 },
                 conversation_id: conversationId || undefined,
             });
-            
+
             if (result.task) {
                 // Update the message with the task ID
-                setMessages(prev => prev.map(m => 
-                    m.id === message.id 
+                setMessages(prev => prev.map(m =>
+                    m.id === message.id
                         ? { ...m, taskId: result.task.id }
                         : m
                 ));
-                
+
                 // Open the approval dialog with the new task
                 setSelectedTask(result.task);
                 setApprovalDialogOpen(true);
-                
+
                 toast.success('Task created for approval', {
                     description: 'This recommendation has been submitted for human approval.',
                 });
             }
         } catch (error: unknown) {
-            const errorMessage = error instanceof Error 
-                ? error.message 
+            const errorMessage = error instanceof Error
+                ? error.message
                 : (error && typeof error === 'object' && 'response' in error && error.response && typeof error.response === 'object' && 'data' in error.response && error.response.data && typeof error.response.data === 'object' && 'error' in error.response.data && typeof error.response.data.error === 'string'
                     ? error.response.data.error
                     : 'An error occurred');
@@ -498,9 +498,9 @@ export function AmaniChatBubble() {
             });
         }
     };
-    
+
     const pendingCount = pendingApprovalsData?.total_count || 0;
-    
+
     return (
         <TooltipProvider>
             {/* Floating Bubble */}
@@ -534,7 +534,7 @@ export function AmaniChatBubble() {
                     </Tooltip>
                 )}
             </div>
-            
+
             {/* Chat Window - Reduced Transparency */}
             {isOpen && (
                 <div
@@ -542,8 +542,8 @@ export function AmaniChatBubble() {
                         "fixed z-50 rounded-2xl shadow-2xl flex flex-col overflow-hidden animate-in fade-in slide-in-from-bottom-4 duration-300",
                         // REDUCED TRANSPARENCY: More solid background with subtle blur
                         "bg-[hsl(var(--card))]/95 backdrop-blur-xl border-2 border-border/50",
-                        isExpanded 
-                            ? "bottom-6 right-6 w-[700px] h-[85vh] max-h-[900px]" 
+                        isExpanded
+                            ? "bottom-6 right-6 w-[700px] h-[85vh] max-h-[900px]"
                             : "bottom-6 right-6 w-[440px] h-[600px]"
                     )}
                     style={{
@@ -578,9 +578,9 @@ export function AmaniChatBubble() {
                             {/* New Conversation */}
                             <Tooltip>
                                 <TooltipTrigger asChild>
-                                    <Button 
-                                        variant="ghost" 
-                                        size="icon" 
+                                    <Button
+                                        variant="ghost"
+                                        size="icon"
                                         className="h-8 w-8"
                                         onClick={handleNewConversation}
                                         aria-label="New conversation"
@@ -590,13 +590,13 @@ export function AmaniChatBubble() {
                                 </TooltipTrigger>
                                 <TooltipContent>New conversation</TooltipContent>
                             </Tooltip>
-                            
+
                             {/* Settings Sheet */}
                             <Sheet open={showSettings} onOpenChange={setShowSettings}>
                                 <SheetTrigger asChild>
-                                    <Button 
-                                        variant="ghost" 
-                                        size="icon" 
+                                    <Button
+                                        variant="ghost"
+                                        size="icon"
                                         className="h-8 w-8"
                                         aria-label="Settings"
                                     >
@@ -613,7 +613,7 @@ export function AmaniChatBubble() {
                                             Customize how Amani assists you. Your preferences are saved locally.
                                         </SheetDescription>
                                     </SheetHeader>
-                                    
+
                                     <div className="mt-6 space-y-6">
                                         {/* System Prompt Section */}
                                         <div className="space-y-3">
@@ -621,9 +621,9 @@ export function AmaniChatBubble() {
                                                 <Label htmlFor="system-prompt" className="text-sm font-medium">
                                                     System Prompt
                                                 </Label>
-                                                <Button 
-                                                    variant="ghost" 
-                                                    size="sm" 
+                                                <Button
+                                                    variant="ghost"
+                                                    size="sm"
                                                     className="h-7 text-xs"
                                                     onClick={handleResetSystemPrompt}
                                                 >
@@ -642,9 +642,9 @@ export function AmaniChatBubble() {
                                                 This prompt guides how Amani responds. The default includes EUCORA governance rules.
                                             </p>
                                         </div>
-                                        
+
                                         <Separator />
-                                        
+
                                         {/* Tips Section */}
                                         <div className="space-y-3">
                                             <Label className="text-sm font-medium">Prompt Tips</Label>
@@ -664,12 +664,12 @@ export function AmaniChatBubble() {
                                             </div>
                                         </div>
                                     </div>
-                                    
+
                                     <SheetFooter className="mt-6">
                                         <Button variant="outline" onClick={() => setShowSettings(false)}>
                                             Cancel
                                         </Button>
-                                        <Button 
+                                        <Button
                                             className="bg-eucora-teal hover:bg-eucora-teal/90"
                                             onClick={handleSaveSystemPrompt}
                                         >
@@ -678,13 +678,13 @@ export function AmaniChatBubble() {
                                     </SheetFooter>
                                 </SheetContent>
                             </Sheet>
-                            
+
                             {/* Expand/Minimize */}
                             <Tooltip>
                                 <TooltipTrigger asChild>
-                                    <Button 
-                                        variant="ghost" 
-                                        size="icon" 
+                                    <Button
+                                        variant="ghost"
+                                        size="icon"
                                         className="h-8 w-8"
                                         onClick={() => setIsExpanded(!isExpanded)}
                                         aria-label={isExpanded ? "Minimize" : "Maximize"}
@@ -694,13 +694,13 @@ export function AmaniChatBubble() {
                                 </TooltipTrigger>
                                 <TooltipContent>{isExpanded ? 'Minimize' : 'Expand'}</TooltipContent>
                             </Tooltip>
-                            
+
                             {/* Close */}
                             <Tooltip>
                                 <TooltipTrigger asChild>
-                                    <Button 
-                                        variant="ghost" 
-                                        size="icon" 
+                                    <Button
+                                        variant="ghost"
+                                        size="icon"
                                         className="h-8 w-8"
                                         onClick={() => setIsOpen(false)}
                                         aria-label="Close chat"
@@ -712,7 +712,7 @@ export function AmaniChatBubble() {
                             </Tooltip>
                         </div>
                     </div>
-                    
+
                     {/* Messages Area */}
                     <ScrollArea className="flex-1 p-4">
                         {/* Context-Aware Welcome */}
@@ -730,7 +730,7 @@ export function AmaniChatBubble() {
                                         {pageContext.description}
                                     </p>
                                 </div>
-                                
+
                                 {/* Suggestions */}
                                 <div className="space-y-2">
                                     <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider px-1">
@@ -749,7 +749,7 @@ export function AmaniChatBubble() {
                                         ))}
                                     </div>
                                 </div>
-                                
+
                                 {/* Collapsible Page Info */}
                                 <Collapsible className="mt-4">
                                     <CollapsibleTrigger className="flex items-center gap-2 text-xs text-muted-foreground hover:text-foreground transition-colors w-full justify-center">
@@ -770,7 +770,7 @@ export function AmaniChatBubble() {
                                                 ))}
                                             </ul>
                                         </div>
-                                        
+
                                         {/* Tips */}
                                         <div className="p-3 rounded-xl bg-eucora-teal/5 border border-eucora-teal/20">
                                             <p className="text-xs font-medium text-eucora-teal mb-2">💡 Tips</p>
@@ -784,7 +784,7 @@ export function AmaniChatBubble() {
                                 </Collapsible>
                             </div>
                         )}
-                        
+
                         {/* Message History */}
                         {messages.map((message) => (
                             <div
@@ -815,7 +815,7 @@ export function AmaniChatBubble() {
                                 </div>
                             </div>
                         ))}
-                        
+
                         {/* Typing Indicator */}
                         {isLoading && (
                             <div className="flex justify-start mb-4">
@@ -831,13 +831,13 @@ export function AmaniChatBubble() {
                                 </div>
                             </div>
                         )}
-                        
+
                         <div ref={messagesEndRef} />
                     </ScrollArea>
-                    
+
                     {/* Input Area - More Opaque */}
                     <div className="p-4 border-t border-border bg-background/80">
-                        <form 
+                        <form
                             onSubmit={(e) => { e.preventDefault(); handleSend(); }}
                             className="flex gap-2"
                         >
@@ -849,8 +849,8 @@ export function AmaniChatBubble() {
                                 className="flex-1 bg-background border-border/80 focus:border-eucora-teal"
                                 disabled={isLoading}
                             />
-                            <Button 
-                                type="submit" 
+                            <Button
+                                type="submit"
                                 size="icon"
                                 disabled={!input.trim() || isLoading}
                                 className="bg-eucora-teal hover:bg-eucora-teal/90 shadow-lg shadow-eucora-teal/25"
@@ -864,7 +864,7 @@ export function AmaniChatBubble() {
                     </div>
                 </div>
             )}
-            
+
             {/* Approval Dialog */}
             <AIApprovalDialog
                 task={selectedTask}

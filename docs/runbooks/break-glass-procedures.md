@@ -1,7 +1,7 @@
 # Break-Glass Procedures
 
-**Version**: 1.0  
-**Status**: Active  
+**Version**: 1.0
+**Status**: Active
 **Last Updated**: 2026-01-06
 
 ---
@@ -156,4 +156,3 @@ All break-glass actions recorded in event store:
 - [Incident Response](./incident-response.md)
 - [Audit Trail Schema](../infrastructure/audit-trail-schema.md)
 - [SIEM Integration](../infrastructure/siem-integration.md)
-

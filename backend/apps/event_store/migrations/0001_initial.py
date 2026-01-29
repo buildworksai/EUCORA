@@ -25,16 +25,12 @@ class Migration(migrations.Migration):
                 ),
                 (
                     "created_at",
-                    models.DateTimeField(
-                        db_index=True, default=django.utils.timezone.now, editable=False
-                    ),
+                    models.DateTimeField(db_index=True, default=django.utils.timezone.now, editable=False),
                 ),
                 ("updated_at", models.DateTimeField(auto_now=True)),
                 (
                     "correlation_id",
-                    models.UUIDField(
-                        db_index=True, help_text="Deployment correlation ID"
-                    ),
+                    models.UUIDField(db_index=True, help_text="Deployment correlation ID"),
                 ),
                 (
                     "event_type",
@@ -57,9 +53,7 @@ class Migration(migrations.Migration):
                 ("event_data", models.JSONField(help_text="Event payload")),
                 (
                     "actor",
-                    models.CharField(
-                        help_text="User or system that triggered event", max_length=255
-                    ),
+                    models.CharField(help_text="User or system that triggered event", max_length=255),
                 ),
             ],
             options={

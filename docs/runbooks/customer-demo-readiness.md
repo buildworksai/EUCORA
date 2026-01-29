@@ -1,7 +1,7 @@
 # Customer Demo Readiness Guide
 
-**SPDX-License-Identifier: Apache-2.0**  
-**Version**: 1.0.0  
+**SPDX-License-Identifier: Apache-2.0**
+**Version**: 1.0.0
 **Last Updated**: January 8, 2026
 
 ---

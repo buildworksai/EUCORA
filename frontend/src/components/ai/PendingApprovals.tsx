@@ -2,7 +2,7 @@
 // Copyright (c) 2026 BuildWorks.AI
 /**
  * Pending Approvals Component.
- * 
+ *
  * Displays a list of AI-generated tasks awaiting human approval.
  * Can be used as a standalone panel or embedded in other views.
  */
@@ -42,11 +42,11 @@ export function PendingApprovals({
     const { data, isLoading, refetch, isRefetching } = usePendingApprovals();
     const [selectedTask, setSelectedTask] = useState<AIAgentTask | null>(null);
     const [dialogOpen, setDialogOpen] = useState(false);
-    
+
     const pendingTasks = data?.pending_approvals || [];
     const displayTasks = maxItems ? pendingTasks.slice(0, maxItems) : pendingTasks;
     const hasMore = maxItems && pendingTasks.length > maxItems;
-    
+
     const handleTaskClick = (task: AIAgentTask) => {
         if (onTaskClick) {
             onTaskClick(task);
@@ -55,7 +55,7 @@ export function PendingApprovals({
             setDialogOpen(true);
         }
     };
-    
+
     const agentTypeColors: Record<string, string> = {
         'amani': 'bg-eucora-teal/20 text-eucora-teal border-eucora-teal/30',
         'packaging': 'bg-blue-500/20 text-blue-500 border-blue-500/30',
@@ -63,7 +63,7 @@ export function PendingApprovals({
         'deployment': 'bg-eucora-coral/20 text-eucora-coral border-eucora-coral/30',
         'compliance': 'bg-eucora-green/20 text-eucora-green border-eucora-green/30',
     };
-    
+
     if (compact) {
         // Compact mode for sidebar or small spaces
         return (
@@ -103,14 +103,14 @@ export function PendingApprovals({
                             </button>
                         ))
                     )}
-                    
+
                     {hasMore && (
                         <Button variant="ghost" size="sm" className="w-full text-xs">
                             View all ({pendingTasks.length} pending)
                         </Button>
                     )}
                 </div>
-                
+
                 <AIApprovalDialog
                     task={selectedTask}
                     open={dialogOpen}
@@ -119,7 +119,7 @@ export function PendingApprovals({
             </>
         );
     }
-    
+
     // Full card mode
     return (
         <>
@@ -155,7 +155,7 @@ export function PendingApprovals({
                         </div>
                     </div>
                 </CardHeader>
-                
+
                 <CardContent>
                     {isLoading ? (
                         <div className="space-y-3">
@@ -224,7 +224,7 @@ export function PendingApprovals({
                     )}
                 </CardContent>
             </Card>
-            
+
             <AIApprovalDialog
                 task={selectedTask}
                 open={dialogOpen}
@@ -235,4 +235,3 @@ export function PendingApprovals({
 }
 
 export default PendingApprovals;
-

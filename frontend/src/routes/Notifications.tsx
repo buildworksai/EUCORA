@@ -15,9 +15,9 @@ export default function Notifications() {
     const navigate = useNavigate();
     const { data: pendingApprovals = [], isLoading: approvalsLoading } = usePendingApprovals();
     const { data: deployments = [], isLoading: deploymentsLoading } = useDeployments();
-    
+
     const isLoading = approvalsLoading || deploymentsLoading;
-    
+
     // Get all notifications
     // CRITICAL FIX: Use unique keys by combining type and correlation_id to prevent duplicate key warnings
     const allNotifications = [
@@ -69,7 +69,7 @@ export default function Notifications() {
                 onClick: () => navigate('/dashboard'),
             })),
     ].sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime());
-    
+
     const pendingCount = allNotifications.filter(n => n.status === 'pending').length;
     const activeCount = allNotifications.filter(n => n.status === 'active').length;
 

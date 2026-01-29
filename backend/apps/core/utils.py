@@ -4,7 +4,8 @@
 Core utility functions.
 """
 import uuid
-from typing import Optional, Callable
+from typing import Callable, Optional
+
 from django.conf import settings
 from django.views.decorators.csrf import csrf_exempt
 
@@ -12,21 +13,21 @@ from django.views.decorators.csrf import csrf_exempt
 def exempt_csrf_in_debug(view_func: Callable) -> Callable:
     """
     Exempt view from CSRF protection in DEBUG mode only.
-    
+
     This is needed because DRF's SessionAuthentication enforces CSRF protection
     for state-changing operations (POST/PUT/DELETE) even when AllowAny permission
     is used. In development with mock authentication, this causes 403 errors.
-    
+
     Usage:
         @exempt_csrf_in_debug
         @api_view(['POST'])
         @permission_classes([AllowAny if settings.DEBUG else IsAuthenticated])
         def my_view(request):
             ...
-    
+
     Args:
         view_func: The view function to conditionally exempt from CSRF
-        
+
     Returns:
         The view function, wrapped with csrf_exempt if DEBUG=True, otherwise unchanged
     """
@@ -38,20 +39,20 @@ def exempt_csrf_in_debug(view_func: Callable) -> Callable:
 def generate_correlation_id(prefix: Optional[str] = None) -> str:
     """
     Generate a correlation ID with optional prefix.
-    
+
     Args:
         prefix: Optional prefix for the correlation ID (e.g., 'deploy', 'cab', 'audit')
-    
+
     Returns:
         Correlation ID string (e.g., 'deploy-a1b2c3d4-...' or UUID if no prefix)
-    
+
     Example:
         >>> generate_correlation_id('deploy')
         'deploy-a1b2c3d4-e5f6-7890-abcd-ef1234567890'
     """
     correlation_id = str(uuid.uuid4())
     if prefix:
-        return f'{prefix}-{correlation_id}'
+        return f"{prefix}-{correlation_id}"
     return correlation_id
 
 
@@ -61,7 +62,7 @@ def get_demo_mode_enabled() -> bool:
     """
     from apps.core.models import DemoModeConfig
 
-    config = DemoModeConfig.objects.order_by('id').first()
+    config = DemoModeConfig.objects.order_by("id").first()
     return bool(config and config.is_enabled)
 
 
@@ -71,14 +72,14 @@ def set_demo_mode_enabled(is_enabled: bool) -> bool:
     """
     from apps.core.models import DemoModeConfig
 
-    config = DemoModeConfig.objects.order_by('id').first()
+    config = DemoModeConfig.objects.order_by("id").first()
     if not config:
         config = DemoModeConfig.objects.create(is_enabled=is_enabled)
         return config.is_enabled
 
     if config.is_enabled != is_enabled:
         config.is_enabled = is_enabled
-        config.save(update_fields=['is_enabled', 'updated_at'])
+        config.save(update_fields=["is_enabled", "updated_at"])
     return config.is_enabled
 
 
@@ -86,13 +87,13 @@ def apply_demo_filter(queryset, request):
     """
     Apply demo filter to a queryset based on global demo mode and query params.
     """
-    include_demo = request.query_params.get('include_demo')
+    include_demo = request.query_params.get("include_demo")
 
-    if include_demo == 'all':
+    if include_demo == "all":
         return queryset
-    if include_demo == 'true':
+    if include_demo == "true":
         return queryset.filter(is_demo=True)
-    if include_demo == 'false':
+    if include_demo == "false":
         return queryset.filter(is_demo=False)
 
     if get_demo_mode_enabled():

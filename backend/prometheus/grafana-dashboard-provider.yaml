@@ -1,0 +1,17 @@
+# SPDX-License-Identifier: Apache-2.0
+# Copyright (c) 2026 BuildWorks.AI
+# Grafana dashboard provider configuration.
+# Automatically provisions the EUCORA dashboard on startup.
+
+apiVersion: 1
+
+providers:
+  - name: 'EUCORA Dashboards'
+    orgId: 1
+    folder: 'EUCORA'
+    type: file
+    disableDeletion: false
+    updateIntervalSeconds: 10
+    allowUiUpdates: true
+    options:
+      path: /etc/grafana/provisioning/dashboards

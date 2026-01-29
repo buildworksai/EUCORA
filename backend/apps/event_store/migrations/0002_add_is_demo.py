@@ -6,13 +6,13 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('event_store', '0001_initial'),
+        ("event_store", "0001_initial"),
     ]
 
     operations = [
         migrations.AddField(
-            model_name='deploymentevent',
-            name='is_demo',
-            field=models.BooleanField(db_index=True, default=False, help_text='Whether this is demo data'),
+            model_name="deploymentevent",
+            name="is_demo",
+            field=models.BooleanField(db_index=True, default=False, help_text="Whether this is demo data"),
         ),
     ]

@@ -30,9 +30,7 @@ class Migration(migrations.Migration):
                 ),
                 (
                     "created_at",
-                    models.DateTimeField(
-                        db_index=True, default=django.utils.timezone.now, editable=False
-                    ),
+                    models.DateTimeField(db_index=True, default=django.utils.timezone.now, editable=False),
                 ),
                 ("updated_at", models.DateTimeField(auto_now=True)),
                 (
@@ -50,15 +48,11 @@ class Migration(migrations.Migration):
                 ),
                 (
                     "comments",
-                    models.TextField(
-                        blank=True, help_text="Approval/rejection comments"
-                    ),
+                    models.TextField(blank=True, help_text="Approval/rejection comments"),
                 ),
                 (
                     "conditions",
-                    models.JSONField(
-                        default=list, help_text="Conditional approval conditions"
-                    ),
+                    models.JSONField(default=list, help_text="Conditional approval conditions"),
                 ),
                 ("submitted_at", models.DateTimeField(auto_now_add=True)),
                 ("reviewed_at", models.DateTimeField(blank=True, null=True)),

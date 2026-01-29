@@ -29,7 +29,7 @@ describe('Sidebar', () => {
     } as ReturnType<typeof useUIStore>);
 
     render(<Sidebar />);
-    
+
     expect(screen.getByText('Dashboard')).toBeInTheDocument();
     expect(screen.getByText('DEX & Green IT')).toBeInTheDocument();
     expect(screen.getByText('Asset Inventory')).toBeInTheDocument();
@@ -44,9 +44,8 @@ describe('Sidebar', () => {
     } as ReturnType<typeof useUIStore>);
 
     render(<Sidebar />);
-    
+
     // Should show Dashboard (has permission)
     expect(screen.getByText('Dashboard')).toBeInTheDocument();
   });
 });
-

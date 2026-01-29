@@ -1,7 +1,7 @@
 # Testing Standards
 
-**Version**: 1.0  
-**Status**: Active  
+**Version**: 1.0
+**Status**: Active
 **Last Updated**: 2026-01-06
 
 ---
@@ -35,8 +35,8 @@ This document defines the **mandatory testing standards** for EUCORA. All code M
 
 ### 1. Unit Tests
 
-**Scope**: Individual functions, methods, components  
-**Framework**: 
+**Scope**: Individual functions, methods, components
+**Framework**:
 - Backend: pytest-django
 - Frontend: Vitest + React Testing Library
 
@@ -64,7 +64,7 @@ it('renders component correctly', () => {
 
 ### 2. Integration Tests
 
-**Scope**: Component interactions, API endpoints, database operations  
+**Scope**: Component interactions, API endpoints, database operations
 **Framework**: pytest-django (backend), Vitest (frontend)
 
 **Requirements**:
@@ -83,7 +83,7 @@ def test_deployment_intent_creation():
 
 ### 3. End-to-End Tests
 
-**Scope**: Complete workflows (packaging → CAB → publishing)  
+**Scope**: Complete workflows (packaging → CAB → publishing)
 **Framework**: pytest + Playwright (planned)
 
 **Requirements**:
@@ -93,7 +93,7 @@ def test_deployment_intent_creation():
 
 ### 4. Idempotency Tests
 
-**Scope**: Connector operations  
+**Scope**: Connector operations
 **Requirements**:
 - Verify safe retries
 - Test idempotent keys
@@ -111,7 +111,7 @@ def test_connector_idempotency():
 
 ### 5. Rollback Tests
 
-**Scope**: Rollback strategies per execution plane  
+**Scope**: Rollback strategies per execution plane
 **Requirements**:
 - Test rollback execution
 - Validate rollback success
@@ -226,4 +226,3 @@ frontend/
 - [Quality Gates](./quality-gates.md)
 - [Pre-Commit Hooks](../infrastructure/ci-cd-pipelines.md)
 - [CI/CD Pipelines](../infrastructure/ci-cd-pipelines.md)
-

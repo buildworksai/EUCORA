@@ -1,7 +1,7 @@
 # Site Classification
 
-**Version**: 1.0  
-**Status**: Active  
+**Version**: 1.0
+**Status**: Active
 **Last Updated**: 2026-01-06
 
 ---
@@ -92,7 +92,7 @@ Site classification determines **distribution strategy** and **time-to-complianc
 
 ### 1. Initial Classification
 
-**Performed By**: Platform Admin, Site Owner  
+**Performed By**: Platform Admin, Site Owner
 **Criteria**:
 - Network connectivity assessment
 - Bandwidth measurement
@@ -107,7 +107,7 @@ Site classification determines **distribution strategy** and **time-to-complianc
 
 ### 2. Classification Review
 
-**Frequency**: Annual or on network changes  
+**Frequency**: Annual or on network changes
 **Reviewers**: Platform Admin, Network Team, Security Team
 
 **Update Triggers**:
@@ -118,7 +118,7 @@ Site classification determines **distribution strategy** and **time-to-complianc
 
 ### 3. Classification Storage
 
-**Storage**: Control Plane database  
+**Storage**: Control Plane database
 **Schema**:
 ```json
 {
@@ -170,4 +170,3 @@ Site classification determines **distribution strategy** and **time-to-complianc
 - [Air-Gapped Procedures](./air-gapped-procedures.md)
 - [Co-Management](./co-management.md)
 - [Bandwidth Optimization](./bandwidth-optimization.md)
-

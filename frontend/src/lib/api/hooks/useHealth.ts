@@ -27,4 +27,3 @@ export function useHealth() {
     retry: 1, // Don't retry health checks aggressively
   });
 }
-

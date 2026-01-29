@@ -23,7 +23,7 @@ export function AppLayout() {
                     </div>
                 </main>
             </div>
-            
+
             {/* Global AI Assistant - Available on every page */}
             <AmaniChatBubble />
         </ThemeProvider>

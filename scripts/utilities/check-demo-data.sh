@@ -20,7 +20,7 @@ if [ -f /.dockerenv ] || [ -n "$DOCKER_CONTAINER" ]; then
 else
     PYTHON_CMD="python3"
     MANAGE_PY="$BACKEND_DIR/manage.py"
-    
+
     if [ -d "$BACKEND_DIR/venv" ]; then
         source "$BACKEND_DIR/venv/bin/activate"
     elif [ -d "$PROJECT_ROOT/venv" ]; then

@@ -17,7 +17,7 @@ jobs:
   spdx-check:
     name: Verify SPDX Headers
     runs-on: ubuntu-latest
-    
+
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -44,7 +44,7 @@ jobs:
             echo "❌ SPDX script not found at scripts/utilities/Add-SPDXHeaders.ps1"
             exit 1
           fi
-          
+
           if pwsh -File scripts/utilities/Add-SPDXHeaders.ps1 -DryRun; then
             echo "status=success" >> $GITHUB_OUTPUT
             echo "message=All PowerShell files have SPDX headers" >> $GITHUB_OUTPUT

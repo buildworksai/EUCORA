@@ -8,6 +8,7 @@ from django.apps import AppConfig
 
 class TelemetryConfig(AppConfig):
     """Telemetry app configuration."""
-    default_auto_field = 'django.db.models.BigAutoField'
-    name = 'apps.telemetry'
-    verbose_name = 'EUCORA Telemetry'
+
+    default_auto_field = "django.db.models.BigAutoField"
+    name = "apps.telemetry"
+    verbose_name = "EUCORA Telemetry"

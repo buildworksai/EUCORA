@@ -119,6 +119,8 @@ export default function AssetInventory() {
         []
     );
 
+    // React Table exposes non-memoizable helpers; lint rule needs explicit opt-out here.
+    // eslint-disable-next-line react-hooks/incompatible-library
     const table = useReactTable({
         data: assets,
         columns,

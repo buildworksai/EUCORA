@@ -30,7 +30,7 @@ export default function AIProvidersTab() {
   const [providerConfigs, setProviderConfigs] = useState<Record<string, ProviderConfigState>>({});
 
   const { data, refetch: refetchProviders } = useModelProviders();
-  const providers = data?.providers ?? [];
+  const providers = useMemo(() => data?.providers ?? [], [data]);
   const { mutate: configureProvider, isPending: isSaving } = useConfigureProvider();
   const { mutate: deleteProvider, isPending: isDeleting } = useDeleteProvider();
 
@@ -49,7 +49,24 @@ export default function AIProvidersTab() {
         is_default: provider.is_default,
       };
     });
-    setProviderConfigs(configs);
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    setProviderConfigs((previous) => {
+      const sameKeys = Object.keys(previous).length === Object.keys(configs).length;
+      const sameValues = sameKeys
+        ? Object.entries(configs).every(([key, value]) => {
+            const existing = previous[key];
+            return (
+              existing?.model_name === value.model_name &&
+              existing?.endpoint_url === value.endpoint_url &&
+              existing?.max_tokens === value.max_tokens &&
+              existing?.temperature === value.temperature &&
+              existing?.is_default === value.is_default
+            );
+          })
+        : false;
+
+      return sameValues ? previous : configs;
+    });
   }, [providersKey, providers]);
 
   const toggleKey = (providerId: string) => {
@@ -106,7 +123,7 @@ export default function AIProvidersTab() {
   const handleDeleteProvider = (providerId: string) => {
     const existingProvider = providers.find((item) => item.id === providerId);
     if (!existingProvider) return;
-    
+
     if (userIsDemo) {
       toast.info('Configuration changes are disabled in demo mode');
       return;

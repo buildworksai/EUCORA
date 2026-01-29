@@ -44,6 +44,30 @@ export interface ComplianceReportResponse {
   report: ComplianceReport;
 }
 
+export interface ComplianceTrendPoint {
+  date: string;
+  score: number;
+}
+
+export interface ComplianceDistributionDatum {
+  name: string;
+  value: number;
+  color: string;
+  [key: string]: string | number;
+}
+
+export interface ComplianceStatsResponse {
+  overall_compliance: number;
+  critical_vulnerabilities: number;
+  policy_conflicts: number;
+  pending_updates: number;
+  compliance_trend: ComplianceTrendPoint[];
+  vulnerability_data: ComplianceDistributionDatum[];
+  os_distribution: ComplianceDistributionDatum[];
+  total_assets: number;
+  active_assets: number;
+}
+
 /**
  * BuildWorks.AI-27004: ENDPOINTS constant - never hardcode URL strings
  */
@@ -51,15 +75,16 @@ export const ENDPOINTS = {
   COMPLIANCE_METRICS: '/compliance/metrics/',
   COMPLIANCE_REPORT: '/compliance/report/',
   COMPLIANCE_VIOLATIONS: '/compliance/violations/',
+  COMPLIANCE_STATS: '/health/compliance-stats',
 } as const;
 
 /**
  * Example usage:
- * 
+ *
  * ```typescript
  * import { ENDPOINTS, type ComplianceMetrics } from './contracts';
  * import { api } from '@/lib/api/client';
- * 
+ *
  * const response = await api.get<ComplianceMetrics>(ENDPOINTS.COMPLIANCE_METRICS);
  * ```
  */

@@ -84,7 +84,7 @@ export function useApproveDeployment() {
       queryClient.invalidateQueries({ queryKey: ['cab-approvals'] });
       queryClient.invalidateQueries({ queryKey: ['deployments'] });
       queryClient.invalidateQueries({ queryKey: ['deployment', correlationId] });
-      
+
       toast.success('Deployment approved', {
         description: decision === 'CONDITIONAL' ? 'Approved with conditions' : 'Deployment can proceed',
       });
@@ -119,7 +119,7 @@ export function useRejectDeployment() {
       queryClient.invalidateQueries({ queryKey: ['cab-approvals'] });
       queryClient.invalidateQueries({ queryKey: ['deployments'] });
       queryClient.invalidateQueries({ queryKey: ['deployment', correlationId] });
-      
+
       toast.success('Deployment rejected', {
         description: 'Deployment has been blocked',
       });
@@ -135,4 +135,3 @@ export function useRejectDeployment() {
     },
   });
 }
-

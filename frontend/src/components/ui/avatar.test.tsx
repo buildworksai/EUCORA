@@ -36,4 +36,3 @@ describe('Avatar', () => {
     expect(avatar).toBeInTheDocument();
   });
 });
-

@@ -3,4 +3,4 @@
 """
 Connectors app for PowerShell integration.
 """
-default_app_config = 'apps.connectors.apps.ConnectorsConfig'
+default_app_config = "apps.connectors.apps.ConnectorsConfig"

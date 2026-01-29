@@ -1,0 +1,474 @@
+# SPDX-License-Identifier: Apache-2.0
+# Copyright (c) 2026 BuildWorks.AI
+"""
+P5.5: Comprehensive tests for Deployment Incident Tracking.
+Tests incident creation, linking, filtering, and resolution workflow.
+"""
+import pytest
+from decimal import Decimal
+from datetime import timedelta
+from django.test import TestCase
+from django.utils import timezone
+from django.contrib.auth.models import User
+from uuid import uuid4
+
+from apps.evidence_store.models_p5_5 import DeploymentIncident
+from apps.evidence_store.models import EvidencePackage
+from apps.deployment_intents.models import DeploymentIntent
+from apps.cab_workflow.models import CABApprovalRequest
+
+
+class IncidentTrackingTestSetup(TestCase):
+    """Setup fixtures for incident tracking tests."""
+
+    @classmethod
+    def setUpTestData(cls):
+        """Create common test data."""
+        cls.user = User.objects.create_user(
+            username='testuser',
+            email='test@example.com',
+            password='testpass123'
+        )
+
+        # Create deployment intent
+        cls.deployment = DeploymentIntent.objects.create(
+            app_name='TestApp',
+            version='1.0.0',
+            target_ring='CANARY',
+            submitter=cls.user,
+        )
+
+        # Create evidence package
+        cls.evidence = EvidencePackage.objects.create(
+            evidence_data={
+                'test_coverage': 92,
+                'blast_radius_class': 'BUSINESS_CRITICAL',
+            },
+            risk_score=Decimal('55'),
+            risk_factors={},
+            deployment_intent_id=str(cls.deployment.id),
+            correlation_id=f'EVIDENCE-{uuid4()}',
+        )
+
+        # Create CAB approval
+        cls.cab_approval = CABApprovalRequest.objects.create(
+            evidence_package_id=str(cls.evidence.id),
+            deployment_intent_id=str(cls.deployment.id),
+            submitted_by=cls.user,
+            risk_score=Decimal('55'),
+            status='approved',
+        )
+
+
+class TestIncidentCreation(IncidentTrackingTestSetup):
+    """Test incident creation and validation."""
+
+    def test_create_incident_with_required_fields(self):
+        """Creating incident with all required fields should succeed."""
+        incident = DeploymentIncident.objects.create(
+            deployment_intent_id=str(self.deployment.id),
+            evidence_package_id=str(self.evidence.id),
+            severity='P1',
+            incident_date=timezone.now(),
+            detection_method='monitoring',
+            title='Critical production failure',
+            description='Service completely unavailable',
+            was_auto_approved=False,
+            risk_score_at_approval=Decimal('55'),
+            blast_radius_class='BUSINESS_CRITICAL',
+            created_by=self.user.username,
+        )
+
+        self.assertIsNotNone(incident.id)
+        self.assertEqual(incident.severity, 'P1')
+        self.assertFalse(incident.was_auto_approved)
+
+    def test_create_incident_with_optional_fields(self):
+        """Creating incident with optional fields should store them."""
+        incident = DeploymentIncident.objects.create(
+            deployment_intent_id=str(self.deployment.id),
+            evidence_package_id=str(self.evidence.id),
+            cab_approval_id=str(self.cab_approval.id),
+            severity='P2',
+            incident_date=timezone.now(),
+            detection_method='user_reported',
+            title='Moderate issue',
+            description='Partial functionality loss',
+            was_auto_approved=False,
+            risk_score_at_approval=Decimal('55'),
+            risk_model_version='1.1',
+            blast_radius_class='BUSINESS_CRITICAL',
+            affected_user_count=5000,
+            downtime_minutes=120,
+            business_impact_usd=Decimal('50000.00'),
+            created_by=self.user.username,
+        )
+
+        self.assertEqual(incident.cab_approval_id, str(self.cab_approval.id))
+        self.assertEqual(incident.risk_model_version, '1.1')
+        self.assertEqual(incident.affected_user_count, 5000)
+        self.assertEqual(incident.downtime_minutes, 120)
+        self.assertEqual(incident.business_impact_usd, Decimal('50000.00'))
+
+    def test_create_incident_missing_required_field_fails(self):
+        """Creating incident without required fields should fail."""
+        with self.assertRaises(Exception):
+            DeploymentIncident.objects.create(
+                deployment_intent_id=str(self.deployment.id),
+                # Missing evidence_package_id
+                severity='P1',
+                incident_date=timezone.now(),
+            )
+
+    def test_incident_severity_choices_validated(self):
+        """Incident severity must be valid choice."""
+        with self.assertRaises(Exception):
+            DeploymentIncident.objects.create(
+                deployment_intent_id=str(self.deployment.id),
+                evidence_package_id=str(self.evidence.id),
+                severity='P0',  # Invalid severity
+                incident_date=timezone.now(),
+                detection_method='monitoring',
+                title='Test',
+                description='Test',
+                was_auto_approved=False,
+                risk_score_at_approval=Decimal('50'),
+                blast_radius_class='BUSINESS_CRITICAL',
+                created_by='test',
+            )
+
+
+class TestIncidentLinking(IncidentTrackingTestSetup):
+    """Test incident linking to deployments and approvals."""
+
+    def test_incident_linked_to_deployment(self):
+        """Incident should link to deployment intent."""
+        incident = DeploymentIncident.objects.create(
+            deployment_intent_id=str(self.deployment.id),
+            evidence_package_id=str(self.evidence.id),
+            severity='P1',
+            incident_date=timezone.now(),
+            detection_method='monitoring',
+            title='Test incident',
+            description='Test',
+            was_auto_approved=False,
+            risk_score_at_approval=Decimal('55'),
+            blast_radius_class='BUSINESS_CRITICAL',
+            created_by=self.user.username,
+        )
+
+        self.assertEqual(incident.deployment_intent_id, str(self.deployment.id))
+
+    def test_incident_linked_to_cab_approval(self):
+        """Incident should optionally link to CAB approval."""
+        incident = DeploymentIncident.objects.create(
+            deployment_intent_id=str(self.deployment.id),
+            evidence_package_id=str(self.evidence.id),
+            cab_approval_id=str(self.cab_approval.id),
+            severity='P2',
+            incident_date=timezone.now(),
+            detection_method='monitoring',
+            title='Test incident',
+            description='Test',
+            was_auto_approved=False,
+            risk_score_at_approval=Decimal('55'),
+            blast_radius_class='BUSINESS_CRITICAL',
+            created_by=self.user.username,
+        )
+
+        self.assertEqual(incident.cab_approval_id, str(self.cab_approval.id))
+
+    def test_query_incidents_by_deployment(self):
+        """Should query incidents by deployment intent."""
+        # Create multiple incidents for same deployment
+        for i in range(3):
+            DeploymentIncident.objects.create(
+                deployment_intent_id=str(self.deployment.id),
+                evidence_package_id=str(self.evidence.id),
+                severity='P3',
+                incident_date=timezone.now() - timedelta(days=i),
+                detection_method='monitoring',
+                title=f'Incident {i}',
+                description='Test',
+                was_auto_approved=False,
+                risk_score_at_approval=Decimal('45'),
+                blast_radius_class='PRODUCTIVITY_TOOLS',
+                created_by=self.user.username,
+            )
+
+        incidents = DeploymentIncident.objects.filter(
+            deployment_intent_id=str(self.deployment.id)
+        )
+
+        self.assertEqual(incidents.count(), 3)
+
+
+class TestIncidentFiltering(IncidentTrackingTestSetup):
+    """Test incident filtering and queries."""
+
+    def setUp(self):
+        """Create sample incidents."""
+        super().setUp()
+
+        # Create P1 incident
+        DeploymentIncident.objects.create(
+            deployment_intent_id=str(self.deployment.id),
+            evidence_package_id=str(self.evidence.id),
+            severity='P1',
+            incident_date=timezone.now() - timedelta(days=1),
+            detection_method='monitoring',
+            title='Critical incident',
+            description='P1',
+            was_auto_approved=False,
+            risk_score_at_approval=Decimal('75'),
+            blast_radius_class='CRITICAL_INFRASTRUCTURE',
+            created_by=self.user.username,
+        )
+
+        # Create P2 incident
+        DeploymentIncident.objects.create(
+            deployment_intent_id=str(self.deployment.id),
+            evidence_package_id=str(self.evidence.id),
+            severity='P2',
+            incident_date=timezone.now() - timedelta(days=2),
+            detection_method='user_reported',
+            title='Moderate incident',
+            description='P2',
+            was_auto_approved=False,
+            risk_score_at_approval=Decimal('55'),
+            blast_radius_class='BUSINESS_CRITICAL',
+            created_by=self.user.username,
+        )
+
+        # Create P3 incident (auto-approved)
+        DeploymentIncident.objects.create(
+            deployment_intent_id=str(self.deployment.id),
+            evidence_package_id=str(self.evidence.id),
+            severity='P3',
+            incident_date=timezone.now() - timedelta(days=3),
+            detection_method='automated_test',
+            title='Minor incident',
+            description='P3',
+            was_auto_approved=True,
+            risk_score_at_approval=Decimal('30'),
+            blast_radius_class='PRODUCTIVITY_TOOLS',
+            created_by=self.user.username,
+        )
+
+    def test_filter_by_severity(self):
+        """Should filter incidents by severity."""
+        p1_incidents = DeploymentIncident.objects.filter(severity='P1')
+        self.assertEqual(p1_incidents.count(), 1)
+        self.assertEqual(p1_incidents.first().title, 'Critical incident')
+
+    def test_filter_by_blast_radius_class(self):
+        """Should filter incidents by blast radius."""
+        critical_incidents = DeploymentIncident.objects.filter(
+            blast_radius_class='CRITICAL_INFRASTRUCTURE'
+        )
+        self.assertEqual(critical_incidents.count(), 1)
+
+    def test_filter_by_auto_approved(self):
+        """Should filter incidents by auto-approval status."""
+        auto_approved = DeploymentIncident.objects.filter(was_auto_approved=True)
+        self.assertEqual(auto_approved.count(), 1)
+        self.assertEqual(auto_approved.first().severity, 'P3')
+
+        manual_review = DeploymentIncident.objects.filter(was_auto_approved=False)
+        self.assertEqual(manual_review.count(), 2)
+
+    def test_filter_by_date_range(self):
+        """Should filter incidents by date range."""
+        start_date = timezone.now() - timedelta(days=2)
+        end_date = timezone.now()
+
+        recent_incidents = DeploymentIncident.objects.filter(
+            incident_date__gte=start_date,
+            incident_date__lte=end_date
+        )
+
+        self.assertEqual(recent_incidents.count(), 2)
+
+    def test_query_high_severity_incidents(self):
+        """Should query P1/P2 incidents."""
+        high_severity = DeploymentIncident.objects.filter(
+            severity__in=['P1', 'P2']
+        )
+
+        self.assertEqual(high_severity.count(), 2)
+
+
+class TestIncidentResolutionWorkflow(IncidentTrackingTestSetup):
+    """Test incident resolution workflow."""
+
+    def test_update_incident_root_cause(self):
+        """Should update incident with root cause analysis."""
+        incident = DeploymentIncident.objects.create(
+            deployment_intent_id=str(self.deployment.id),
+            evidence_package_id=str(self.evidence.id),
+            severity='P1',
+            incident_date=timezone.now(),
+            detection_method='monitoring',
+            title='Critical incident',
+            description='Service down',
+            was_auto_approved=False,
+            risk_score_at_approval=Decimal('75'),
+            blast_radius_class='CRITICAL_INFRASTRUCTURE',
+            created_by=self.user.username,
+        )
+
+        # Update with root cause
+        incident.root_cause = 'Memory leak in artifact version 1.0.0'
+        incident.was_preventable = True
+        incident.preventability_notes = 'Should have been caught in stress testing'
+        incident.save()
+
+        incident.refresh_from_db()
+        self.assertEqual(incident.root_cause, 'Memory leak in artifact version 1.0.0')
+        self.assertTrue(incident.was_preventable)
+
+    def test_mark_incident_resolved(self):
+        """Should mark incident as resolved."""
+        incident = DeploymentIncident.objects.create(
+            deployment_intent_id=str(self.deployment.id),
+            evidence_package_id=str(self.evidence.id),
+            severity='P2',
+            incident_date=timezone.now(),
+            detection_method='monitoring',
+            title='Moderate incident',
+            description='Partial outage',
+            was_auto_approved=False,
+            risk_score_at_approval=Decimal('55'),
+            blast_radius_class='BUSINESS_CRITICAL',
+            created_by=self.user.username,
+        )
+
+        # Resolve incident
+        incident.resolved_at = timezone.now()
+        incident.resolution_method = 'ROLLBACK'
+        incident.resolution_notes = 'Rolled back to version 0.9.5'
+        incident.save()
+
+        incident.refresh_from_db()
+        self.assertIsNotNone(incident.resolved_at)
+        self.assertTrue(incident.is_resolved)
+        self.assertEqual(incident.resolution_method, 'ROLLBACK')
+
+    def test_incident_is_resolved_property(self):
+        """is_resolved property should reflect resolution status."""
+        incident = DeploymentIncident.objects.create(
+            deployment_intent_id=str(self.deployment.id),
+            evidence_package_id=str(self.evidence.id),
+            severity='P3',
+            incident_date=timezone.now(),
+            detection_method='monitoring',
+            title='Minor incident',
+            description='Test',
+            was_auto_approved=True,
+            risk_score_at_approval=Decimal('25'),
+            blast_radius_class='NON_CRITICAL',
+            created_by=self.user.username,
+        )
+
+        # Initially not resolved
+        self.assertFalse(incident.is_resolved)
+
+        # Mark resolved
+        incident.resolved_at = timezone.now()
+        incident.save()
+
+        # Now resolved
+        self.assertTrue(incident.is_resolved)
+
+
+class TestIncidentAnalytics(IncidentTrackingTestSetup):
+    """Test incident analytics and aggregations."""
+
+    def test_count_incidents_by_severity(self):
+        """Should count incidents by severity."""
+        # Create incidents with different severities
+        for severity in ['P1', 'P2', 'P3', 'P3', 'P4']:
+            DeploymentIncident.objects.create(
+                deployment_intent_id=str(self.deployment.id),
+                evidence_package_id=str(self.evidence.id),
+                severity=severity,
+                incident_date=timezone.now(),
+                detection_method='monitoring',
+                title=f'{severity} incident',
+                description='Test',
+                was_auto_approved=False,
+                risk_score_at_approval=Decimal('45'),
+                blast_radius_class='PRODUCTIVITY_TOOLS',
+                created_by=self.user.username,
+            )
+
+        from django.db.models import Count
+
+        severity_counts = DeploymentIncident.objects.values('severity').annotate(
+            count=Count('id')
+        )
+
+        severity_dict = {item['severity']: item['count'] for item in severity_counts}
+
+        self.assertEqual(severity_dict['P1'], 1)
+        self.assertEqual(severity_dict['P2'], 1)
+        self.assertEqual(severity_dict['P3'], 2)
+        self.assertEqual(severity_dict['P4'], 1)
+
+    def test_calculate_incident_rate(self):
+        """Should calculate incident rate for period."""
+        # Create 5 incidents
+        for i in range(5):
+            DeploymentIncident.objects.create(
+                deployment_intent_id=str(self.deployment.id),
+                evidence_package_id=str(self.evidence.id),
+                severity='P3',
+                incident_date=timezone.now() - timedelta(days=i),
+                detection_method='monitoring',
+                title=f'Incident {i}',
+                description='Test',
+                was_auto_approved=False,
+                risk_score_at_approval=Decimal('40'),
+                blast_radius_class='PRODUCTIVITY_TOOLS',
+                created_by=self.user.username,
+            )
+
+        total_incidents = DeploymentIncident.objects.count()
+        total_deployments = 200  # Assume 200 deployments
+
+        incident_rate = (total_incidents / total_deployments) * 100
+
+        self.assertEqual(incident_rate, 2.5)  # 5/200 * 100 = 2.5%
+
+    def test_was_high_severity_property(self):
+        """was_high_severity property should identify P1/P2 incidents."""
+        p1_incident = DeploymentIncident.objects.create(
+            deployment_intent_id=str(self.deployment.id),
+            evidence_package_id=str(self.evidence.id),
+            severity='P1',
+            incident_date=timezone.now(),
+            detection_method='monitoring',
+            title='Critical',
+            description='Test',
+            was_auto_approved=False,
+            risk_score_at_approval=Decimal('75'),
+            blast_radius_class='CRITICAL_INFRASTRUCTURE',
+            created_by=self.user.username,
+        )
+
+        p3_incident = DeploymentIncident.objects.create(
+            deployment_intent_id=str(self.deployment.id),
+            evidence_package_id=str(self.evidence.id),
+            severity='P3',
+            incident_date=timezone.now(),
+            detection_method='monitoring',
+            title='Minor',
+            description='Test',
+            was_auto_approved=True,
+            risk_score_at_approval=Decimal('25'),
+            blast_radius_class='NON_CRITICAL',
+            created_by=self.user.username,
+        )
+
+        self.assertTrue(p1_incident.was_high_severity)
+        self.assertFalse(p3_incident.was_high_severity)

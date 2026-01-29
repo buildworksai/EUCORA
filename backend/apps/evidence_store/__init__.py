@@ -3,4 +3,4 @@
 """
 Evidence Store app for artifact management.
 """
-default_app_config = 'apps.evidence_store.apps.EvidenceStoreConfig'
+default_app_config = "apps.evidence_store.apps.EvidenceStoreConfig"

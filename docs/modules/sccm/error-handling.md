@@ -1,7 +1,7 @@
 # SCCM Connector Error Handling
 
-**Version**: 1.0  
-**Status**: Active  
+**Version**: 1.0
+**Status**: Active
 **Last Updated**: 2026-01-06
 
 ---
@@ -56,4 +56,3 @@ Error classification and retry logic for SCCM connector.
 
 - [SCCM Connector Spec](./connector-spec.md)
 - [Rollback Procedures](./rollback-procedures.md)
-

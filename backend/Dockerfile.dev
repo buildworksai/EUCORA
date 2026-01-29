@@ -40,6 +40,9 @@ COPY . /app/
 # Make entrypoint script executable
 RUN chmod +x /app/entrypoint.sh
 
+# Create prometheus metrics directory for multiprocess mode
+RUN mkdir -p /tmp/prometheus_metrics && chmod 777 /tmp/prometheus_metrics
+
 # Set entrypoint to handle migrations automatically
 ENTRYPOINT ["/bin/bash", "/app/entrypoint.sh"]
 CMD ["python", "manage.py", "runserver", "0.0.0.0:8000"]
