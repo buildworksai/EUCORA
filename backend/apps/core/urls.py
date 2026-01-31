@@ -4,6 +4,7 @@
 Core admin and utility endpoints.
 """
 from django.urls import path
+from django.views.decorators.csrf import csrf_exempt
 
 from .views_demo import clear_demo_data_view, csrf_token_view, demo_data_stats_view, demo_mode_view, seed_demo_data_view
 from .views_deployments import create_core_deployment, get_core_deployment, list_core_deployments
@@ -12,10 +13,12 @@ from .views_tasks import get_active_tasks, get_task_status, revoke_task
 
 urlpatterns = [
     # Demo data management
+    # CSRF exemption applied in URLconf for mutation endpoints (POST/DELETE)
+    # GET endpoints don't require CSRF tokens
     path("demo-data-stats", demo_data_stats_view, name="demo-data-stats"),
-    path("seed-demo-data", seed_demo_data_view, name="seed-demo-data"),
-    path("clear-demo-data", clear_demo_data_view, name="clear-demo-data"),
-    path("demo-mode", demo_mode_view, name="demo-mode"),
+    path("seed-demo-data", csrf_exempt(seed_demo_data_view), name="seed-demo-data"),
+    path("clear-demo-data", csrf_exempt(clear_demo_data_view), name="clear-demo-data"),
+    path("demo-mode", csrf_exempt(demo_mode_view), name="demo-mode"),
     path("csrf-token", csrf_token_view, name="csrf-token"),
     # Task status API (Celery async task monitoring)
     path("tasks/<str:task_id>/status", get_task_status, name="task-status"),

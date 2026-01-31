@@ -49,8 +49,15 @@ dependencies = [
     "python-json-logger~=2.0.7",
     # Object Storage (MinIO)
     "minio~=7.2.3",
+    # AWS S3 Storage
+    "boto3>=1.34.0",
+    # Azure Blob Storage
+    "azure-storage-blob>=12.19.0",
+    "azure-identity>=1.15.0",
     # HTTP Requests
     "requests>=2.32.4,<3.0",  # Updated from 2.31.0 to fix CVE-2024-35195, CVE-2024-47081
+    "httpx~=0.28.0",  # Async HTTP client
+    "httpx-ntlm~=1.4.0",  # NTLM auth for 1E DEX integration
     # Date/Time Utilities
     "python-dateutil~=2.8.2",
     # Utilities
@@ -59,11 +66,24 @@ dependencies = [
     "openai>=2.0.0",
     "anthropic>=0.34.0",
     "groq>=0.9.0",
+    # Vector Storage (pgvector)
+    "pgvector>=0.4.0",
+    # Embedding Providers
+    "cohere>=5.0.0",
+    "sentence-transformers>=2.2.0",
+    # Document Processing
+    "PyMuPDF>=1.23.0",
+    "python-docx>=1.1.0",
+    "beautifulsoup4>=4.12.0",
+    "lxml>=5.0.0",
     # Async utilities for AI calls
     "nest-asyncio~=1.6.0",
     # Celery for async task processing
     "celery[redis]~=5.3.6",
     "django-celery-beat~=2.8.1",  # Updated for Django 5.1 compatibility
+    # Django Channels for WebSocket support
+    "channels~=4.0.0",
+    "channels-redis~=4.2.0",
     # LDAP for Active Directory integration
     "ldap3~=2.9.1",
     # Encryption for sensitive fields

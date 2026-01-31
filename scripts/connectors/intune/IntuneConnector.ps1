@@ -14,6 +14,7 @@ Related Docs: docs/modules/intune/connector-spec.md
 Set-StrictMode -Version Latest
 $ErrorActionPreference = 'Stop'
 . "$PSScriptRoot/../common/ConnectorBase.ps1"
+. "$PSScriptRoot/../../utilities/common/Get-EndpointConfig.ps1"
 
 function New-IntuneWin32App {
     <#
@@ -42,7 +43,8 @@ function New-IntuneWin32App {
         [string]$CorrelationId
     )
 
-    $graphUri = "https://graph.microsoft.com/v1.0/deviceAppManagement/mobileApps"
+    # Use centralized endpoint configuration
+    $graphUri = Get-EndpointConfig -Service "intune" -Endpoint "mobile_apps"
 
     # Build Win32 LOB app payload
     $appPayload = @{
@@ -129,7 +131,7 @@ function New-IntuneAssignment {
         [string]$CorrelationId
     )
 
-    $assignmentUri = "https://graph.microsoft.com/v1.0/deviceAppManagement/mobileApps/$AppId/assignments"
+    $assignmentUri = Get-EndpointConfig -Service "intune" -Endpoint "app_assignments" -Parameters @{app_id = $AppId}
 
     $assignmentPayload = @{
         '@odata.type' = '#microsoft.graph.mobileAppAssignment'
@@ -241,7 +243,7 @@ function Remove-IntuneApplication {
     # Acquire OAuth2 token
     $accessToken = Get-ConnectorAuthToken -ConnectorName 'intune' -CorrelationId $CorrelationId
 
-    $deleteUri = "https://graph.microsoft.com/v1.0/deviceAppManagement/mobileApps/$ApplicationId"
+    $deleteUri = Get-EndpointConfig -Service "intune" -Endpoint "mobile_app_by_id" -Parameters @{app_id = $ApplicationId}
     $headers = @{
         Authorization = "Bearer $accessToken"
     }
@@ -281,7 +283,8 @@ function Get-IntuneDeploymentStatus {
     $accessToken = Get-ConnectorAuthToken -ConnectorName 'intune' -CorrelationId $CorrelationId
 
     # Search for apps with correlation ID
-    $searchUri = "https://graph.microsoft.com/v1.0/deviceAppManagement/mobileApps?`$filter=contains(notes,'$CorrelationId')"
+    $filter = "contains(notes,'$CorrelationId')"
+    $searchUri = Get-EndpointConfig -Service "intune" -Endpoint "mobile_apps_filter" -Parameters @{filter = $filter}
     $headers = @{
         Authorization = "Bearer $accessToken"
     }
@@ -303,7 +306,7 @@ function Get-IntuneDeploymentStatus {
 
     # Get install status for first matching app
     $app = $apps[0]
-    $statusUri = "https://graph.microsoft.com/v1.0/deviceAppManagement/mobileApps/$($app.id)/deviceStatuses"
+        $statusUri = Get-EndpointConfig -Service "intune" -Endpoint "app_device_statuses" -Parameters @{app_id = $app.id}
     $statusResponse = Invoke-ConnectorRequest -Uri $statusUri -Method 'GET' -Headers $headers -CorrelationId $CorrelationId
 
     $deviceStatuses = $statusResponse.value
@@ -349,7 +352,7 @@ function Test-IntuneConnection {
         $accessToken = Get-ConnectorAuthToken -ConnectorName 'intune' -CorrelationId $testCid
 
         # Test Graph API connectivity
-        $testUri = "https://graph.microsoft.com/v1.0/deviceAppManagement/mobileApps?`$top=1"
+        $testUri = Get-EndpointConfig -Service "intune" -Endpoint "mobile_apps_filter" -Parameters @{filter = "\$top=1"}
         $headers = @{
             Authorization = "Bearer $accessToken"
         }
@@ -411,7 +414,7 @@ function Get-IntuneTargetDevices {
         }
 
         # Query group members
-        $membersUri = "https://graph.microsoft.com/v1.0/groups/$groupId/members"
+        $membersUri = Get-EndpointConfig -Service "intune" -Endpoint "groups" -Parameters @{group_id = $groupId}
         $headers = @{
             Authorization = "Bearer $accessToken"
         }

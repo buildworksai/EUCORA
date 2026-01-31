@@ -3,11 +3,18 @@
 """
 URL configuration for AI Agents app.
 """
-from django.urls import path
+from django.urls import include, path
+from rest_framework.routers import DefaultRouter
 
 from . import views
+from .workflows import views as workflow_views
 
 app_name = "ai_agents"
+
+# Workflow routers
+workflow_router = DefaultRouter()
+workflow_router.register(r"workflows", workflow_views.WorkflowDefinitionViewSet, basename="workflow")
+workflow_router.register(r"executions", workflow_views.WorkflowExecutionViewSet, basename="execution")
 
 urlpatterns = [
     # Provider management
@@ -28,4 +35,6 @@ urlpatterns = [
     path("tasks/<uuid:task_id>/request-revision/", views.request_task_revision, name="request_revision"),
     path("tasks/create/", views.create_task_from_message, name="create_task"),
     path("tasks/pending/", views.list_pending_approvals, name="list_pending_approvals"),
+    # Workflows
+    path("", include(workflow_router.urls)),
 ]

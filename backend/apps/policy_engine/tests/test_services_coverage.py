@@ -10,7 +10,7 @@ import pytest
 from django.utils import timezone
 
 from apps.event_store.models import DeploymentEvent
-from apps.policy_engine.services import _evaluate_factor
+from apps.policy_engine.risk_scoring import _evaluate_factor
 
 
 @pytest.mark.django_db
@@ -101,7 +101,7 @@ class TestPolicyEngineServicesCoverage:
         """Test deployment frequency with various deployment counts."""
         # Create test events
         app_name = "FrequencyTestApp"
-        thirty_days_ago = timezone.now() - timedelta(days=30)
+        thirty_days_ago = timezone.now() - timedelta(days=30)  # noqa: F841
 
         # Create 3 deployments (should give 0.4 risk)
         for i in range(3):

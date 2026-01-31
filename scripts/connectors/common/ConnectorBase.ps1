@@ -16,6 +16,8 @@ $ErrorActionPreference = 'Stop'
 . "$PSScriptRoot/../../utilities/logging/Write-StructuredLog.ps1"
 . "$PSScriptRoot/../../utilities/common/Invoke-RetryWithBackoff.ps1"
 . "$PSScriptRoot/../../utilities/common/Test-IdempotencyKey.ps1"
+. "$PSScriptRoot/../../utilities/common/Get-EndpointConfig.ps1"
+. "$PSScriptRoot/../../utilities/Get-VaultSecret.ps1" -ErrorAction SilentlyContinue
 
 function Get-ConnectorConfig {
     <#
@@ -70,13 +72,23 @@ function Get-ConnectorAuthToken {
             # Microsoft Graph OAuth2 client credentials flow
             $tenantId = $config.tenant_id
             $clientId = $config.client_id
-            $clientSecret = $config.client_secret
+
+            # Retrieve client secret from vault, fall back to config
+            try {
+                $clientSecret = Get-VaultSecret -SecretName "INTUNE_CLIENT_SECRET" -ErrorAction SilentlyContinue
+            } catch {
+                $clientSecret = $null
+            }
+            if (-not $clientSecret) {
+                $clientSecret = $config.client_secret
+            }
 
             if (-not $tenantId -or -not $clientId -or -not $clientSecret) {
                 throw "Intune connector missing OAuth2 credentials (tenant_id, client_id, client_secret)"
             }
 
-            $tokenUri = "https://login.microsoftonline.com/$tenantId/oauth2/v2.0/token"
+            # Use centralized endpoint configuration
+            $tokenUri = Get-EndpointConfig -Service "microsoft" -Endpoint "oauth_token" -Parameters @{tenant_id = $tenantId}
             $body = @{
                 client_id     = $clientId
                 client_secret = $clientSecret
@@ -99,7 +111,16 @@ function Get-ConnectorAuthToken {
             # Jamf Pro OAuth2 or API token
             $apiUrl = $config.api_url
             $clientId = $config.client_id
-            $clientSecret = $config.client_secret
+
+            # Retrieve client secret from vault, fall back to config
+            try {
+                $clientSecret = Get-VaultSecret -SecretName "JAMF_CLIENT_SECRET" -ErrorAction SilentlyContinue
+            } catch {
+                $clientSecret = $null
+            }
+            if (-not $clientSecret) {
+                $clientSecret = $config.client_secret
+            }
 
             if (-not $apiUrl -or -not $clientId -or -not $clientSecret) {
                 throw "Jamf connector missing OAuth2 credentials (api_url, client_id, client_secret)"
@@ -124,12 +145,19 @@ function Get-ConnectorAuthToken {
         }
 
         'ansible' {
-            # AWX/Tower uses static API token (configured in settings)
-            $token = $config.token
+            # AWX/Tower uses static API token - retrieve from vault, fall back to config
+            try {
+                $token = Get-VaultSecret -SecretName "ANSIBLE_API_TOKEN" -ErrorAction SilentlyContinue
+            } catch {
+                $token = $null
+            }
+            if (-not $token) {
+                $token = $config.token
+            }
             if (-not $token) {
                 throw "Ansible connector missing API token"
             }
-            Write-StructuredLog -Level 'Debug' -Message 'Ansible API token loaded from config' -CorrelationId $CorrelationId
+            Write-StructuredLog -Level 'Debug' -Message 'Ansible API token loaded' -CorrelationId $CorrelationId
             return $token
         }
 
@@ -260,16 +288,22 @@ function Invoke-ConnectorRequest {
         $requestHeaders['X-Idempotency-Key'] = $idempotencyKey
     }
 
+    # Get timeout and retry configuration
+    $timeoutSeconds = Get-ConfigValue -Key "api.timeout_seconds" -DefaultValue 30
+    $maxRetries = Get-ConfigValue -Key "retry.max_retries" -DefaultValue 3
+    $initialDelayMs = Get-ConfigValue -Key "retry.initial_delay_ms" -DefaultValue 1000
+    $baseDelaySeconds = [math]::Round($initialDelayMs / 1000, 0)
+
     # Execute request with retry logic
     $scriptBlock = {
-        param($uri, $method, $body, $headers)
-        return Invoke-RestMethod -Uri $uri -Method $method -Body $body -Headers $headers -TimeoutSec 60
+        param($uri, $method, $body, $headers, $timeout)
+        return Invoke-RestMethod -Uri $uri -Method $method -Body $body -Headers $headers -TimeoutSec $timeout
     }
 
     try {
         $response = Invoke-RetryWithBackoff -ScriptBlock {
-            & $scriptBlock $Uri $Method $payload $requestHeaders
-        } -CorrelationId $CorrelationId -MaxRetries 3 -BaseDelaySeconds 2
+            & $scriptBlock $Uri $Method $payload $requestHeaders $timeoutSeconds
+        } -CorrelationId $CorrelationId -MaxRetries $maxRetries -BaseDelaySeconds $baseDelaySeconds
 
         Write-StructuredLog -Level 'Debug' -Message 'Connector request succeeded' -CorrelationId $CorrelationId -Metadata @{
             uri = $Uri

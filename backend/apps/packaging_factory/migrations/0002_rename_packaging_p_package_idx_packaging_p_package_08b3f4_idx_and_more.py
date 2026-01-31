@@ -6,28 +6,28 @@ from django.db import migrations
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('packaging_factory', '0001_initial'),
+        ("packaging_factory", "0001_initial"),
     ]
 
     operations = [
         migrations.RenameIndex(
-            model_name='packagingpipeline',
-            new_name='packaging_p_package_08b3f4_idx',
-            old_name='packaging_p_package_idx',
+            model_name="packagingpipeline",
+            new_name="packaging_p_package_08b3f4_idx",
+            old_name="packaging_p_package_idx",
         ),
         migrations.RenameIndex(
-            model_name='packagingpipeline',
-            new_name='packaging_p_status_4a1dc3_idx',
-            old_name='packaging_p_status_idx',
+            model_name="packagingpipeline",
+            new_name="packaging_p_status_4a1dc3_idx",
+            old_name="packaging_p_status_idx",
         ),
         migrations.RenameIndex(
-            model_name='packagingpipeline',
-            new_name='packaging_p_policy__3ea73d_idx',
-            old_name='packaging_p_policy_idx',
+            model_name="packagingpipeline",
+            new_name="packaging_p_policy__3ea73d_idx",
+            old_name="packaging_p_policy_idx",
         ),
         migrations.RenameIndex(
-            model_name='packagingstagelog',
-            new_name='packaging_s_pipelin_3e6428_idx',
-            old_name='packaging_s_pipeline_idx',
+            model_name="packagingstagelog",
+            new_name="packaging_s_pipelin_3e6428_idx",
+            old_name="packaging_s_pipeline_idx",
         ),
     ]

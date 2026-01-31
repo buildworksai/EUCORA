@@ -14,6 +14,7 @@ Related Docs: docs/modules/landscape/connector-spec.md
 Set-StrictMode -Version Latest
 $ErrorActionPreference = 'Stop'
 . "$PSScriptRoot/../common/ConnectorBase.ps1"
+. "$PSScriptRoot/../../utilities/common/Get-EndpointConfig.ps1"
 
 function New-LandscapePackageProfile {
     <#
@@ -43,7 +44,9 @@ function New-LandscapePackageProfile {
     )
 
     $config = Get-ConnectorConfig -Name 'landscape'
-    $profileUri = "$($config.api_url.TrimEnd('/'))/api/v2/package-profiles"
+    $baseUrl = $config.api_url.TrimEnd('/')
+    $profilePath = Get-EndpointConfig -Service "landscape" -Endpoint "package_profiles"
+    $profileUri = "$baseUrl$profilePath"
 
     # Build package profile payload
     $profilePayload = @{
@@ -107,7 +110,9 @@ function New-LandscapeActivity {
     )
 
     $config = Get-ConnectorConfig -Name 'landscape'
-    $activityUri = "$($config.api_url.TrimEnd('/'))/api/v2/activities"
+    $baseUrl = $config.api_url.TrimEnd('/')
+    $activityPath = Get-EndpointConfig -Service "landscape" -Endpoint "activities"
+    $activityUri = "$baseUrl$activityPath"
 
     # Build activity payload
     $activityPayload = @{
@@ -216,7 +221,9 @@ function Remove-LandscapeApplication {
     $config = Get-ConnectorConfig -Name 'landscape'
     $accessToken = $config.api_token
 
-    $deleteUri = "$($config.api_url.TrimEnd('/'))/api/v2/package-profiles/$ApplicationId"
+    $baseUrl = $config.api_url.TrimEnd('/')
+    $deletePath = Get-EndpointConfig -Service "landscape" -Endpoint "package_profile_by_id" -Parameters @{profile_id = $ApplicationId}
+    $deleteUri = "$baseUrl$deletePath"
     $headers = @{
         Authorization = "Bearer $accessToken"
     }
@@ -256,7 +263,10 @@ function Get-LandscapeDeploymentStatus {
     $accessToken = $config.api_token
 
     # Search for package profiles with correlation ID in tags
-    $searchUri = "$($config.api_url.TrimEnd('/'))/api/v2/package-profiles?tags=correlation:$CorrelationId"
+    $baseUrl = $config.api_url.TrimEnd('/')
+    $filter = "correlation:$CorrelationId"
+    $searchPath = Get-EndpointConfig -Service "landscape" -Endpoint "package_profiles_filter" -Parameters @{filter = $filter}
+    $searchUri = "$baseUrl$searchPath"
     $headers = @{
         Authorization = "Bearer $accessToken"
         Accept = 'application/json'
@@ -280,7 +290,9 @@ function Get-LandscapeDeploymentStatus {
     $profileId = $packageProfileResult.id
 
     # Get activities for this profile
-    $activitiesUri = "$($config.api_url.TrimEnd('/'))/api/v2/activities?package_profile_id=$profileId"
+    $baseUrl = $config.api_url.TrimEnd('/')
+    $activitiesPath = Get-EndpointConfig -Service "landscape" -Endpoint "activities_filter" -Parameters @{profile_id = $profileId}
+    $activitiesUri = "$baseUrl$activitiesPath"
     $activitiesResponse = Invoke-ConnectorRequest -Uri $activitiesUri -Method 'GET' -Headers $headers -CorrelationId $CorrelationId
 
     if ($activitiesResponse.Count -eq 0) {
@@ -296,7 +308,9 @@ function Get-LandscapeDeploymentStatus {
     $activity = $activitiesResponse[0]
     $activityId = $activity.id
 
-    $resultsUri = "$($config.api_url.TrimEnd('/'))/api/v2/activities/$activityId/results"
+    $baseUrl = $config.api_url.TrimEnd('/')
+    $resultsPath = Get-EndpointConfig -Service "landscape" -Endpoint "activity_results" -Parameters @{activity_id = $activityId}
+    $resultsUri = "$baseUrl$resultsPath"
     $resultsResponse = Invoke-ConnectorRequest -Uri $resultsUri -Method 'GET' -Headers $headers -CorrelationId $CorrelationId
 
     $results = $resultsResponse
@@ -342,7 +356,9 @@ function Test-LandscapeConnection {
         $accessToken = $config.api_token
 
         # Test API connectivity
-        $testUri = "$($config.api_url.TrimEnd('/'))/api/v2/computers?limit=1"
+        $baseUrl = $config.api_url.TrimEnd('/')
+        $testPath = Get-EndpointConfig -Service "landscape" -Endpoint "computers" -Parameters @{limit = "1"}
+        $testUri = "$baseUrl$testPath"
         $headers = @{
             Authorization = "Bearer $accessToken"
         }
@@ -397,7 +413,9 @@ function Get-LandscapeTargetDevices {
 
         # Query computers with ring tag
         $ringTag = $Ring.ToLower()
-        $computersUri = "$($config.api_url.TrimEnd('/'))/api/v2/computers?tags=$ringTag"
+        $baseUrl = $config.api_url.TrimEnd('/')
+        $computersPath = Get-EndpointConfig -Service "landscape" -Endpoint "computers_filter" -Parameters @{filter = $ringTag}
+        $computersUri = "$baseUrl$computersPath"
         $headers = @{
             Authorization = "Bearer $accessToken"
         }

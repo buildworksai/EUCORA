@@ -47,6 +47,9 @@ app.conf.accept_content = ["json"]
 app.conf.timezone = "UTC"
 app.conf.enable_utc = True
 
+# Broker connection retry (Celery 6.0+ compatibility)
+app.conf.broker_connection_retry_on_startup = True
+
 # Task execution settings
 app.conf.task_acks_late = True
 app.conf.task_reject_on_worker_lost = True

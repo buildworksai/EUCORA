@@ -23,6 +23,11 @@ from apps.core.models import CorrelationIdModel, TimeStampedModel
 User = get_user_model()
 
 
+def generate_vendor_identifier() -> str:
+    """Generate a unique vendor identifier using UUID."""
+    return f"vendor-{uuid.uuid4().hex[:12]}"
+
+
 class LicenseModelType(models.TextChoices):
     """License model type for SKU configuration."""
 
@@ -111,7 +116,11 @@ class Vendor(TimeStampedModel):
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     name = models.CharField(max_length=255, unique=True, db_index=True, help_text="Vendor display name")
     identifier = models.CharField(
-        max_length=100, unique=True, db_index=True, help_text="Unique vendor identifier (slug)"
+        max_length=100,
+        unique=True,
+        default=generate_vendor_identifier,
+        db_index=True,
+        help_text="Unique vendor identifier (slug)",
     )
     website = models.URLField(blank=True, help_text="Vendor website URL")
     support_contact = models.EmailField(blank=True, help_text="Support contact email")
@@ -560,7 +569,7 @@ class ReconciliationRun(TimeStampedModel, CorrelationIdModel):
         default=ReconciliationStatus.RUNNING,
         db_index=True,
     )
-    ruleset_version = models.CharField(max_length=50, help_text="Version of reconciliation rules")
+    ruleset_version = models.CharField(max_length=50, default="v1.0", help_text="Version of reconciliation rules")
 
     # Timing
     started_at = models.DateTimeField(default=timezone.now, help_text="When run started")
@@ -705,13 +714,13 @@ class ImportJob(TimeStampedModel, CorrelationIdModel):
     ]
 
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
-    import_type = models.CharField(max_length=20, choices=IMPORT_TYPE_CHOICES, db_index=True)
+    import_type = models.CharField(max_length=20, choices=IMPORT_TYPE_CHOICES, default="entitlements", db_index=True)
     status = models.CharField(max_length=20, choices=STATUS_CHOICES, default="pending", db_index=True)
 
-    # File info
-    file_name = models.CharField(max_length=255, help_text="Original file name")
-    file_hash = models.CharField(max_length=64, help_text="SHA-256 of uploaded file")
-    file_ref = models.CharField(max_length=500, help_text="MinIO path to uploaded file")
+    # File info - blank=True allows empty values, no unique constraint so empty is safe
+    file_name = models.CharField(max_length=255, blank=True, default="", help_text="Original file name")
+    file_hash = models.CharField(max_length=64, blank=True, default="", help_text="SHA-256 of uploaded file")
+    file_ref = models.CharField(max_length=500, blank=True, default="", help_text="MinIO path to uploaded file")
 
     # Progress
     total_rows = models.IntegerField(default=0)

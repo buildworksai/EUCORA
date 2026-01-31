@@ -6,7 +6,7 @@ Tests for policy_engine app.
 import pytest
 
 from apps.policy_engine.models import RiskAssessment, RiskModel
-from apps.policy_engine.services import _evaluate_factor, calculate_risk_score
+from apps.policy_engine.risk_scoring import _evaluate_factor, calculate_risk_score
 
 
 @pytest.mark.django_db

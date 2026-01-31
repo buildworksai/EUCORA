@@ -21,7 +21,7 @@ All source files MUST include the appropriate SPDX license identifier.
 
 ```powershell
 # SPDX-License-Identifier: Apache-2.0
-# Copyright (c) 2025 BuildWorks.AI
+# Copyright (c) 2026 BuildWorks.AI
 #
 <#
 .SYNOPSIS
@@ -49,7 +49,7 @@ Content...
 
 ```bash
 # SPDX-License-Identifier: Apache-2.0
-# Copyright (c) 2025 BuildWorks.AI
+# Copyright (c) 2026 BuildWorks.AI
 ```
 
 ### JSON Files (.json)
@@ -62,14 +62,14 @@ JSON does not support comments. SPDX compliance is documented in:
 
 ```python
 # SPDX-License-Identifier: Apache-2.0
-# Copyright (c) 2025 BuildWorks.AI
+# Copyright (c) 2026 BuildWorks.AI
 ```
 
 ### TypeScript/JavaScript Files (.ts, .tsx, .js) - If Added
 
 ```typescript
 // SPDX-License-Identifier: Apache-2.0
-// Copyright (c) 2025 BuildWorks.AI
+// Copyright (c) 2026 BuildWorks.AI
 ```
 
 ## Enforcement

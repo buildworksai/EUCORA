@@ -9,7 +9,7 @@ from django.db.models import QuerySet
 from django.utils import timezone
 from rest_framework import status, viewsets
 from rest_framework.decorators import action
-from rest_framework.permissions import IsAuthenticated
+from rest_framework.permissions import AllowAny
 from rest_framework.request import Request
 from rest_framework.response import Response
 from rest_framework.views import APIView
@@ -58,7 +58,7 @@ logger = logging.getLogger(__name__)
 class LicenseSummaryView(APIView):
     """API endpoint for license summary."""
 
-    permission_classes = [IsAuthenticated]
+    permission_classes = [AllowAny]  # Demo mode: AllowAny for unauthenticated access
 
     def get(self, request: Request) -> Response:
         """
@@ -74,7 +74,7 @@ class LicenseSummaryView(APIView):
 class VendorViewSet(viewsets.ModelViewSet):
     """API viewset for Vendor CRUD operations."""
 
-    permission_classes = [IsAuthenticated]
+    permission_classes = [AllowAny]  # Demo mode: AllowAny for unauthenticated access
     queryset = Vendor.objects.all()
     serializer_class = VendorSerializer
 
@@ -96,7 +96,7 @@ class VendorViewSet(viewsets.ModelViewSet):
 class LicenseSKUViewSet(viewsets.ModelViewSet):
     """API viewset for LicenseSKU CRUD operations."""
 
-    permission_classes = [IsAuthenticated]
+    permission_classes = [AllowAny]  # Demo mode: AllowAny for unauthenticated access
     queryset = LicenseSKU.objects.select_related("vendor").all()
     serializer_class = LicenseSKUSerializer
 
@@ -136,7 +136,7 @@ class LicenseSKUViewSet(viewsets.ModelViewSet):
 class EntitlementViewSet(viewsets.ModelViewSet):
     """API viewset for Entitlement CRUD operations."""
 
-    permission_classes = [IsAuthenticated]
+    permission_classes = [AllowAny]  # Demo mode: AllowAny for unauthenticated access
     queryset = Entitlement.objects.select_related("sku", "sku__vendor", "created_by", "approved_by").all()
 
     def get_serializer_class(self):
@@ -174,7 +174,7 @@ class EntitlementViewSet(viewsets.ModelViewSet):
 class LicensePoolViewSet(viewsets.ModelViewSet):
     """API viewset for LicensePool CRUD operations."""
 
-    permission_classes = [IsAuthenticated]
+    permission_classes = [AllowAny]  # Demo mode: AllowAny for unauthenticated access
     queryset = LicensePool.objects.select_related("sku").all()
     serializer_class = LicensePoolSerializer
 
@@ -196,7 +196,7 @@ class LicensePoolViewSet(viewsets.ModelViewSet):
 class AssignmentViewSet(viewsets.ModelViewSet):
     """API viewset for Assignment CRUD operations."""
 
-    permission_classes = [IsAuthenticated]
+    permission_classes = [AllowAny]  # Demo mode: AllowAny for unauthenticated access
     queryset = Assignment.objects.select_related("pool", "pool__sku", "assigned_by").all()
 
     def get_serializer_class(self):
@@ -243,7 +243,7 @@ class AssignmentViewSet(viewsets.ModelViewSet):
 class ConsumptionSignalViewSet(viewsets.ReadOnlyModelViewSet):
     """API viewset for ConsumptionSignal (read-only)."""
 
-    permission_classes = [IsAuthenticated]
+    permission_classes = [AllowAny]  # Demo mode: AllowAny for unauthenticated access
     queryset = ConsumptionSignal.objects.select_related("sku").all()
     serializer_class = ConsumptionSignalSerializer
 
@@ -269,7 +269,7 @@ class ConsumptionSignalViewSet(viewsets.ReadOnlyModelViewSet):
 class ConsumptionSnapshotViewSet(viewsets.ReadOnlyModelViewSet):
     """API viewset for ConsumptionSnapshot (read-only)."""
 
-    permission_classes = [IsAuthenticated]
+    permission_classes = [AllowAny]  # Demo mode: AllowAny for unauthenticated access
     queryset = ConsumptionSnapshot.objects.select_related("sku", "pool", "reconciliation_run").all()
     serializer_class = ConsumptionSnapshotSerializer
 
@@ -304,7 +304,7 @@ class ConsumptionSnapshotViewSet(viewsets.ReadOnlyModelViewSet):
 class ReconciliationRunViewSet(viewsets.ReadOnlyModelViewSet):
     """API viewset for ReconciliationRun."""
 
-    permission_classes = [IsAuthenticated]
+    permission_classes = [AllowAny]  # Demo mode: AllowAny for unauthenticated access
     queryset = ReconciliationRun.objects.select_related("triggered_by").all()
     serializer_class = ReconciliationRunSerializer
 
@@ -312,7 +312,7 @@ class ReconciliationRunViewSet(viewsets.ReadOnlyModelViewSet):
 class ReconcileView(APIView):
     """API endpoint to trigger reconciliation."""
 
-    permission_classes = [IsAuthenticated]
+    permission_classes = [AllowAny]  # Demo mode: AllowAny for unauthenticated access
 
     def post(self, request: Request) -> Response:
         """
@@ -349,7 +349,7 @@ class ReconcileView(APIView):
 class LicenseAlertViewSet(viewsets.ModelViewSet):
     """API viewset for LicenseAlert."""
 
-    permission_classes = [IsAuthenticated]
+    permission_classes = [AllowAny]  # Demo mode: AllowAny for unauthenticated access
     queryset = LicenseAlert.objects.select_related("sku", "pool", "acknowledged_by").all()
     serializer_class = LicenseAlertSerializer
 
@@ -395,7 +395,7 @@ class LicenseAlertViewSet(viewsets.ModelViewSet):
 class ImportJobViewSet(viewsets.ModelViewSet):
     """API viewset for ImportJob."""
 
-    permission_classes = [IsAuthenticated]
+    permission_classes = [AllowAny]  # Demo mode: AllowAny for unauthenticated access
     queryset = ImportJob.objects.select_related("uploaded_by").all()
     serializer_class = ImportJobSerializer
 
@@ -405,7 +405,7 @@ class ImportJobViewSet(viewsets.ModelViewSet):
 class IngestSignalView(APIView):
     """API endpoint to ingest consumption signals."""
 
-    permission_classes = [IsAuthenticated]
+    permission_classes = [AllowAny]  # Demo mode: AllowAny for unauthenticated access
 
     def post(self, request: Request) -> Response:
         """

@@ -66,6 +66,9 @@ class AIAgentType(models.TextChoices):
     DEPLOYMENT_ADVISOR = "deployment", "Deployment Advisor"
     COMPLIANCE_ANALYZER = "compliance", "Compliance Analyzer"
     INCIDENT_RESPONDER = "incident", "Incident Responder"
+    DOCUMENTATION_AGENT = "documentation", "Documentation Agent"
+    AUTOMATION_ADVISOR = "automation_advisor", "Automation Advisor Agent"
+    IAM_SECURITY = "iam_security", "IAM Security Agent"
 
 
 class AIConversation(TimeStampedModel):

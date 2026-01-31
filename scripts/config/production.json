@@ -1,0 +1,67 @@
+{
+  "SPDX-License-Identifier": "Apache-2.0",
+  "Copyright": "(c) 2026 BuildWorks.AI",
+  "description": "Production configuration for EUCORA PowerShell scripts",
+  "version": "1.0.0",
+  "api": {
+    "endpoint": "${EUCORA_API_ENDPOINT}",
+    "version": "v1",
+    "timeout_seconds": 30,
+    "max_retries": 3
+  },
+  "connectors": {
+    "intune": {
+      "graph_endpoint": "https://graph.microsoft.com/v1.0",
+      "requests_per_second": 10,
+      "throttle_retry_after_ms": 60000
+    },
+    "jamf": {
+      "api_version": "v1",
+      "page_size": 100
+    },
+    "sccm": {
+      "use_constrained_delegation": true,
+      "timeout_seconds": 120
+    },
+    "landscape": {
+      "api_version": "v2",
+      "page_size": 100
+    },
+    "ansible": {
+      "api_version": "v2",
+      "timeout_seconds": 60
+    }
+  },
+  "logging": {
+    "level": "Info",
+    "format": "json",
+    "include_correlation_id": true
+  },
+  "retry": {
+    "max_retries": 3,
+    "initial_delay_ms": 1000,
+    "max_delay_ms": 30000,
+    "backoff_multiplier": 2.0,
+    "add_jitter": true
+  },
+  "risk_model": {
+    "version": "v1.0",
+    "cab_threshold": 50
+  },
+  "promotion_gates": {
+    "ring_1_success_rate": 0.98,
+    "ring_2_success_rate": 0.97,
+    "ring_3_success_rate": 0.99,
+    "ring_4_success_rate": 0.99
+  },
+  "circuit_breaker": {
+    "failure_threshold": 5,
+    "reset_timeout_seconds": 60,
+    "half_open_max_calls": 3
+  },
+  "vault": {
+    "provider": "azure_key_vault",
+    "vault_url": "${AZURE_KEY_VAULT_URL}",
+    "use_managed_identity": true
+  }
+}

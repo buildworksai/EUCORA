@@ -31,16 +31,27 @@ urlpatterns = [
     path("api/v1/events/", include("apps.event_store.urls")),
     # Connectors endpoints - assets at /api/v1/assets/, connector ops at /api/v1/connectors/
     path("api/v1/", include("apps.connectors.urls")),  # Assets endpoints at /api/v1/assets/
-    path("api/v1/health/", include("apps.telemetry.urls")),
-    path("api/v1/telemetry/", include("apps.telemetry.urls")),  # Add telemetry namespace
+    path("api/v1/telemetry/", include("apps.telemetry.urls")),  # Telemetry endpoints
     path("api/v1/ai/", include("apps.ai_agents.urls")),
     path("api/v1/", include("apps.integrations.urls")),
+    path("api/v1/dex/", include("apps.integrations.dex.urls")),
     path("api/v1/admin/", include("apps.core.urls")),  # Admin demo data endpoints
     path("api/v1/core/", include("apps.core.urls")),  # Core wrapper endpoints for API coverage
     path("api/v1/agent-management/", include("apps.agent_management.urls")),
     path("api/v1/packaging/", include("apps.packaging_factory.urls")),
     path("api/v1/licenses/", include("apps.license_management.urls")),
     path("api/v1/portfolio/", include("apps.application_portfolio.urls")),
+    path("api/v1/portfolio-management/", include("apps.portfolio_management.urls")),
+    path("api/v1/rbac/", include("apps.rbac.urls")),
+    path("api/v1/storage/", include("apps.storage.urls")),
+    path("api/v1/knowledge/", include("apps.knowledge.urls")),
+    path("api/v1/policy-documents/", include("apps.policy_documents.urls")),
+    path("api/cmdb/", include("apps.cmdb_integration.urls")),
+    path("api/change-communications/", include("apps.change_communications.urls")),
+    path("api/discovery/", include("apps.discovery_agent.urls")),
+    path("api/documentation/", include("apps.documentation_agent.urls")),
+    path("api/automation-advisor/", include("apps.automation_advisor.urls")),
+    path("api/iam-security/", include("apps.iam_security.urls")),
     # OpenAPI / Swagger
     path("api/schema/", SpectacularAPIView.as_view(), name="schema"),
     path("api/docs/", SpectacularSwaggerView.as_view(url_name="schema"), name="swagger-ui"),

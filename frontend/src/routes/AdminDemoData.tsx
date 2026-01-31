@@ -40,12 +40,12 @@ export default function AdminDemoData() {
   const setDemoModeMutation = useSetDemoMode();
 
   const [formState, setFormState] = useState({
-    assets: 50000,
-    applications: 5000,
-    deployments: 10000,
-    users: 1000,
-    events: 100000,
-    batch_size: 1000,
+    assets: 20000,
+    applications: 500,
+    deployments: 2000,
+    users: 100,
+    events: 10000,
+    batch_size: 500,
     clear_existing: true,
   });
 

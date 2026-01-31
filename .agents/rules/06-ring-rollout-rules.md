@@ -18,7 +18,7 @@ Enforce ring progression order, promotion gate thresholds, rollback validation, 
 5. Rollout metadata must include correlation ids for each promotion event.
 
 ## Enforcement Examples
-- ✅ Promotion command: `POST /rollout/promote` with body `{"ring":1,"success_rate":0.985,"time_to_compliance":22}` (CAUTION: success_rate must be ≥98% to promote Ring 1 to Ring 2).
+- ✅ Promotion command: `POST /rollout/promote` with body `{"ring":1,"success_rate":0.985,"time_to_compliance":22}` (CAUTION: Ring 1 (Canary) requires ≥98%; Ring 2 (Pilot) requires ≥97%; Rings 3-4 require ≥99%).
 - ✅ Ring 0 rollback validation crates autop-runbook referencing `rollback_job_id` before enabling Ring 1.
 - ❌ Scheduling Ring 2 start during air-gapped transfer window without documented maintenance approval.
 

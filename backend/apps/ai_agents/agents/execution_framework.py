@@ -1,5 +1,7 @@
 # SPDX-License-Identifier: Apache-2.0
 # Copyright (c) 2026 BuildWorks.AI
+from __future__ import annotations
+
 """
 Agent Execution Framework for EUCORA Control Plane.
 
@@ -12,6 +14,7 @@ Implements D7.1 from MASTER-IMPLEMENTATION-PLAN-2026.md:
 
 All agent executions MUST go through this framework.
 """
+
 import asyncio
 import hashlib
 import json
@@ -25,7 +28,7 @@ from typing import Any, Callable, Optional, TypeVar
 from django.contrib.auth import get_user_model
 
 from ..guardrails import AGENT_GUARDRAILS, AgentGuardrail, RiskLevel
-from ..models import AgentExecution, AIModel, ApprovalStatus
+from ..models import AgentExecution, AIModel
 
 logger = logging.getLogger(__name__)
 User = get_user_model()
@@ -70,7 +73,7 @@ class ExecutionResult:
     confidence: Optional[float] = None
     risk_level: RiskLevel = RiskLevel.R1_LOW
     requires_approval: bool = False
-    approval_status: Optional[ApprovalStatus] = None
+    approval_status: Optional[AgentExecution.ApprovalStatus] = None
     evidence_pack_ref: Optional[str] = None
     errors: list[dict[str, Any]] = field(default_factory=list)
     started_at: Optional[datetime] = None
@@ -281,7 +284,11 @@ class AgentExecutionFramework:
         audit_record: Optional[AgentExecution] = None
         if self._enable_audit:
             input_hash = self._compute_input_hash(execution_input.input_data)
-            approval_status = ApprovalStatus.PENDING if requires_approval else ApprovalStatus.NOT_REQUIRED
+            approval_status = (
+                AgentExecution.ApprovalStatus.PENDING
+                if requires_approval
+                else AgentExecution.ApprovalStatus.NOT_REQUIRED
+            )
 
             # Get model if specified
             model = None
@@ -313,7 +320,7 @@ class AgentExecutionFramework:
                 status=ExecutionStatus.AWAITING_APPROVAL,
                 risk_level=guardrail.risk_level,
                 requires_approval=True,
-                approval_status=ApprovalStatus.PENDING,
+                approval_status=AgentExecution.ApprovalStatus.PENDING,
                 started_at=started_at,
             )
             self._pending_approvals[execution_id] = result
@@ -356,7 +363,11 @@ class AgentExecutionFramework:
                     output=output,
                     confidence=confidence,
                     executed=True,
-                    approval_status=ApprovalStatus.NOT_REQUIRED if not requires_approval else ApprovalStatus.APPROVED,
+                    approval_status=(
+                        AgentExecution.ApprovalStatus.NOT_REQUIRED
+                        if not requires_approval
+                        else AgentExecution.ApprovalStatus.APPROVED
+                    ),
                 )
 
             result = ExecutionResult(
@@ -366,7 +377,11 @@ class AgentExecutionFramework:
                 confidence=confidence,
                 risk_level=guardrail.risk_level,
                 requires_approval=requires_approval,
-                approval_status=ApprovalStatus.NOT_REQUIRED if not requires_approval else ApprovalStatus.APPROVED,
+                approval_status=(
+                    AgentExecution.ApprovalStatus.NOT_REQUIRED
+                    if not requires_approval
+                    else AgentExecution.ApprovalStatus.APPROVED
+                ),
                 evidence_pack_ref=evidence_ref,
                 started_at=started_at,
                 completed_at=completed_at,
@@ -408,7 +423,7 @@ class AgentExecutionFramework:
         output: Optional[dict[str, Any]] = None,
         confidence: Optional[float] = None,
         executed: bool = False,
-        approval_status: Optional[ApprovalStatus] = None,
+        approval_status: Optional[AgentExecution.ApprovalStatus] = None,
     ) -> None:
         """Update audit record with execution results."""
         if output:
@@ -446,7 +461,7 @@ class AgentExecutionFramework:
 
         result = self._pending_approvals.pop(execution_id)
         result.status = ExecutionStatus.APPROVED
-        result.approval_status = ApprovalStatus.APPROVED
+        result.approval_status = AgentExecution.ApprovalStatus.APPROVED
 
         # Update audit record
         if self._enable_audit:
@@ -456,7 +471,7 @@ class AgentExecutionFramework:
                     correlation_id=result.execution_id,
                 )
                 approver = await asyncio.to_thread(User.objects.get, pk=approver_id)
-                record.approval_status = ApprovalStatus.APPROVED
+                record.approval_status = AgentExecution.ApprovalStatus.APPROVED
                 record.approved_by = approver
                 from django.utils import timezone as dj_timezone
 
@@ -490,7 +505,7 @@ class AgentExecutionFramework:
 
         result = self._pending_approvals.pop(execution_id)
         result.status = ExecutionStatus.REJECTED
-        result.approval_status = ApprovalStatus.REJECTED
+        result.approval_status = AgentExecution.ApprovalStatus.REJECTED
         result.errors.append({"message": reason, "type": "rejected"})
         result.completed_at = datetime.now(timezone.utc)
 
@@ -501,7 +516,7 @@ class AgentExecutionFramework:
                     AgentExecution.objects.get,
                     correlation_id=result.execution_id,
                 )
-                record.approval_status = ApprovalStatus.REJECTED
+                record.approval_status = AgentExecution.ApprovalStatus.REJECTED
                 record.execution_result = {"rejected_reason": reason}
                 await asyncio.to_thread(record.save)
             except AgentExecution.DoesNotExist:

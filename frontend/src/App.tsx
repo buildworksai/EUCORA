@@ -19,10 +19,24 @@ import AuditTrail from './routes/AuditTrail';
 import EvidenceViewer from './routes/EvidenceViewer';
 import Settings from './routes/settings';
 import AIAgentHub from './routes/AIAgentHub';
+import WorkflowPage from './routes/ai/WorkflowPage';
 import AdminDemoData from './routes/AdminDemoData';
+import PolicyDocuments from './routes/admin/PolicyDocuments';
 import Notifications from './routes/Notifications';
 import Login from './routes/Login';
 import { LicenseDashboard } from './routes/licenses';
+import {
+  PortfolioManagerDashboard,
+  ApplicationManagerPerformance,
+  TrueUpForecasts,
+  PackagingRequests,
+} from './routes/portfolio';
+import CMDBDashboard from './routes/cmdb/CMDBDashboard';
+import CommunicationsDashboard from './routes/communications/CommunicationsDashboard';
+import DiscoveryDashboard from './routes/discovery/DiscoveryDashboard';
+import DocumentationDashboard from './routes/documentation/DocumentationDashboard';
+import AdvisorDashboard from './routes/automation-advisor/AdvisorDashboard';
+import IAMSecurityDashboard from './routes/iam-security/IAMSecurityDashboard';
 
 function App() {
   const isAuthenticated = useAuthStore((state) => state.isAuthenticated);
@@ -77,10 +91,23 @@ function App() {
             <Route path="/audit" element={<AuditTrail />} />
             <Route path="/evidence/:id" element={<EvidenceViewer />} />
             <Route path="/ai-agents" element={<AIAgentHub />} />
+            <Route path="/ai/workflows/:executionId" element={<WorkflowPage />} />
             <Route path="/licenses" element={<LicenseDashboard />} />
+            <Route path="/portfolios" element={<PortfolioManagerDashboard />} />
+            <Route path="/performance" element={<ApplicationManagerPerformance />} />
+            <Route path="/forecasts" element={<TrueUpForecasts />} />
+            <Route path="/packaging-requests" element={<PackagingRequests />} />
             <Route path="/notifications" element={<Notifications />} />
             <Route path="/settings" element={<Settings />} />
             <Route path="/admin/demo-data" element={<AdminDemoData />} />
+            <Route path="/admin/policy-documents" element={<PolicyDocuments />} />
+            {/* ALM Agent Dashboards */}
+            <Route path="/cmdb" element={<CMDBDashboard />} />
+            <Route path="/communications" element={<CommunicationsDashboard />} />
+            <Route path="/discovery" element={<DiscoveryDashboard />} />
+            <Route path="/documentation" element={<DocumentationDashboard />} />
+            <Route path="/automation-advisor" element={<AdvisorDashboard />} />
+            <Route path="/iam-security" element={<IAMSecurityDashboard />} />
           </Route>
         </Routes>
       </QueryClientProvider>

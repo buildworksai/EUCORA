@@ -11,9 +11,12 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import {
     Package, FileCheck, AlertTriangle, Rocket, Shield,
     Activity, Clock, CheckCircle, XCircle, Play,
-    Sparkles, Brain, Loader2
+    Sparkles, Brain, Loader2, Siren
 } from 'lucide-react';
 import { useAIAgentTasks, useAIAgentStats } from '@/lib/api/hooks/useAI';
+import { useWorkflowDefinitions, useWorkflowExecutions, useStartWorkflow } from '@/lib/api/hooks/useWorkflow';
+import { useNavigate } from 'react-router-dom';
+import { toast } from 'sonner';
 
 const AGENT_TYPES = [
     {
@@ -80,15 +83,45 @@ const AGENT_TYPES = [
             'Track policy violations',
             'Forecast compliance trends'
         ]
+    },
+    {
+        id: 'incident',
+        name: 'Incident Responder',
+        description: 'Assists with incident response and root cause analysis',
+        icon: Siren,
+        color: 'text-red-500',
+        capabilities: [
+            'Analyze deployment failures',
+            'Identify root causes',
+            'Generate incident reports',
+            'Recommend preventive measures'
+        ]
     }
 ];
 
 export default function AIAgentHub() {
     const { data: stats, isLoading: statsLoading } = useAIAgentStats();
     const { data: tasksData, isLoading: tasksLoading } = useAIAgentTasks();
+    const { data: workflows, isLoading: workflowsLoading } = useWorkflowDefinitions();
+    const { data: executions, isLoading: executionsLoading } = useWorkflowExecutions();
+    const startWorkflow = useStartWorkflow();
+    const navigate = useNavigate();
     const [, setSelectedAgent] = useState<string | null>(null); // Reserved for future use
 
     const tasks = tasksData?.tasks || [];
+
+    const handleStartWorkflow = async (workflowId: string, agentType: string) => {
+        try {
+            const execution = await startWorkflow.mutateAsync({
+                workflowId,
+                inputData: { agent_type: agentType },
+            });
+            toast.success('Workflow started');
+            navigate(`/ai/workflows/${execution.id}`);
+        } catch {
+            toast.error('Failed to start workflow');
+        }
+    };
 
     return (
         <div className="space-y-8">
@@ -177,7 +210,9 @@ export default function AIAgentHub() {
             <Tabs defaultValue="agents" className="space-y-6">
                 <TabsList className="glass">
                     <TabsTrigger value="agents">Available Agents</TabsTrigger>
+                    <TabsTrigger value="workflows">Workflows</TabsTrigger>
                     <TabsTrigger value="tasks">Recent Tasks</TabsTrigger>
+                    <TabsTrigger value="executions">Active Executions</TabsTrigger>
                 </TabsList>
 
                 <TabsContent value="agents">
@@ -219,6 +254,62 @@ export default function AIAgentHub() {
                                 </Card>
                             ))}
                         </div>
+                    </div>
+                </TabsContent>
+
+                <TabsContent value="workflows">
+                    {/* Available Workflows */}
+                    <div>
+                        <h3 className="text-xl font-semibold mb-4">Available Workflows</h3>
+                        {workflowsLoading ? (
+                            <div className="text-center py-8">
+                                <Loader2 className="h-8 w-8 animate-spin mx-auto text-eucora-teal" />
+                            </div>
+                        ) : workflows && workflows.length > 0 ? (
+                            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+                                {workflows.map((workflow) => {
+                                    const agentInfo = AGENT_TYPES.find((a) => a.id === workflow.agent_type);
+                                    return (
+                                        <Card key={workflow.id} className="glass hover:border-eucora-teal/50 transition-all">
+                                            <CardHeader>
+                                                <div className="flex items-center gap-3">
+                                                    {agentInfo && (
+                                                        <div className={`p-2 rounded-lg bg-white/5 ${agentInfo.color}`}>
+                                                            <agentInfo.icon className="h-5 w-5" />
+                                                        </div>
+                                                    )}
+                                                    <div>
+                                                        <CardTitle className="text-base">{workflow.name}</CardTitle>
+                                                        <Badge variant="outline" className="mt-1">
+                                                            {workflow.risk_level}
+                                                        </Badge>
+                                                    </div>
+                                                </div>
+                                                <CardDescription>{workflow.description}</CardDescription>
+                                            </CardHeader>
+                                            <CardContent>
+                                                <p className="text-sm text-muted-foreground mb-2">
+                                                    {workflow.steps.length} steps
+                                                </p>
+                                                <Button
+                                                    className="w-full"
+                                                    variant="outline"
+                                                    onClick={() => handleStartWorkflow(workflow.id, workflow.agent_type)}
+                                                    disabled={startWorkflow.isPending}
+                                                >
+                                                    <Play className="mr-2 h-4 w-4" />
+                                                    Start Workflow
+                                                </Button>
+                                            </CardContent>
+                                        </Card>
+                                    );
+                                })}
+                            </div>
+                        ) : (
+                            <div className="text-center py-8 text-muted-foreground">
+                                No workflows available. Run seed_workflows management command.
+                            </div>
+                        )}
                     </div>
                 </TabsContent>
 
@@ -271,6 +362,63 @@ export default function AIAgentHub() {
                                                 </div>
                                             </div>
                                         ))}
+                                    </div>
+                                )}
+                            </CardContent>
+                        </Card>
+                    </div>
+                </TabsContent>
+
+                <TabsContent value="executions">
+                    {/* Active Workflow Executions */}
+                    <div>
+                        <h3 className="text-xl font-semibold mb-4">Active Workflow Executions</h3>
+                        <Card className="glass">
+                            <CardContent className="pt-6">
+                                {executionsLoading ? (
+                                    <div className="text-center py-8">
+                                        <Loader2 className="h-8 w-8 animate-spin mx-auto text-eucora-teal" />
+                                    </div>
+                                ) : executions && executions.length > 0 ? (
+                                    <div className="space-y-4">
+                                        {executions
+                                            .filter((e) => e.status === 'running' || e.status === 'awaiting_approval')
+                                            .map((execution) => (
+                                                <div
+                                                    key={execution.id}
+                                                    className="flex items-center justify-between p-4 rounded-lg bg-white/5 hover:bg-white/10 transition-colors cursor-pointer"
+                                                    onClick={() => navigate(`/ai/workflows/${execution.id}`)}
+                                                >
+                                                    <div className="flex items-center gap-3">
+                                                        <Badge
+                                                            variant={
+                                                                execution.status === 'awaiting_approval'
+                                                                    ? 'secondary'
+                                                                    : 'outline'
+                                                            }
+                                                        >
+                                                            {execution.status}
+                                                        </Badge>
+                                                        <div>
+                                                            <p className="font-medium">{execution.workflow.name}</p>
+                                                            <p className="text-sm text-muted-foreground">
+                                                                Step {execution.current_step_index + 1} of{' '}
+                                                                {execution.steps.length}
+                                                            </p>
+                                                            <p className="text-xs text-muted-foreground mt-1">
+                                                                Started: {new Date(execution.created_at).toLocaleString()}
+                                                            </p>
+                                                        </div>
+                                                    </div>
+                                                    <Button size="sm" variant="outline">
+                                                        View Details
+                                                    </Button>
+                                                </div>
+                                            ))}
+                                    </div>
+                                ) : (
+                                    <div className="text-center py-8 text-muted-foreground">
+                                        No active workflow executions.
                                     </div>
                                 )}
                             </CardContent>

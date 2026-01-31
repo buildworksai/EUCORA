@@ -38,7 +38,7 @@ export function usePendingApprovals() {
     queryKey: ['cab-approvals', 'pending'],
     queryFn: async () => {
       const response = await api.get<CABApprovalListResponse>('/cab/pending/');
-      return response.approvals;
+      return response?.approvals || [];
     },
     staleTime: 120000, // 2 minutes
     refetchInterval: 180000, // Poll every 3 minutes for new approvals
@@ -60,7 +60,7 @@ export function useCABApprovals(filters?: { decision?: string }) {
       const response = await api.get<CABApprovalListResponse>(
         `/cab/approvals${queryString ? `?${queryString}` : ''}`
       );
-      return response.approvals;
+      return response?.approvals || [];
     },
     staleTime: 60000, // 1 minute
   });

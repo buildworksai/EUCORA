@@ -30,13 +30,39 @@ function Send-SIEMEvent {
         [string]$WorkspaceId,
         [string]$SharedKey,
         [string]$LogType = 'ControlPlaneEvents',
-        [int]$RetryMaxAttempts = 5,
-        [int]$RetryBaseSeconds = 4,
-        [int]$RetryMaxBackoffSeconds = 60,
+        [int]$RetryMaxAttempts,
+        [int]$RetryBaseSeconds,
+        [int]$RetryMaxBackoffSeconds,
         [string[]]$RetryTransientErrorCodes
     )
+    # Get retry configuration from config file if not provided
+    if (-not $PSBoundParameters.ContainsKey('RetryMaxAttempts')) {
+        $RetryMaxAttempts = Get-ConfigValue -Key 'retry.max_retries' -DefaultValue 3
+    }
+    if (-not $PSBoundParameters.ContainsKey('RetryBaseSeconds')) {
+        $initialDelayMs = Get-ConfigValue -Key 'retry.initial_delay_ms' -DefaultValue 1000
+        $RetryBaseSeconds = [math]::Round($initialDelayMs / 1000, 0)
+    }
+    if (-not $PSBoundParameters.ContainsKey('RetryMaxBackoffSeconds')) {
+        $maxDelayMs = Get-ConfigValue -Key 'retry.max_delay_ms' -DefaultValue 30000
+        $RetryMaxBackoffSeconds = [math]::Round($maxDelayMs / 1000, 0)
+    }
+
     $workspace = if ($WorkspaceId) { $WorkspaceId } else { Get-ConfigValue -Key 'azure.log_analytics_workspace_id' -Required }
-    $shared = if ($SharedKey) { $SharedKey } else { Get-ConfigValue -Key 'azure.log_analytics_shared_key' }
+
+    # Try vault first, then config fallback
+    if ($SharedKey) {
+        $shared = $SharedKey
+    } else {
+        try {
+            . "$PSScriptRoot/../Get-VaultSecret.ps1"
+            $shared = Get-VaultSecret -SecretName 'AZURE_LOG_ANALYTICS_SHARED_KEY' -ErrorAction SilentlyContinue
+        } catch {
+            # Fall back to config if vault not available
+            $shared = Get-ConfigValue -Key 'azure.log_analytics_shared_key' -ErrorAction SilentlyContinue
+        }
+    }
+
     if (-not $shared) { throw 'Missing SIEM shared key in config/vault.' }
     $body = $Event | ConvertTo-Json -Depth 5
     $date = (Get-Date).ToUniversalTime().ToString('r')
@@ -52,7 +78,9 @@ function Send-SIEMEvent {
     }
     $auth = "SharedKey ${workspace}:" + [Convert]::ToBase64String($hash)
     $headers = @{ Authorization = $auth; 'x-ms-date' = $date; 'Log-Type' = $LogType; 'time-generated-field' = $Event.timestamp }
-    $uri = "https://$workspace.ods.opinsights.azure.com/api/logs?api-version=2016-04-01"
+    # Use centralized endpoint configuration
+    . "$PSScriptRoot/../common/Get-EndpointConfig.ps1"
+    $uri = Get-EndpointConfig -Service "siem" -Endpoint "azure_log_analytics" -Parameters @{workspace = $workspace}
     $retryArgs = @{
         ScriptBlock = {
             Invoke-RestMethod -Method Post -Uri $uri -Headers $headers -Body $body -ContentType 'application/json'

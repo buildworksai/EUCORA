@@ -256,7 +256,10 @@ function SKUTable({ skus, isLoading }: SKUTableProps) {
     );
   }
 
-  if (skus.length === 0) {
+  // Ensure skus is always an array
+  const skuList = Array.isArray(skus) ? skus : [];
+
+  if (skuList.length === 0) {
     return (
       <div className="flex items-center justify-center h-48 text-muted-foreground">
         No SKUs found
@@ -278,7 +281,7 @@ function SKUTable({ skus, isLoading }: SKUTableProps) {
         </TableRow>
       </TableHeader>
       <TableBody>
-        {skus.map((sku) => {
+        {skuList.map((sku) => {
           const utilization = calculateUtilization(sku.consumed, sku.entitled);
           return (
             <TableRow key={sku.id}>

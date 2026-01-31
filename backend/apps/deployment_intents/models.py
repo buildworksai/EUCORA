@@ -25,8 +25,10 @@ class DeploymentIntent(TimeStampedModel, CorrelationIdModel):
         APPROVED = "APPROVED", "Approved"
         REJECTED = "REJECTED", "Rejected"
         DEPLOYING = "DEPLOYING", "Deploying"
+        PAUSED = "PAUSED", "Paused"
         COMPLETED = "COMPLETED", "Completed"
         FAILED = "FAILED", "Failed"
+        CANCELLED = "CANCELLED", "Cancelled"
         ROLLED_BACK = "ROLLED_BACK", "Rolled Back"
 
     class Ring(models.TextChoices):

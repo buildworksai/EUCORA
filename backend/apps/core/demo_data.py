@@ -31,7 +31,7 @@ logger = logging.getLogger(__name__)
 DEMO_USER_PASSWORD = config("DEMO_USER_PASSWORD", default="change-me-in-production")
 
 
-def seed_demo_data(
+def seed_demo_data(  # noqa: C901
     assets: int = 50000,
     applications: int = 5000,
     deployments: int = 10000,
@@ -105,18 +105,18 @@ def seed_demo_data(
         applications_count = updated_stats["applications"]
         if updated_stats["deployments"] < deployments and applications_count > 0:
             logger.info(
-                f"Seeding deployments: target={deployments}, current={updated_stats['deployments']}, applications available={applications_count}"
+                f"Seeding deployments: target={deployments}, current={updated_stats['deployments']}, applications available={applications_count}"  # noqa: E501
             )
             try:
                 deployment_results = _seed_deployments(deployments, demo_user, batch_size)
                 logger.info(
-                    f"Deployment seeding results: deployments={deployment_results.get('deployments', 0)}, cab_approvals={deployment_results.get('cab_approvals', 0)}, events={deployment_results.get('events', 0)}"
+                    f"Deployment seeding results: deployments={deployment_results.get('deployments', 0)}, cab_approvals={deployment_results.get('cab_approvals', 0)}, events={deployment_results.get('events', 0)}"  # noqa: E501
                 )
                 # Re-check events count after deployment seeding
                 final_events_count = DeploymentEvent.objects.filter(is_demo=True).count()
                 if final_events_count < events and deployment_results.get("correlation_ids"):
                     logger.info(
-                        f"Seeding additional events: target={events}, current={final_events_count}, correlation_ids={len(deployment_results.get('correlation_ids', []))}"
+                        f"Seeding additional events: target={events}, current={final_events_count}, correlation_ids={len(deployment_results.get('correlation_ids', []))}"  # noqa: E501
                     )
                     try:
                         _seed_additional_events(events, deployment_results["correlation_ids"], batch_size)
@@ -126,7 +126,7 @@ def seed_demo_data(
                 logger.error(f"Error seeding deployments: {e}", exc_info=True)
         elif applications_count == 0:
             logger.warning(
-                f"Cannot seed deployments: no applications available (target={deployments}, current={updated_stats['deployments']})"
+                f"Cannot seed deployments: no applications available (target={deployments}, current={updated_stats['deployments']})"  # noqa: E501
             )
 
         final_stats = demo_data_stats()
@@ -198,7 +198,7 @@ def demo_data_stats() -> dict:
     }
 
 
-def _get_or_create_demo_admin() -> User:
+def _get_or_create_demo_admin() -> User:  # noqa: C901
     """
     Get or create demo admin user (resilient - handles race conditions).
     """
@@ -262,15 +262,128 @@ def _seed_demo_users(count: int) -> None:
         user.save(update_fields=["first_name", "last_name"])
 
 
-def _delete_demo_users() -> int:
-    demo_users = User.objects.filter(username__startswith="demo_")
-    deleted = demo_users.delete()[0]
-    demo_user = User.objects.filter(username="demo")
-    deleted += demo_user.delete()[0]
-    return deleted
+def _delete_demo_users() -> int:  # noqa: C901
+    """
+    Delete demo users by first deleting all their related records.
+
+    Uses Django ORM patterns where possible, and parameterized queries
+    for raw SQL to prevent SQL injection vulnerabilities.
+    """
+    from django.db import connection, transaction
+
+    # SECURITY: Whitelist of allowed table/column pairs for deletion
+    # These are hardcoded and validated - never accept user input for table names
+    ALLOWED_DELETION_TABLES = frozenset(
+        [
+            ("ai_agents_aiconversation", "user_id"),
+            ("ai_agents_aiagenttask", "initiated_by_id"),
+            ("ai_agents_aiagenttask", "approved_by_id"),
+            ("agent_tasks", "created_by_id"),
+        ]
+    )
+
+    ALLOWED_NULLABLE_TABLES = frozenset(
+        [
+            ("connector_instance", "created_by_id"),
+            ("connector_drift_event", "resolved_by_id"),
+            ("connector_sync_job", "triggered_by_id"),
+            ("app_portfolio_deployment_intent", "created_by_id"),
+            ("packaging_pipeline", "created_by_id"),
+            ("license_entitlement", "created_by_id"),
+        ]
+    )
+
+    def _validate_table_column(table: str, column: str, allowed_set: frozenset) -> bool:
+        """Validate table/column pair is in the allowed whitelist."""
+        return (table, column) in allowed_set
+
+    def _execute_parameterized_delete(cursor, table: str, column: str, user_ids: list) -> int:
+        """Execute DELETE with proper parameterization for values."""
+        if not _validate_table_column(table, column, ALLOWED_DELETION_TABLES):
+            logger.warning(f"Skipping unauthorized table/column: {table}.{column}")
+            return 0
+        # Use format for table/column (validated above), placeholders for values
+        placeholders = ",".join(["%s"] * len(user_ids))
+        # Table and column names can't be parameterized in SQL, but we've validated them
+        sql = f"DELETE FROM {table} WHERE {column} IN ({placeholders})"
+        cursor.execute(sql, user_ids)
+        return cursor.rowcount
+
+    def _execute_parameterized_update(cursor, table: str, column: str, user_ids: list) -> int:
+        """Execute UPDATE SET NULL with proper parameterization for values."""
+        if not _validate_table_column(table, column, ALLOWED_NULLABLE_TABLES):
+            logger.warning(f"Skipping unauthorized table/column: {table}.{column}")
+            return 0
+        placeholders = ",".join(["%s"] * len(user_ids))
+        sql = f"UPDATE {table} SET {column} = NULL WHERE {column} IN ({placeholders})"
+        cursor.execute(sql, user_ids)
+        return cursor.rowcount
+
+    try:
+        with transaction.atomic():
+            # Use Django ORM to get demo users - fully parameterized
+            from django.contrib.auth.models import User as AuthUser
+            from django.db.models import Q
+
+            demo_users = AuthUser.objects.filter(Q(username__startswith="demo_") | Q(username="demo"))
+            count = demo_users.count()
+
+            if count == 0:
+                return 0
+
+            demo_user_ids = list(demo_users.values_list("id", flat=True))
+            if not demo_user_ids:
+                return 0
+
+            with connection.cursor() as cursor:
+                # First, delete ALL messages from conversations owned by demo users
+                # Using parameterized subquery
+                try:
+                    placeholders = ",".join(["%s"] * len(demo_user_ids))
+                    cursor.execute(
+                        f"""
+                        DELETE FROM ai_agents_aimessage
+                        WHERE conversation_id IN (
+                            SELECT id FROM ai_agents_aiconversation
+                            WHERE user_id IN ({placeholders})
+                        )
+                        """,
+                        demo_user_ids,
+                    )
+                    deleted = cursor.rowcount
+                    if deleted > 0:
+                        logger.debug(f"Deleted {deleted} AI messages from demo user conversations")
+                except Exception as e:
+                    logger.debug(f"Could not delete AI messages: {e}")
+
+                # Delete from tables with FK to auth_user (validated against whitelist)
+                for table, column in ALLOWED_DELETION_TABLES:
+                    try:
+                        deleted = _execute_parameterized_delete(cursor, table, column, demo_user_ids)
+                        if deleted > 0:
+                            logger.debug(f"Deleted {deleted} rows from {table}.{column}")
+                    except Exception as e:
+                        logger.debug(f"Could not delete from {table}.{column}: {e}")
+
+                # Set nullable foreign keys to NULL (validated against whitelist)
+                for table, column in ALLOWED_NULLABLE_TABLES:
+                    try:
+                        updated = _execute_parameterized_update(cursor, table, column, demo_user_ids)
+                        if updated > 0:
+                            logger.debug(f"Updated {updated} rows in {table}.{column} to NULL")
+                    except Exception as e:
+                        logger.debug(f"Could not update {table}.{column}: {e}")
+
+            # Delete demo users using Django ORM - fully safe
+            demo_users.delete()
+
+            return count
+    except Exception as e:
+        logger.error(f"Error deleting demo users: {e}", exc_info=True)
+        return 0
 
 
-def _seed_applications(count: int, batch_size: int) -> int:
+def _seed_applications(count: int, batch_size: int) -> int:  # noqa: C901
     """
     Seed applications up to target count (idempotent - only creates if below target).
     """
@@ -353,7 +466,7 @@ def _seed_applications(count: int, batch_size: int) -> int:
         return created
 
 
-def _seed_assets(count: int, batch_size: int) -> int:
+def _seed_assets(count: int, batch_size: int) -> int:  # noqa: C901
     """
     Seed assets up to target count (idempotent - only creates if below target).
     Uses transactions for safety.
@@ -486,7 +599,7 @@ def _seed_assets(count: int, batch_size: int) -> int:
         return created
 
 
-def _seed_deployments(count: int, demo_user: User, batch_size: int) -> dict:
+def _seed_deployments(count: int, demo_user: User, batch_size: int) -> dict:  # noqa: C901
     """
     Seed deployments up to target count (idempotent - only creates if below target).
 
@@ -649,7 +762,7 @@ def _seed_deployments(count: int, demo_user: User, batch_size: int) -> dict:
 
                 evidence_batch.append(
                     EvidencePack(
-                        correlation_id=deployment_id,  # Use deployment_id so it matches deployment intent's correlation_id
+                        correlation_id=deployment_id,  # Use deployment_id so it matches deployment intent's correlation_id  # noqa: E501
                         app_name=app_def["name"],
                         version=version,
                         artifact_hash="".join(random.choices("0123456789abcdef", k=64)),
@@ -705,7 +818,7 @@ def _seed_deployments(count: int, demo_user: User, batch_size: int) -> dict:
                             decision = CABApproval.Decision.PENDING
                             approver = demo_user
                             reviewed_at = timezone.now() - timedelta(hours=random.randint(1, 24))
-                            comments = f"Under technical assessment for {app_def['name']} {version}. Security team reviewing vulnerability scan results. Risk score: {risk_score}."
+                            comments = f"Under technical assessment for {app_def['name']} {version}. Security team reviewing vulnerability scan results. Risk score: {risk_score}."  # noqa: E501
                             conditions = []
                         else:  # 25% - CAB Review (explicitly in CAB review)
                             decision = CABApproval.Decision.PENDING
@@ -723,11 +836,11 @@ def _seed_deployments(count: int, demo_user: User, batch_size: int) -> dict:
                                 "Rollback plan must be tested before deployment",
                                 "Require additional security scan before production deployment",
                             ][: random.randint(1, 3)]
-                            comments = f"Conditionally approved {app_def['name']} {version} with {len(conditions)} conditions. Risk score: {risk_score}."
+                            comments = f"Conditionally approved {app_def['name']} {version} with {len(conditions)} conditions. Risk score: {risk_score}."  # noqa: E501
                         else:
                             decision = CABApproval.Decision.APPROVED
                             conditions = []
-                            comments = f"Approved {app_def['name']} {version} for deployment to {ring} ring. Risk assessment completed successfully."
+                            comments = f"Approved {app_def['name']} {version} for deployment to {ring} ring. Risk assessment completed successfully."  # noqa: E501
                         approver = demo_user
                         reviewed_at = timezone.now() - timedelta(hours=random.randint(1, 72))
                     elif status == DeploymentIntent.Status.REJECTED:
@@ -737,10 +850,10 @@ def _seed_deployments(count: int, demo_user: User, batch_size: int) -> dict:
                         reviewed_at = timezone.now() - timedelta(hours=random.randint(1, 48))
                         comments = random.choice(
                             [
-                                f"Rejected {app_def['name']} {version}: Risk score too high ({risk_score}). Requires additional security review.",
-                                f"Rejected {app_def['name']} {version}: Insufficient evidence pack. Missing vulnerability scan results.",
-                                f"Rejected {app_def['name']} {version}: Rollback plan incomplete. Please resubmit with detailed rollback procedures.",
-                                f"Rejected {app_def['name']} {version}: Policy violation detected. Application does not meet enterprise security standards.",
+                                f"Rejected {app_def['name']} {version}: Risk score too high ({risk_score}). Requires additional security review.",  # noqa: E501
+                                f"Rejected {app_def['name']} {version}: Insufficient evidence pack. Missing vulnerability scan results.",  # noqa: E501
+                                f"Rejected {app_def['name']} {version}: Rollback plan incomplete. Please resubmit with detailed rollback procedures.",  # noqa: E501
+                                f"Rejected {app_def['name']} {version}: Policy violation detected. Application does not meet enterprise security standards.",  # noqa: E501
                             ]
                         )
                         conditions = []
@@ -1049,7 +1162,7 @@ def _generate_realistic_vulnerabilities(app_name: str, version: str) -> dict:
                 "installed_version": template["version"],
                 "fixed_version": f"{template['version'].split('.')[0]}.{int(template['version'].split('.')[1]) + 1}.0",
                 "title": template["title"],
-                "description": f"{template['title']} in {template['package']} {template['version']}. This vulnerability allows remote attackers to execute arbitrary code.",
+                "description": f"{template['title']} in {template['package']} {template['version']}. This vulnerability allows remote attackers to execute arbitrary code.",  # noqa: E501
                 "cvss_score": round(random.uniform(9.0, 10.0), 1),
                 "published_date": (timezone.now() - timedelta(days=random.randint(1, 90))).isoformat(),
             }

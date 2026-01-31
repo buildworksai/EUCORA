@@ -1,0 +1,104 @@
+---
+description: EUCORA quality gates and architecture patterns for all code changes
+alwaysApply: true
+---
+
+# EUCORA Development Standards
+
+## Quality Gates (NON-NEGOTIABLE)
+
+### Test Coverage
+- **Minimum**: ≥90% coverage enforced by CI
+- **Run before commit**: `pytest --cov --cov-fail-under=90`
+- **Frontend**: `npm run test -- --coverage`
+
+### TypeScript Standards
+- **Zero errors**: `npx tsc --noEmit` must pass
+- **Zero warnings**: `npm run lint` with `--max-warnings 0`
+- **No `any` type**: Use explicit types always
+- **Hooks before conditionals**: All React hooks called before any early returns
+
+### Python Standards
+- **Type hints**: Required on all functions
+- **Black formatting**: `line-length = 120`
+- **Flake8**: `max-line-length = 120`
+
+### Pre-Commit (MANDATORY)
+```bash
+# Install and run
+pip install pre-commit && pre-commit install
+pre-commit run --all-files
+```
+
+## Architecture Patterns
+
+### Control Plane Design
+- **Thin Control Plane**: Policy + Orchestration + Evidence only
+- **Correlation IDs**: Every deployment event MUST include correlation_id
+- **Idempotency**: All connector operations must be safely retryable
+
+### Django App Structure
+```
+backend/apps/{app_name}/
+├── models.py          # Include CorrelationIdModel mixin
+├── serializers.py     # DRF serializers
+├── views.py           # ViewSets with correlation filtering
+├── urls.py            # Router registration
+├── admin.py           # Admin registration
+├── tests/
+│   ├── test_models.py
+│   ├── test_api.py
+│   └── test_correlation_isolation.py  # MANDATORY
+```
+
+### Frontend Structure
+```
+frontend/src/routes/{domain}/
+├── contracts.ts       # Types + ENDPOINTS (MANDATORY)
+├── index.tsx          # Main page component
+├── components/        # Domain components
+└── hooks/             # Custom hooks
+```
+
+### contracts.ts Pattern (REQUIRED)
+```typescript
+// Always define types and endpoints in contracts.ts
+export interface MyEntity {
+  id: string;
+  correlation_id: string;
+  // ...
+}
+
+export const ENDPOINTS = {
+  list: '/api/my-entity/',
+  detail: (id: string) => `/api/my-entity/${id}/`,
+} as const;
+```
+
+## Anti-Patterns (FORBIDDEN)
+
+- ❌ Skipping SBOM/vulnerability scanning
+- ❌ Publishing without CAB approval when Risk > 50
+- ❌ Modifying existing migrations (create new ones)
+- ❌ Documents in project root (use `docs/` or `reports/`)
+- ❌ Hardcoded secrets (use vault)
+- ❌ Bypassing pre-commit hooks
+- ❌ Missing correlation IDs in events
+- ❌ Non-idempotent connector operations
+
+## Workflow Checkpoints
+
+### Before Frontend TypeScript
+1. Read `contracts.ts` FIRST
+2. Use types from contracts
+3. Use ENDPOINTS constant
+
+### After Each Edit
+1. Run `npx tsc --noEmit` on file
+2. Fix errors IMMEDIATELY
+3. Run `npx eslint` on file
+
+### Before Declaring Complete
+1. `npm run build` - zero errors
+2. `npm run lint` - zero warnings
+3. `pytest --cov` - ≥90% coverage

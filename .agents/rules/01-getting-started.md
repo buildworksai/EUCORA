@@ -21,7 +21,7 @@ Quick ramp-up for new contributors to the Enterprise Endpoint Application Packag
 1. Packaging Engineer builds artifact → signs → SBOM + vuln scan in artifact pipeline.
 2. Control Plane computes risk score, generates evidence pack, and emits correlation id `dp-20260104-0001`.
 3. Publisher creates Deployment Intent for Ring 0, verifies evidence pack completeness, then calls Intune connector (Graph API `POST /deviceAppManagement/mobileApps`).
-4. Rollout Orchestrator evaluates Ring 0 success (≥98% test installs). Upon pass, promotion enters Ring 1 (Canary) per thresholds.
+4. Rollout Orchestrator validates Ring 0 (Lab) deployment completes successfully, then promotes to Ring 1 (Canary). Ring 1 requires ≥98% success rate before promotion to Ring 2 (Pilot).
 
 ## Validation
 - ✅ Command example: `./tools/control-plane-cli submit-deployment --ring 0 --correlation-id dp-20260104-0001` only runs after full evidence pack.

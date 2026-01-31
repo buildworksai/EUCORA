@@ -14,6 +14,7 @@ Related Docs: docs/modules/sccm/connector-spec.md
 Set-StrictMode -Version Latest
 $ErrorActionPreference = 'Stop'
 . "$PSScriptRoot/../common/ConnectorBase.ps1"
+. "$PSScriptRoot/../../utilities/common/Get-EndpointConfig.ps1"
 
 function Get-SccmAuthHeaders {
     <#
@@ -43,6 +44,14 @@ function Get-SccmAuthHeaders {
     return $headers
 }
 
+function Get-SccmTimeout {
+    <#
+    .SYNOPSIS
+        Get timeout value for SCCM operations from configuration.
+    #>
+    return Get-ConfigValue -Key "connectors.sccm.timeout_seconds" -DefaultValue 120
+}
+
 function New-SccmApplication {
     <#
     .SYNOPSIS
@@ -66,7 +75,9 @@ function New-SccmApplication {
     )
 
     $config = Get-ConnectorConfig -Name 'sccm'
-    $appUri = "$($config.api_url.TrimEnd('/'))/wmi/SMS_Application"
+    $baseUrl = $config.api_url.TrimEnd('/')
+    $appPath = Get-EndpointConfig -Service "sccm" -Endpoint "applications"
+    $appUri = "$baseUrl$appPath"
 
     # Build application payload
     $appPayload = @{
@@ -85,10 +96,11 @@ function New-SccmApplication {
     }
 
     $headers = Get-SccmAuthHeaders -CorrelationId $CorrelationId
+    $timeoutSeconds = Get-SccmTimeout
 
     # Use -UseDefaultCredentials for Windows Integrated Auth
     try {
-        $response = Invoke-RestMethod -Uri $appUri -Method 'POST' -Body ($appPayload | ConvertTo-Json -Depth 10) -Headers $headers -UseDefaultCredentials -TimeoutSec 60
+        $response = Invoke-RestMethod -Uri $appUri -Method 'POST' -Body ($appPayload | ConvertTo-Json -Depth 10) -Headers $headers -UseDefaultCredentials -TimeoutSec $timeoutSeconds
 
         Write-StructuredLog -Level 'Info' -Message 'SCCM application created' -CorrelationId $CorrelationId -Metadata @{
             app_name = $DeploymentIntent.AppName
@@ -131,7 +143,9 @@ function New-SccmDeploymentType {
     )
 
     $config = Get-ConnectorConfig -Name 'sccm'
-    $dtUri = "$($config.api_url.TrimEnd('/'))/wmi/SMS_DeploymentType"
+    $baseUrl = $config.api_url.TrimEnd('/')
+    $dtPath = Get-EndpointConfig -Service "sccm" -Endpoint "deployment_types"
+    $dtUri = "$baseUrl$dtPath"
 
     # Build deployment type payload (MSI or Script installer)
     $dtPayload = @{
@@ -150,9 +164,10 @@ function New-SccmDeploymentType {
     }
 
     $headers = Get-SccmAuthHeaders -CorrelationId $CorrelationId
+    $timeoutSeconds = Get-SccmTimeout
 
     try {
-        $response = Invoke-RestMethod -Uri $dtUri -Method 'POST' -Body ($dtPayload | ConvertTo-Json -Depth 10) -Headers $headers -UseDefaultCredentials -TimeoutSec 60
+        $response = Invoke-RestMethod -Uri $dtUri -Method 'POST' -Body ($dtPayload | ConvertTo-Json -Depth 10) -Headers $headers -UseDefaultCredentials -TimeoutSec $timeoutSeconds
 
         Write-StructuredLog -Level 'Info' -Message 'SCCM deployment type created' -CorrelationId $CorrelationId -Metadata @{
             app_name = $DeploymentIntent.AppName
@@ -200,7 +215,9 @@ function New-SccmDeployment {
     )
 
     $config = Get-ConnectorConfig -Name 'sccm'
-    $deploymentUri = "$($config.api_url.TrimEnd('/'))/wmi/SMS_ApplicationAssignment"
+    $baseUrl = $config.api_url.TrimEnd('/')
+    $deploymentPath = Get-EndpointConfig -Service "sccm" -Endpoint "deployments"
+    $deploymentUri = "$baseUrl$deploymentPath"
 
     # Build deployment payload
     $deploymentPayload = @{
@@ -220,9 +237,10 @@ function New-SccmDeployment {
     }
 
     $headers = Get-SccmAuthHeaders -CorrelationId $CorrelationId
+    $timeoutSeconds = Get-SccmTimeout
 
     try {
-        $response = Invoke-RestMethod -Uri $deploymentUri -Method 'POST' -Body ($deploymentPayload | ConvertTo-Json -Depth 10) -Headers $headers -UseDefaultCredentials -TimeoutSec 60
+        $response = Invoke-RestMethod -Uri $deploymentUri -Method 'POST' -Body ($deploymentPayload | ConvertTo-Json -Depth 10) -Headers $headers -UseDefaultCredentials -TimeoutSec $timeoutSeconds
 
         Write-StructuredLog -Level 'Info' -Message 'SCCM deployment created' -CorrelationId $CorrelationId -Metadata @{
             app_name = $DeploymentIntent.AppName
@@ -318,12 +336,15 @@ function Remove-SccmApplication {
     )
 
     $config = Get-ConnectorConfig -Name 'sccm'
-    $deleteUri = "$($config.api_url.TrimEnd('/'))/wmi/SMS_Application(ModelName='$ApplicationId')"
+    $baseUrl = $config.api_url.TrimEnd('/')
+    $deletePath = Get-EndpointConfig -Service "sccm" -Endpoint "application_by_id" -Parameters @{app_id = $ApplicationId}
+    $deleteUri = "$baseUrl$deletePath"
 
     $headers = Get-SccmAuthHeaders -CorrelationId $CorrelationId
+    $timeoutSeconds = Get-SccmTimeout
 
     try {
-        Invoke-RestMethod -Uri $deleteUri -Method 'DELETE' -Headers $headers -UseDefaultCredentials -TimeoutSec 60
+        Invoke-RestMethod -Uri $deleteUri -Method 'DELETE' -Headers $headers -UseDefaultCredentials -TimeoutSec $timeoutSeconds
 
         Write-StructuredLog -Level 'Warning' -Message 'SCCM application removed' -CorrelationId $CorrelationId -Metadata @{
             app_model_name = $ApplicationId
@@ -362,11 +383,15 @@ function Get-SccmDeploymentStatus {
     $config = Get-ConnectorConfig -Name 'sccm'
 
     # Search for deployments with correlation ID in assignment name
-    $searchUri = "$($config.api_url.TrimEnd('/'))/wmi/SMS_ApplicationAssignment?`$filter=contains(AssignmentName,'$CorrelationId')"
+    $baseUrl = $config.api_url.TrimEnd('/')
+    $filter = "contains(AssignmentName,'$CorrelationId')"
+    $searchPath = Get-EndpointConfig -Service "sccm" -Endpoint "deployments_filter" -Parameters @{filter = $filter}
+    $searchUri = "$baseUrl$searchPath"
     $headers = Get-SccmAuthHeaders -CorrelationId $CorrelationId
+    $timeoutSeconds = Get-SccmTimeout
 
     try {
-        $response = Invoke-RestMethod -Uri $searchUri -Method 'GET' -Headers $headers -UseDefaultCredentials -TimeoutSec 60
+        $response = Invoke-RestMethod -Uri $searchUri -Method 'GET' -Headers $headers -UseDefaultCredentials -TimeoutSec $timeoutSeconds
 
         if ($response.value.Count -eq 0) {
             return @{
@@ -380,8 +405,12 @@ function Get-SccmDeploymentStatus {
         $assignmentId = $assignment.AssignmentID
 
         # Get deployment asset details
-        $statusUri = "$($config.api_url.TrimEnd('/'))/wmi/SMS_AppDeploymentAssetDetails?`$filter=AssignmentID eq $assignmentId"
-        $statusResponse = Invoke-RestMethod -Uri $statusUri -Method 'GET' -Headers $headers -UseDefaultCredentials -TimeoutSec 60
+        $baseUrl = $config.api_url.TrimEnd('/')
+        $filter = "AssignmentID eq $assignmentId"
+        $statusPath = Get-EndpointConfig -Service "sccm" -Endpoint "app_deployment_asset_details" -Parameters @{filter = $filter}
+        $statusUri = "$baseUrl$statusPath"
+        $timeoutSeconds = Get-SccmTimeout
+        $statusResponse = Invoke-RestMethod -Uri $statusUri -Method 'GET' -Headers $headers -UseDefaultCredentials -TimeoutSec $timeoutSeconds
 
         $assetDetails = $statusResponse.value
         $successCount = ($assetDetails | Where-Object { $_.ComplianceState -eq 1 }).Count  # 1 = Compliant (Installed)
@@ -428,10 +457,13 @@ function Test-SccmConnection {
 
     try {
         # Test AdminService connectivity
-        $testUri = "$($config.api_url.TrimEnd('/'))/wmi/SMS_Site"
+        $baseUrl = $config.api_url.TrimEnd('/')
+        $testPath = Get-EndpointConfig -Service "sccm" -Endpoint "site"
+        $testUri = "$baseUrl$testPath"
         $headers = Get-SccmAuthHeaders -CorrelationId $testCid
+        $timeoutSeconds = Get-SccmTimeout
 
-        $response = Invoke-RestMethod -Uri $testUri -Method 'GET' -Headers $headers -UseDefaultCredentials -TimeoutSec 60
+        $response = Invoke-RestMethod -Uri $testUri -Method 'GET' -Headers $headers -UseDefaultCredentials -TimeoutSec $timeoutSeconds
 
         Write-StructuredLog -Level 'Info' -Message 'SCCM connector test successful' -CorrelationId $testCid
 
@@ -486,10 +518,14 @@ function Get-SccmTargetDevices {
         }
 
         # Query collection members
-        $membersUri = "$($config.api_url.TrimEnd('/'))/wmi/SMS_FullCollectionMembership?`$filter=CollectionID eq '$collectionId'"
+        $baseUrl = $config.api_url.TrimEnd('/')
+        $filter = "CollectionID eq '$collectionId'"
+        $membersPath = Get-EndpointConfig -Service "sccm" -Endpoint "collection_members" -Parameters @{filter = $filter}
+        $membersUri = "$baseUrl$membersPath"
         $headers = Get-SccmAuthHeaders -CorrelationId $testCid
+        $timeoutSeconds = Get-SccmTimeout
 
-        $response = Invoke-RestMethod -Uri $membersUri -Method 'GET' -Headers $headers -UseDefaultCredentials -TimeoutSec 60
+        $response = Invoke-RestMethod -Uri $membersUri -Method 'GET' -Headers $headers -UseDefaultCredentials -TimeoutSec $timeoutSeconds
 
         $devices = $response.value | ForEach-Object {
             @{

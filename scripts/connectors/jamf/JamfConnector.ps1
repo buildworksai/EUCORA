@@ -14,6 +14,7 @@ Related Docs: docs/modules/jamf/connector-spec.md
 Set-StrictMode -Version Latest
 $ErrorActionPreference = 'Stop'
 . "$PSScriptRoot/../common/ConnectorBase.ps1"
+. "$PSScriptRoot/../../utilities/common/Get-EndpointConfig.ps1"
 
 function New-JamfPackage {
     <#
@@ -49,7 +50,9 @@ function New-JamfPackage {
     )
 
     $config = Get-ConnectorConfig -Name 'jamf'
-    $packageUri = "$($config.api_url.TrimEnd('/'))/api/v1/packages"
+    $baseUrl = $config.api_url.TrimEnd('/')
+    $packagePath = Get-EndpointConfig -Service "jamf" -Endpoint "packages"
+    $packageUri = "$baseUrl$packagePath"
 
     # Create package metadata
     $packageMetadata = @{
@@ -80,7 +83,8 @@ function New-JamfPackage {
 
     # Upload package file to distribution point
     $packageId = $packageResponse.id
-    $uploadUri = "$($config.api_url.TrimEnd('/'))/api/v1/packages/$packageId/upload"
+    $uploadPath = Get-EndpointConfig -Service "jamf" -Endpoint "package_upload" -Parameters @{package_id = $packageId}
+    $uploadUri = "$baseUrl$uploadPath"
 
     # Read file as byte array
     $fileBytes = [System.IO.File]::ReadAllBytes($PackagePath)
@@ -102,8 +106,12 @@ function New-JamfPackage {
     )
     $bodyString = $bodyLines -join "`r`n"
 
+    # Get upload timeout from configuration (longer for file uploads)
+    $uploadTimeoutSeconds = Get-ConfigValue -Key "api.timeout_seconds" -DefaultValue 30
+    $uploadTimeoutSeconds = Get-ConfigValue -Key "timeouts.upload" -DefaultValue $uploadTimeoutSeconds
+
     try {
-        $null = Invoke-RestMethod -Uri $uploadUri -Method 'POST' -Headers $uploadHeaders -Body $bodyString -TimeoutSec 300
+        $null = Invoke-RestMethod -Uri $uploadUri -Method 'POST' -Headers $uploadHeaders -Body $bodyString -TimeoutSec $uploadTimeoutSeconds
 
         Write-StructuredLog -Level 'Info' -Message 'Jamf package uploaded' -CorrelationId $CorrelationId -Metadata @{
             package_id = $packageId
@@ -155,7 +163,9 @@ function New-JamfPolicy {
     )
 
     $config = Get-ConnectorConfig -Name 'jamf'
-    $policyUri = "$($config.api_url.TrimEnd('/'))/JSSResource/policies/id/0"
+    $baseUrl = $config.api_url.TrimEnd('/')
+    $policyPath = Get-EndpointConfig -Service "jamf" -Endpoint "policy_by_id" -Parameters @{policy_id = "0"}
+    $policyUri = "$baseUrl$policyPath"
 
     # Get smart group ID for ring
     $smartGroupId = Get-JamfSmartGroupId -Ring $DeploymentIntent.Ring -Config $config
@@ -210,7 +220,10 @@ function New-JamfPolicy {
         'Content-Type' = 'application/xml'
     }
 
-    $response = Invoke-RestMethod -Uri $policyUri -Method 'POST' -Body $policyXml -Headers $headers -TimeoutSec 60
+    # Get timeout from configuration
+    $timeoutSeconds = Get-ConfigValue -Key "api.timeout_seconds" -DefaultValue 30
+
+    $response = Invoke-RestMethod -Uri $policyUri -Method 'POST' -Body $policyXml -Headers $headers -TimeoutSec $timeoutSeconds
 
     Write-StructuredLog -Level 'Info' -Message 'Jamf policy created' -CorrelationId $CorrelationId -Metadata @{
         policy_id = $response.policy.id
@@ -314,7 +327,9 @@ function Remove-JamfApplication {
     # Acquire OAuth2 token
     $accessToken = Get-ConnectorAuthToken -ConnectorName 'jamf' -CorrelationId $CorrelationId
 
-    $deleteUri = "$($config.api_url.TrimEnd('/'))/JSSResource/policies/id/$ApplicationId"
+    $baseUrl = $config.api_url.TrimEnd('/')
+    $deletePath = Get-EndpointConfig -Service "jamf" -Endpoint "policy_by_id" -Parameters @{policy_id = $ApplicationId}
+    $deleteUri = "$baseUrl$deletePath"
     $headers = @{
         Authorization = "Bearer $accessToken"
     }
@@ -356,7 +371,9 @@ function Get-JamfDeploymentStatus {
     $accessToken = Get-ConnectorAuthToken -ConnectorName 'jamf' -CorrelationId $CorrelationId
 
     # Search for policies with correlation ID in trigger
-    $searchUri = "$($config.api_url.TrimEnd('/'))/JSSResource/policies"
+    $baseUrl = $config.api_url.TrimEnd('/')
+    $searchPath = Get-EndpointConfig -Service "jamf" -Endpoint "policies"
+    $searchUri = "$baseUrl$searchPath"
     $headers = @{
         Authorization = "Bearer $accessToken"
         Accept = 'application/json'
@@ -381,11 +398,14 @@ function Get-JamfDeploymentStatus {
 
     # Get policy details
     $policyId = $matchingPolicy.id
-    $policyUri = "$($config.api_url.TrimEnd('/'))/JSSResource/policies/id/$policyId"
+    $baseUrl = $config.api_url.TrimEnd('/')
+    $policyPath = Get-EndpointConfig -Service "jamf" -Endpoint "policy_by_id" -Parameters @{policy_id = $policyId}
+    $policyUri = "$baseUrl$policyPath"
     $policyDetails = Invoke-ConnectorRequest -Uri $policyUri -Method 'GET' -Headers $headers -CorrelationId $CorrelationId
 
     # Get policy logs
-    $logsUri = "$($config.api_url.TrimEnd('/'))/JSSResource/computermanagementlogs/policy/id/$policyId"
+    $logsPath = Get-EndpointConfig -Service "jamf" -Endpoint "computer_logs" -Parameters @{policy_id = $policyId}
+    $logsUri = "$baseUrl$logsPath"
     $logs = Invoke-ConnectorRequest -Uri $logsUri -Method 'GET' -Headers $headers -CorrelationId $CorrelationId
 
     $successCount = ($logs.computer_management_logs | Where-Object { $_.status -eq 'Completed' }).Count
@@ -430,7 +450,9 @@ function Test-JamfConnection {
         $accessToken = Get-ConnectorAuthToken -ConnectorName 'jamf' -CorrelationId $testCid
 
         # Test API connectivity
-        $testUri = "$($config.api_url.TrimEnd('/'))/api/v1/jamf-pro-information"
+        $baseUrl = $config.api_url.TrimEnd('/')
+        $testPath = Get-EndpointConfig -Service "jamf" -Endpoint "jamf_pro_info"
+        $testUri = "$baseUrl$testPath"
         $headers = @{
             Authorization = "Bearer $accessToken"
         }
@@ -492,7 +514,9 @@ function Get-JamfTargetDevices {
         }
 
         # Query smart group members
-        $groupUri = "$($config.api_url.TrimEnd('/'))/JSSResource/computergroups/id/$smartGroupId"
+        $baseUrl = $config.api_url.TrimEnd('/')
+        $groupPath = Get-EndpointConfig -Service "jamf" -Endpoint "computer_groups" -Parameters @{group_id = $smartGroupId}
+        $groupUri = "$baseUrl$groupPath"
         $headers = @{
             Authorization = "Bearer $accessToken"
             Accept = 'application/json'

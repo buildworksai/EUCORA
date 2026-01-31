@@ -5,9 +5,8 @@ Admin demo data endpoints.
 """
 from django.conf import settings
 from django.middleware.csrf import get_token
-from django.views.decorators.csrf import csrf_exempt
 from rest_framework import status
-from rest_framework.decorators import api_view, permission_classes
+from rest_framework.decorators import api_view, authentication_classes, permission_classes
 from rest_framework.permissions import AllowAny, IsAdminUser
 from rest_framework.response import Response
 
@@ -18,21 +17,9 @@ from apps.core.utils import get_demo_mode_enabled, set_demo_mode_enabled
 # In production, require IsAdminUser
 DEMO_DATA_PERMISSION = AllowAny if settings.DEBUG else IsAdminUser
 
-# In development, exempt CSRF for these API views to allow mock auth
-# DRF's @api_view handles CSRF, but SessionAuthentication still enforces it
-# This exemption allows unauthenticated requests in development
-if settings.DEBUG:
-    # Apply csrf_exempt to all views in development
-    def exempt_csrf(view_func):
-        return csrf_exempt(view_func)
-
-else:
-
-    def exempt_csrf(view_func):
-        return view_func
+# CSRF exemption is handled in URLconf (urls.py) using csrf_exempt() wrapper
 
 
-@exempt_csrf
 @api_view(["GET"])
 @permission_classes([DEMO_DATA_PERMISSION])
 def demo_data_stats_view(request):
@@ -52,10 +39,10 @@ def demo_data_stats_view(request):
         return Response({"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 
-@exempt_csrf
 @api_view(["POST"])
+@authentication_classes([])  # Disable authentication to bypass SessionAuthentication's CSRF check
 @permission_classes([DEMO_DATA_PERMISSION])
-def seed_demo_data_view(request):
+def seed_demo_data_view(request):  # noqa: C901
     """
     Seed demo data - attempts to restore from backup first, falls back to seeding.
 
@@ -143,11 +130,6 @@ def seed_demo_data_view(request):
 
                 logger.info("Demo data and demo users cleared successfully")
 
-                # Use psql directly via subprocess to restore
-                # We can't use docker exec from inside container, so use psql via connection string
-                import os
-                import subprocess
-
                 from django.conf import settings
 
                 logger.info(f"Restoring backup using psql: {backup_file}")
@@ -182,7 +164,7 @@ def seed_demo_data_view(request):
                 # 1. Filter out user ID 1 (devadmin) from auth_user COPY
                 # 2. Wrap in transaction with proper error handling
                 processed_lines = []
-                skip_user_line = False
+                skip_user_line = False  # noqa: F841
                 in_auth_user_copy = False
 
                 for line in sql_content.split("\n"):
@@ -283,7 +265,7 @@ SET session_replication_role = 'origin';
                     else:
                         logger.info(f"Restore completed with warnings: {stderr_str[:500]}")
                 else:
-                    logger.info(f"Restore completed successfully")
+                    logger.info("Restore completed successfully")
                     if stderr_str:
                         logger.info(f"Restore warnings: {stderr_str[:500]}")
 
@@ -318,7 +300,7 @@ SET session_replication_role = 'origin';
         # OR if user provided form parameters (which takes priority)
         if force_seed or has_form_parameters or not (use_backup_only and backup_file and backup_file.exists()):
             logger.info(
-                f"Seeding demo data using seeding function with parameters: assets={assets}, applications={applications}, deployments={deployments}, users={users}, events={events}..."
+                f"Seeding demo data using seeding function with parameters: assets={assets}, applications={applications}, deployments={deployments}, users={users}, events={events}..."  # noqa: E501
             )
 
             from apps.core.tasks import seed_demo_data_task
@@ -360,7 +342,7 @@ SET session_replication_role = 'origin';
                 return Response(
                     {
                         "status": "queued",
-                        "message": "Demo data seeding started in background. Check demo-data-stats endpoint for progress.",
+                        "message": "Demo data seeding started in background. Check demo-data-stats endpoint for progress.",  # noqa: E501
                         "task_id": str(task.id),
                         "method": "async_seed",
                     },
@@ -408,8 +390,8 @@ SET session_replication_role = 'origin';
         return Response({"status": "error", "error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 
-@exempt_csrf
 @api_view(["DELETE"])
+@authentication_classes([])
 @permission_classes([DEMO_DATA_PERMISSION])
 def clear_demo_data_view(request):
     """
@@ -421,8 +403,8 @@ def clear_demo_data_view(request):
     return Response({"status": "success", "counts": results}, status=status.HTTP_200_OK)
 
 
-@exempt_csrf
 @api_view(["GET", "POST"])
+@authentication_classes([])
 @permission_classes([DEMO_DATA_PERMISSION])
 def demo_mode_view(request):
     """
@@ -444,7 +426,6 @@ def demo_mode_view(request):
         return Response({"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 
-@exempt_csrf
 @api_view(["GET"])
 @permission_classes([DEMO_DATA_PERMISSION])
 def csrf_token_view(request):

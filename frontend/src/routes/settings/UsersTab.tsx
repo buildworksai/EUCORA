@@ -4,70 +4,118 @@ import { useState } from 'react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
-import { UserMinus, UserPlus, Users } from 'lucide-react';
+import { UserMinus, UserPlus, Users, Shield } from 'lucide-react';
 import { toast } from 'sonner';
-import type { User, UserRole } from '@/types/auth';
-import { MOCK_USERS_LIST } from './data';
+import { useRoles, useUserRoles, useAssignRole, useRevokeRole } from '@/lib/auth/usePermissions';
+import { Role } from '@/routes/settings/rbac/contracts';
+import { PermissionGate } from '@/components/auth/PermissionGate';
+import { Loader2 } from 'lucide-react';
 
-const getRoleBadgeColor = (role: UserRole) => {
-  switch (role) {
-    case 'admin':
-      return 'bg-eucora-gold/10 text-eucora-gold border-eucora-gold/30';
-    case 'operator':
-      return 'bg-eucora-deepBlue/10 text-eucora-deepBlue border-eucora-deepBlue/30';
-    case 'demo':
-      return 'bg-eucora-teal/10 text-eucora-teal border-eucora-teal/30';
-    default:
-      return 'bg-gray-500/10 text-gray-500 border-gray-500/30';
-  }
-};
+// Mock user type - replace with real User type from API
+interface User {
+  id: string;
+  email: string;
+  first_name?: string;
+  last_name?: string;
+  username: string;
+  is_active: boolean;
+}
 
 export default function UsersTab() {
-  const [users, setUsers] = useState<User[]>(MOCK_USERS_LIST);
-  const [isAddingUser, setIsAddingUser] = useState(false);
-  const [newUser, setNewUser] = useState({
-    email: '',
-    firstName: '',
-    lastName: '',
-    role: 'viewer' as UserRole,
-    department: '',
-  });
+  const [selectedUserId, setSelectedUserId] = useState<string | null>(null);
+  const [isAssigningRole, setIsAssigningRole] = useState(false);
+  const [selectedRoleId, setSelectedRoleId] = useState<string>('');
+  const [selectedPortfolioScope, setSelectedPortfolioScope] = useState<string>('');
+  const [selectedBusinessUnitScope, setSelectedBusinessUnitScope] = useState<string>('');
 
-  const handleAddUser = () => {
-    if (!newUser.email || !newUser.firstName) {
-      toast.error('Please fill in required fields');
+  // Fetch roles
+  const { data: roles, isLoading: rolesLoading } = useRoles();
+  const { data: userRoles, isLoading: userRolesLoading } = useUserRoles(selectedUserId || undefined);
+
+  const assignRoleMutation = useAssignRole();
+  const revokeRoleMutation = useRevokeRole();
+
+  // Mock users list - replace with real API call
+  const [users] = useState<User[]>([
+    {
+      id: '1',
+      email: 'admin@eucora.com',
+      username: 'admin',
+      first_name: 'Admin',
+      last_name: 'User',
+      is_active: true,
+    },
+  ]);
+
+  const handleAssignRole = async () => {
+    if (!selectedUserId || !selectedRoleId) {
+      toast.error('Please select a user and role');
       return;
     }
 
-    const user: User = {
-      id: Date.now().toString(),
-      email: newUser.email,
-      firstName: newUser.firstName,
-      lastName: newUser.lastName,
-      role: newUser.role,
-      department: newUser.department,
-      isActive: true,
-      permissions: [],
-      createdAt: new Date(),
-      lastLogin: new Date(),
-    };
-
-    setUsers((prev) => [...prev, user]);
-    setNewUser({ email: '', firstName: '', lastName: '', role: 'viewer', department: '' });
-    setIsAddingUser(false);
-    toast.success('User added successfully');
+    try {
+      await assignRoleMutation.mutateAsync({
+        userId: selectedUserId,
+        data: {
+          role_id: selectedRoleId,
+          portfolio_scope: selectedPortfolioScope || undefined,
+          business_unit_scope: selectedBusinessUnitScope || undefined,
+        },
+      });
+      toast.success('Role assigned successfully');
+      setIsAssigningRole(false);
+      setSelectedRoleId('');
+      setSelectedPortfolioScope('');
+      setSelectedBusinessUnitScope('');
+    } catch {
+      toast.error('Failed to assign role');
+    }
   };
 
-  const handleToggleUserStatus = (userId: string) => {
-    setUsers((prev) =>
-      prev.map((user) => (user.id === userId ? { ...user, isActive: !user.isActive } : user))
-    );
-    toast.success('User status updated');
+  const handleRevokeRole = async (userId: string, roleId: string) => {
+    try {
+      await revokeRoleMutation.mutateAsync({ userId, roleId });
+      toast.success('Role revoked successfully');
+    } catch {
+      toast.error('Failed to revoke role');
+    }
+  };
+
+  const getRoleBadgeColor = (roleType: string) => {
+    switch (roleType) {
+      case 'platform_admin':
+        return 'bg-eucora-gold/10 text-eucora-gold border-eucora-gold/30';
+      case 'application_manager':
+        return 'bg-eucora-deepBlue/10 text-eucora-deepBlue border-eucora-deepBlue/30';
+      case 'portfolio_manager':
+        return 'bg-eucora-teal/10 text-eucora-teal border-eucora-teal/30';
+      case 'packaging_engineer':
+        return 'bg-purple-500/10 text-purple-500 border-purple-500/30';
+      case 'license_manager':
+        return 'bg-blue-500/10 text-blue-500 border-blue-500/30';
+      case 'cab_approver':
+        return 'bg-orange-500/10 text-orange-500 border-orange-500/30';
+      case 'security_reviewer':
+        return 'bg-red-500/10 text-red-500 border-red-500/30';
+      case 'publisher':
+        return 'bg-green-500/10 text-green-500 border-green-500/30';
+      case 'auditor':
+        return 'bg-gray-500/10 text-gray-500 border-gray-500/30';
+      default:
+        return 'bg-gray-500/10 text-gray-500 border-gray-500/30';
+    }
   };
 
   return (
@@ -79,81 +127,14 @@ export default function UsersTab() {
               <Users className="h-5 w-5 text-eucora-teal" />
               User Management
             </CardTitle>
-            <CardDescription>Manage user accounts and permissions</CardDescription>
+            <CardDescription>Manage user accounts and RBAC role assignments</CardDescription>
           </div>
-          <Dialog open={isAddingUser} onOpenChange={setIsAddingUser}>
-            <DialogTrigger asChild>
-              <Button className="bg-eucora-deepBlue hover:bg-eucora-deepBlue-dark">
-                <UserPlus className="mr-2 h-4 w-4" />
-                Add User
-              </Button>
-            </DialogTrigger>
-            <DialogContent className="glass">
-              <DialogHeader>
-                <DialogTitle>Add New User</DialogTitle>
-                <DialogDescription>Create a new user account</DialogDescription>
-              </DialogHeader>
-              <div className="space-y-4 py-4">
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="space-y-2">
-                    <Label>First Name *</Label>
-                    <Input
-                      value={newUser.firstName}
-                      onChange={(e) => setNewUser((prev) => ({ ...prev, firstName: e.target.value }))}
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label>Last Name</Label>
-                    <Input
-                      value={newUser.lastName}
-                      onChange={(e) => setNewUser((prev) => ({ ...prev, lastName: e.target.value }))}
-                    />
-                  </div>
-                </div>
-                <div className="space-y-2">
-                  <Label>Email *</Label>
-                  <Input
-                    type="email"
-                    value={newUser.email}
-                    onChange={(e) => setNewUser((prev) => ({ ...prev, email: e.target.value }))}
-                  />
-                </div>
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="space-y-2">
-                    <Label>Role</Label>
-                    <Select
-                      value={newUser.role}
-                      onValueChange={(value: UserRole) => setNewUser((prev) => ({ ...prev, role: value }))}
-                    >
-                      <SelectTrigger>
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="admin">Admin</SelectItem>
-                        <SelectItem value="operator">Operator</SelectItem>
-                        <SelectItem value="viewer">Viewer</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-                  <div className="space-y-2">
-                    <Label>Department</Label>
-                    <Input
-                      value={newUser.department}
-                      onChange={(e) => setNewUser((prev) => ({ ...prev, department: e.target.value }))}
-                    />
-                  </div>
-                </div>
-              </div>
-              <DialogFooter>
-                <Button variant="outline" onClick={() => setIsAddingUser(false)}>
-                  Cancel
-                </Button>
-                <Button onClick={handleAddUser} className="bg-eucora-teal hover:bg-eucora-teal-dark">
-                  Add User
-                </Button>
-              </DialogFooter>
-            </DialogContent>
-          </Dialog>
+          <PermissionGate resource="users" action="create">
+            <Button className="bg-eucora-deepBlue hover:bg-eucora-deepBlue-dark">
+              <UserPlus className="mr-2 h-4 w-4" />
+              Add User
+            </Button>
+          </PermissionGate>
         </div>
       </CardHeader>
       <CardContent>
@@ -162,37 +143,163 @@ export default function UsersTab() {
             <div
               key={user.id}
               className={`flex items-center justify-between p-4 rounded-lg border ${
-                user.isActive ? 'bg-card' : 'bg-muted/30 opacity-60'
+                user.is_active ? 'bg-card' : 'bg-muted/30 opacity-60'
               }`}
             >
               <div className="flex items-center gap-4">
                 <Avatar className="h-10 w-10">
                   <AvatarFallback className="bg-eucora-deepBlue text-white">
-                    {user.firstName?.charAt(0)}
-                    {user.lastName?.charAt(0)}
+                    {user.first_name?.charAt(0) || user.username.charAt(0)}
+                    {user.last_name?.charAt(0)}
                   </AvatarFallback>
                 </Avatar>
                 <div>
                   <p className="font-medium">
-                    {user.firstName} {user.lastName}
+                    {user.first_name} {user.last_name}
                   </p>
                   <p className="text-sm text-muted-foreground">{user.email}</p>
                 </div>
               </div>
               <div className="flex items-center gap-4">
-                <Badge variant="outline" className={getRoleBadgeColor(user.role)}>
-                  {user.role}
+                {/* Role badges - would fetch from useUserRoles */}
+                <Badge variant={user.is_active ? 'default' : 'secondary'}>
+                  {user.is_active ? 'Active' : 'Inactive'}
                 </Badge>
-                <Badge variant={user.isActive ? 'default' : 'secondary'}>
-                  {user.isActive ? 'Active' : 'Inactive'}
-                </Badge>
-                <Button variant="ghost" size="sm" onClick={() => handleToggleUserStatus(user.id)}>
-                  {user.isActive ? <UserMinus className="h-4 w-4" /> : <UserPlus className="h-4 w-4" />}
-                </Button>
+                <PermissionGate resource="roles" action="update">
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => {
+                      setSelectedUserId(user.id);
+                      setIsAssigningRole(true);
+                    }}
+                  >
+                    <Shield className="h-4 w-4 mr-1" />
+                    Manage Roles
+                  </Button>
+                </PermissionGate>
               </div>
             </div>
           ))}
         </div>
+
+        {/* Role Assignment Dialog */}
+        <Dialog open={isAssigningRole} onOpenChange={setIsAssigningRole}>
+          <DialogContent className="glass max-w-2xl">
+            <DialogHeader>
+              <DialogTitle>Manage User Roles</DialogTitle>
+              <DialogDescription>Assign or revoke roles for this user</DialogDescription>
+            </DialogHeader>
+            <div className="space-y-6 py-4">
+              {/* Current Roles */}
+              <div>
+                <Label className="mb-2 block">Current Roles</Label>
+                {userRolesLoading ? (
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                ) : userRoles && userRoles.length > 0 ? (
+                  <div className="space-y-2">
+                    {userRoles.map((userRole) => (
+                      <div
+                        key={userRole.id}
+                        className="flex items-center justify-between p-3 rounded-lg border bg-card"
+                      >
+                        <div className="flex items-center gap-3">
+                          <Badge variant="outline" className={getRoleBadgeColor(userRole.role.role_type)}>
+                            {userRole.role.display_name}
+                          </Badge>
+                          {userRole.portfolio_name && (
+                            <span className="text-sm text-muted-foreground">
+                              Portfolio: {userRole.portfolio_name}
+                            </span>
+                          )}
+                          {userRole.business_unit_scope && (
+                            <span className="text-sm text-muted-foreground">
+                              BU: {userRole.business_unit_scope}
+                            </span>
+                          )}
+                        </div>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => handleRevokeRole(selectedUserId!, userRole.role.id)}
+                        >
+                          <UserMinus className="h-4 w-4" />
+                        </Button>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <p className="text-sm text-muted-foreground">No roles assigned</p>
+                )}
+              </div>
+
+              {/* Assign New Role */}
+              <div className="space-y-4 border-t pt-4">
+                <Label className="text-base font-semibold">Assign New Role</Label>
+                <div className="space-y-4">
+                  <div className="space-y-2">
+                    <Label>Role</Label>
+                    <Select value={selectedRoleId} onValueChange={setSelectedRoleId}>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select a role" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {rolesLoading ? (
+                          <SelectItem value="loading" disabled>
+                            Loading...
+                          </SelectItem>
+                        ) : (
+                          roles?.map((role: Role) => (
+                            <SelectItem key={role.id} value={role.id}>
+                              {role.display_name}
+                            </SelectItem>
+                          ))
+                        )}
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label>Portfolio Scope (Optional)</Label>
+                    <Input
+                      value={selectedPortfolioScope}
+                      onChange={(e) => setSelectedPortfolioScope(e.target.value)}
+                      placeholder="Leave empty for global scope"
+                    />
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label>Business Unit Scope (Optional)</Label>
+                    <Input
+                      value={selectedBusinessUnitScope}
+                      onChange={(e) => setSelectedBusinessUnitScope(e.target.value)}
+                      placeholder="Leave empty for global scope"
+                    />
+                  </div>
+                </div>
+              </div>
+            </div>
+            <DialogFooter>
+              <Button variant="outline" onClick={() => setIsAssigningRole(false)}>
+                Cancel
+              </Button>
+              <Button
+                onClick={handleAssignRole}
+                disabled={!selectedRoleId || assignRoleMutation.isPending}
+                className="bg-eucora-teal hover:bg-eucora-teal-dark"
+              >
+                {assignRoleMutation.isPending ? (
+                  <>
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    Assigning...
+                  </>
+                ) : (
+                  'Assign Role'
+                )}
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
       </CardContent>
     </Card>
   );

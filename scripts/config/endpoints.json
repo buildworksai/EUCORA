@@ -1,0 +1,71 @@
+{
+  "SPDX-License-Identifier": "Apache-2.0",
+  "Copyright": "(c) 2026 BuildWorks.AI",
+  "description": "Centralized endpoint configuration for all connectors and services",
+  "version": "1.0.0",
+  "endpoints": {
+    "microsoft": {
+      "graph_api_base": "https://graph.microsoft.com/v1.0",
+      "graph_api_beta": "https://graph.microsoft.com/beta",
+      "oauth_token": "https://login.microsoftonline.com/{tenant_id}/oauth2/v2.0/token",
+      "azure_log_analytics": "https://{workspace}.ods.opinsights.azure.com/api/logs?api-version=2016-04-01",
+      "oauth_token_template": "https://login.microsoftonline.com/{tenant_id}/oauth2/v2.0/token"
+    },
+    "intune": {
+      "mobile_apps": "/deviceAppManagement/mobileApps",
+      "mobile_app_by_id": "/deviceAppManagement/mobileApps/{app_id}",
+      "app_assignments": "/deviceAppManagement/mobileApps/{app_id}/assignments",
+      "app_device_statuses": "/deviceAppManagement/mobileApps/{app_id}/deviceStatuses",
+      "groups": "/groups/{group_id}/members",
+      "mobile_apps_filter": "/deviceAppManagement/mobileApps?$filter={filter}"
+    },
+    "jamf": {
+      "packages": "/api/v1/packages",
+      "package_upload": "/api/v1/packages/{package_id}/upload",
+      "policies": "/JSSResource/policies",
+      "policy_by_id": "/JSSResource/policies/id/{policy_id}",
+      "computer_logs": "/JSSResource/computermanagementlogs/policy/id/{policy_id}",
+      "computer_groups": "/JSSResource/computergroups/id/{group_id}",
+      "jamf_pro_info": "/api/v1/jamf-pro-information"
+    },
+    "sccm": {
+      "applications": "/wmi/SMS_Application",
+      "deployment_types": "/wmi/SMS_DeploymentType",
+      "deployments": "/wmi/SMS_ApplicationAssignment",
+      "deployments_filter": "/wmi/SMS_ApplicationAssignment?$filter={filter}",
+      "application_by_id": "/wmi/SMS_Application(ModelName='{app_id}')",
+      "app_deployment_asset_details": "/wmi/SMS_AppDeploymentAssetDetails?$filter={filter}",
+      "site": "/wmi/SMS_Site",
+      "collection_members": "/wmi/SMS_FullCollectionMembership?$filter={filter}"
+    },
+    "landscape": {
+      "package_profiles": "/api/v2/package-profiles",
+      "package_profile_by_id": "/api/v2/package-profiles/{profile_id}",
+      "package_profiles_filter": "/api/v2/package-profiles?tags={filter}",
+      "activities": "/api/v2/activities",
+      "activities_filter": "/api/v2/activities?package_profile_id={profile_id}",
+      "activity_results": "/api/v2/activities/{activity_id}/results",
+      "computers": "/api/v2/computers?limit={limit}",
+      "computers_filter": "/api/v2/computers?tags={filter}"
+    },
+    "ansible": {
+      "ping": "/ping/",
+      "inventory_hosts": "/inventories/{inventory_id}/hosts/"
+    },
+    "siem": {
+      "azure_log_analytics": "https://{workspace}.ods.opinsights.azure.com/api/logs?api-version=2016-04-01"
+    }
+  },
+  "timeouts": {
+    "default": 30,
+    "upload": 300,
+    "health_check": 10,
+    "test_connection": 15
+  },
+  "retry": {
+    "max_attempts": 3,
+    "initial_delay_ms": 1000,
+    "max_delay_ms": 10000,
+    "backoff_multiplier": 2
+  }
+}

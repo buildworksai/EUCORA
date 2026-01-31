@@ -13,6 +13,7 @@ Related Docs: docs/modules/ansible/connector-spec.md, .agents/rules/08-connector
 Set-StrictMode -Version Latest
 $ErrorActionPreference = 'Stop'
 . "$PSScriptRoot/../common/ConnectorBase.ps1"
+. "$PSScriptRoot/../../utilities/common/Get-EndpointConfig.ps1"
 
 function Get-AnsibleHeaders {
     [CmdletBinding()]
@@ -157,8 +158,11 @@ function Get-AnsibleJobLog {
 
     $headers = Get-AnsibleHeaders -CorrelationId $CorrelationId
 
+    # Get timeout from configuration
+    $timeoutSeconds = Get-ConfigValue -Key "connectors.ansible.timeout_seconds" -DefaultValue 60
+
     try {
-        $logContent = Invoke-RestMethod -Uri $logUri -Method 'GET' -Headers $headers -TimeoutSec 60
+        $logContent = Invoke-RestMethod -Uri $logUri -Method 'GET' -Headers $headers -TimeoutSec $timeoutSeconds
 
         Write-StructuredLog -Level 'Debug' -Message 'Ansible job log retrieved' -CorrelationId $CorrelationId -Metadata @{
             job_id = $JobId
@@ -348,7 +352,9 @@ function Test-AnsibleConnection {
     }
 
     try {
-        $statusUri = "$($config.tower_api_url.TrimEnd('/'))/ping/"
+        $baseUrl = $config.tower_api_url.TrimEnd('/')
+        $statusPath = Get-EndpointConfig -Service "ansible" -Endpoint "ping"
+        $statusUri = "$baseUrl$statusPath"
         $response = Invoke-ConnectorRequest -Uri $statusUri -Method 'GET' -Headers (Get-AnsibleHeaders -CorrelationId (Get-CorrelationId -Type uuid)) -CorrelationId (Get-CorrelationId -Type uuid)
         return @{
             connector = 'ansible'
@@ -383,7 +389,9 @@ function Get-AnsibleTargetDevices {
 
     $headers = Get-AnsibleHeaders -CorrelationId (Get-CorrelationId -Type uuid)
     $inventoryId = $config.inventory_id
-    $hostsUri = "$($config.tower_api_url.TrimEnd('/'))/inventories/$inventoryId/hosts/"
+    $baseUrl = $config.tower_api_url.TrimEnd('/')
+    $hostsPath = Get-EndpointConfig -Service "ansible" -Endpoint "inventory_hosts" -Parameters @{inventory_id = $inventoryId}
+    $hostsUri = "$baseUrl$hostsPath"
     $response = Invoke-ConnectorRequest -Uri $hostsUri -Method 'GET' -Headers $headers -CorrelationId (Get-CorrelationId -Type uuid)
     $hosts = if ($response.ContainsKey('results')) { $response.results } else { @() }
 

@@ -35,6 +35,11 @@ done
 echo "Running Django migrations..."
 python manage.py migrate --noinput
 
+echo "Seeding workflow definitions..."
+python manage.py seed_workflows || {
+  echo "⚠️  Warning: seed_workflows failed, continuing anyway..."
+}
+
 echo "Setting up development data..."
 python manage.py setup_dev_data || {
   echo "⚠️  Warning: setup_dev_data failed, continuing anyway..."

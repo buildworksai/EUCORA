@@ -50,7 +50,27 @@ INSTALLED_APPS = [
     "apps.ai_strategy",
     "apps.license_management",
     "apps.application_portfolio",
+    "apps.portfolio_management",
+    "apps.rbac",
+    "apps.storage",
+    "apps.knowledge",
+    "apps.policy_documents",
+    "apps.cmdb_integration",
+    "apps.change_communications",
+    "apps.discovery_agent",
+    "apps.documentation_agent",
+    "apps.automation_advisor",
+    "apps.iam_security",
 ]
+
+# Django Channels (optional - for WebSocket support)
+# Only add if channels is installed
+try:
+    import channels  # noqa: F401
+
+    INSTALLED_APPS.append("channels")
+except ImportError:
+    pass  # Channels not installed - WebSocket support disabled
 
 MIDDLEWARE = [
     "django.middleware.security.SecurityMiddleware",
@@ -283,6 +303,30 @@ AZURE_SENTINEL_SHARED_KEY = config("AZURE_SENTINEL_SHARED_KEY", default="")
 # Celery Configuration
 CELERY_BROKER_URL = config("CELERY_BROKER_URL", default="redis://localhost:6379/1")
 CELERY_RESULT_BACKEND = config("CELERY_RESULT_BACKEND", default="redis://localhost:6379/1")
+
+# Django Channels Configuration (for WebSocket support)
+# Only configure if channels is installed (check already done above)
+try:
+    # Uses same Redis instance as cache, but different database (db 2 for channels)
+    # Parse REDIS_URL to extract host and port (works with Docker hostname 'redis' or localhost)
+    _redis_url = config("REDIS_URL", default="redis://localhost:6379/0")
+    _redis_parsed = _redis_url.replace("redis://", "").split("/")[0]
+    _redis_host = _redis_parsed.split(":")[0]
+    _redis_port = int(_redis_parsed.split(":")[1]) if ":" in _redis_parsed else 6379
+
+    CHANNEL_LAYERS = {
+        "default": {
+            "BACKEND": "channels_redis.core.RedisChannelLayer",
+            "CONFIG": {
+                "hosts": [(_redis_host, _redis_port)],
+                "capacity": 1500,  # Maximum number of messages to store per channel
+                "expiry": 10,  # Message expiry time in seconds
+            },
+        },
+    }
+except ImportError:
+    # Channels not installed - WebSocket support disabled
+    CHANNEL_LAYERS = {}
 CELERY_ACCEPT_CONTENT = ["json"]
 CELERY_TASK_SERIALIZER = "json"
 CELERY_RESULT_SERIALIZER = "json"

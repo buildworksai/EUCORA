@@ -2,11 +2,15 @@
 // Copyright (c) 2026 BuildWorks.AI
 import { useUIStore } from '@/lib/stores/uiStore';
 import { useAuthStore } from '@/lib/stores/authStore';
-import { isAdmin, isDemo, hasPermission } from '@/types/auth';
+import { isAdmin, isDemo } from '@/types/auth';
+import { usePermissions } from '@/lib/auth/usePermissions';
+import { ResourceType } from '@/routes/settings/rbac/contracts';
 import { cn } from '@/lib/utils';
 import {
     LayoutDashboard, Box, ShieldCheck, Settings, Database, Activity,
-    HeartPulse, Sparkles, Shield, Users, Bell, Package, FileKey
+    HeartPulse, Sparkles, Shield, Users, Bell, Package, FileKey,
+    Briefcase, TrendingUp, DollarSign, PackageCheck, FileText,
+    Server, MessageSquare, Search
 } from 'lucide-react';
 import { NavLink } from 'react-router-dom';
 import { LicenseSummaryWidget } from '@/components/licenses';
@@ -16,29 +20,39 @@ interface NavItem {
     label: string;
     icon: React.ComponentType<{ className?: string }>;
     adminOnly?: boolean;
-    resource?: string;
+    resource?: ResourceType;
+    action?: 'read' | 'create' | 'update' | 'delete';
 }
 
 const navItems: NavItem[] = [
-    { href: '/dashboard', label: 'Dashboard', icon: LayoutDashboard, resource: 'dashboard' },
-    { href: '/dex', label: 'DEX & Green IT', icon: HeartPulse, resource: 'deployments' },
-    { href: '/assets', label: 'Asset Inventory', icon: Database, resource: 'assets' },
-    { href: '/compliance', label: 'Compliance', icon: ShieldCheck, resource: 'compliance' },
-    { href: '/deploy', label: 'Deployments', icon: Box, resource: 'deployments' },
-    { href: '/deployments/stack', label: 'Application Stack', icon: Package, resource: 'deployments' },
-    { href: '/cab', label: 'CAB Portal', icon: Activity, resource: 'cab' },
-    { href: '/ai-agents', label: 'AI Agents', icon: Sparkles, resource: 'ai' },
-    { href: '/licenses', label: 'Licenses', icon: FileKey, resource: 'licenses' },
-    { href: '/audit', label: 'Audit Trail', icon: Database, resource: 'audit' },
-    { href: '/notifications', label: 'Notifications', icon: Bell, resource: 'notifications' },
-    { href: '/settings', label: 'Settings', icon: Settings, resource: 'settings' },
-    { href: '/admin/demo-data', label: 'Demo Data', icon: Shield, resource: 'admin', adminOnly: true },
+    { href: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
+    { href: '/dex', label: 'DEX & Green IT', icon: HeartPulse, resource: 'dex_data', action: 'read' },
+    { href: '/assets', label: 'Asset Inventory', icon: Database, resource: 'assets', action: 'read' },
+    { href: '/compliance', label: 'Compliance', icon: ShieldCheck, resource: 'compliance_data', action: 'read' },
+    { href: '/deploy', label: 'Deployments', icon: Box, resource: 'deployment_intents', action: 'read' },
+    { href: '/deployments/stack', label: 'Application Stack', icon: Package, resource: 'applications', action: 'read' },
+    { href: '/cab', label: 'CAB Portal', icon: Activity, resource: 'cab_requests', action: 'read' },
+    { href: '/ai-agents', label: 'AI Agents', icon: Sparkles, resource: 'ai_agents', action: 'read' },
+    { href: '/cmdb', label: 'CMDB Integration', icon: Server, resource: 'cmdb_connections', action: 'read' },
+    { href: '/communications', label: 'Communications', icon: MessageSquare, resource: 'change_records', action: 'read' },
+    { href: '/discovery', label: 'Discovery', icon: Search, resource: 'discovery_sources', action: 'read' },
+    { href: '/licenses', label: 'Licenses', icon: FileKey, resource: 'license_inventory', action: 'read' },
+    { href: '/portfolios', label: 'Portfolios', icon: Briefcase, resource: 'portfolios', action: 'read' },
+    { href: '/performance', label: 'Performance', icon: TrendingUp, resource: 'portfolio_metrics', action: 'read' },
+    { href: '/forecasts', label: 'Forecasts', icon: DollarSign, resource: 'license_forecasts', action: 'read' },
+    { href: '/packaging-requests', label: 'Packaging', icon: PackageCheck, resource: 'packaging_requests', action: 'read' },
+    { href: '/audit', label: 'Audit Trail', icon: Database, resource: 'audit_trail', action: 'read' },
+    { href: '/notifications', label: 'Notifications', icon: Bell },
+    { href: '/settings', label: 'Settings', icon: Settings, resource: 'platform_settings', action: 'read' },
+    { href: '/admin/policy-documents', label: 'Policy Documents', icon: FileText, resource: 'policy_documents', action: 'read', adminOnly: true },
+    { href: '/admin/demo-data', label: 'Demo Data', icon: Shield, resource: 'platform_settings', action: 'read', adminOnly: true },
 ];
 
 export function Sidebar() {
     const { sidebarOpen: isSidebarOpen } = useUIStore();
     const { user } = useAuthStore();
-    const userIsAdmin = isAdmin(user);
+    const { hasPermission, isAdmin: userIsAdminRBAC } = usePermissions();
+    const userIsAdmin = isAdmin(user) || userIsAdminRBAC;
     const userIsDemo = isDemo(user);
 
     // Filter nav items based on user permissions
@@ -52,8 +66,8 @@ export function Sidebar() {
         if (userIsDemo) return true;
 
         // Check permission for resource
-        if (item.resource) {
-            return hasPermission(user, item.resource, 'read');
+        if (item.resource && item.action) {
+            return hasPermission(item.resource, item.action);
         }
 
         return true;

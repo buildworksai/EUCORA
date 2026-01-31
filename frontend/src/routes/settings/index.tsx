@@ -13,6 +13,8 @@ import ProfileTab from './ProfileTab';
 import AIProvidersTab from './AIProvidersTab';
 import UsersTab from './UsersTab';
 import IntegrationsTab from './IntegrationsTab';
+import StorageTab from './StorageTab';
+import KnowledgeTab from './KnowledgeTab';
 
 export default function Settings() {
   const [searchParams, setSearchParams] = useSearchParams();
@@ -61,9 +63,11 @@ export default function Settings() {
       )}
 
       <Tabs value={activeTab} className="space-y-6" onValueChange={handleTabChange}>
-        <TabsList className={`glass grid w-full ${userIsAdmin ? 'grid-cols-4' : 'grid-cols-2'}`}>
+        <TabsList className={`glass grid w-full ${userIsAdmin ? 'grid-cols-6' : 'grid-cols-2'}`}>
           <TabsTrigger value="profile">Profile</TabsTrigger>
           <TabsTrigger value="ai">AI Providers</TabsTrigger>
+          {userIsAdmin && <TabsTrigger value="storage">Storage</TabsTrigger>}
+          {userIsAdmin && <TabsTrigger value="knowledge">Knowledge</TabsTrigger>}
           {userIsAdmin && <TabsTrigger value="users">Users</TabsTrigger>}
           {userIsAdmin && <TabsTrigger value="integrations">Integrations</TabsTrigger>}
         </TabsList>
@@ -74,6 +78,16 @@ export default function Settings() {
         <TabsContent value="ai" className="space-y-6">
           <AIProvidersTab />
         </TabsContent>
+        {userIsAdmin && (
+          <TabsContent value="storage" className="space-y-6">
+            <StorageTab />
+          </TabsContent>
+        )}
+        {userIsAdmin && (
+          <TabsContent value="knowledge" className="space-y-6">
+            <KnowledgeTab />
+          </TabsContent>
+        )}
         {userIsAdmin && (
           <TabsContent value="users" className="space-y-6">
             <UsersTab />
