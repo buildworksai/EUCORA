@@ -15,7 +15,6 @@ import {
     ChevronDown, Rocket, Building2, Wrench, Lock, Brain, Cog
 } from 'lucide-react';
 import { NavLink, useLocation } from 'react-router-dom';
-import { LicenseSummaryWidget } from '@/components/licenses';
 
 interface NavItem {
     href: string;
@@ -331,58 +330,31 @@ export function Sidebar() {
                 })}
             </nav>
 
-            {/* Compact License Widget (collapsed sidebar) */}
-            {!isSidebarOpen && (
-                <div className="mt-auto px-3 w-full">
-                    <LicenseSummaryWidget compact className="mb-2" />
-                </div>
-            )}
-
-            {/* Footer Status */}
-            <div className={cn("mt-auto px-6 w-full", !isSidebarOpen && "hidden")}>
-                {/* License Summary Widget (D8.5 Implementation) */}
-                <LicenseSummaryWidget className="mb-3" />
-
-                <div className="p-4 rounded-xl bg-white/5 border border-white/5">
-                    <div className="flex items-center justify-between mb-2">
-                        <span className="text-xs font-semibold text-muted-foreground uppercase">System Status</span>
-                        <span className="h-2 w-2 rounded-full bg-eucora-green animate-pulse" />
-                    </div>
-                    <div className="text-xs text-muted-foreground">
-                        <div className="flex justify-between">
-                            <span>API</span>
-                            <span className="text-eucora-green">Operational</span>
-                        </div>
-                        <div className="flex justify-between mt-1">
-                            <span>Factory</span>
-                            <span className="text-eucora-gold">Busy</span>
-                        </div>
-                    </div>
-                </div>
-
+            {/* Footer */}
+            <div className={cn("mt-auto px-6 w-full pt-4", !isSidebarOpen && "px-3")}>
                 {/* User Role Indicator */}
-                <div className="mt-3 p-3 rounded-lg bg-white/5">
+                <div className={cn("p-3 rounded-lg bg-white/5", !isSidebarOpen && "p-2")}>
                     <div className="flex items-center gap-2 text-xs">
                         {userIsAdmin ? (
                             <>
-                                <Shield className="w-4 h-4 text-eucora-gold" />
-                                <span className="text-eucora-gold">Admin Access</span>
+                                <Shield className="w-4 h-4 text-eucora-gold flex-shrink-0" />
+                                <span className={cn("text-eucora-gold", !isSidebarOpen && "hidden")}>Admin Access</span>
                             </>
                         ) : userIsDemo ? (
                             <>
-                                <Sparkles className="w-4 h-4 text-eucora-teal" />
-                                <span className="text-eucora-teal">Demo Mode</span>
+                                <Sparkles className="w-4 h-4 text-eucora-teal flex-shrink-0" />
+                                <span className={cn("text-eucora-teal", !isSidebarOpen && "hidden")}>Demo Mode</span>
                             </>
                         ) : (
                             <>
-                                <Users className="w-4 h-4 text-muted-foreground" />
-                                <span className="text-muted-foreground">{user?.role || 'User'}</span>
+                                <Users className="w-4 h-4 text-muted-foreground flex-shrink-0" />
+                                <span className={cn("text-muted-foreground", !isSidebarOpen && "hidden")}>{user?.role || 'User'}</span>
                             </>
                         )}
                     </div>
                 </div>
 
-                <div className="mt-4 text-[10px] text-center text-muted-foreground/50">
+                <div className={cn("mt-3 text-[10px] text-center text-muted-foreground/50", !isSidebarOpen && "hidden")}>
                     Built by BuildWorks.AI
                 </div>
             </div>
