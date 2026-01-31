@@ -6,8 +6,7 @@ RAG context retriever for policy documents.
 from dataclasses import dataclass
 from typing import List, Optional
 
-from asgiref.sync import async_to_sync
-
+from apps.core.async_utils import run_async
 from apps.knowledge.embeddings.factory import EmbeddingService
 from apps.knowledge.services.retrieval import KnowledgeRetrievalService
 
@@ -47,12 +46,14 @@ class PolicyContextRetriever:
             List of chunks with content, source document, and similarity score.
         """
         # Use knowledge retrieval service
-        results = async_to_sync(self.retrieval_service.search)(
-            query=query,
-            source_types=["policy_document"],
-            categories=categories,
-            top_k=top_k,
-            min_similarity=min_similarity,
+        results = run_async(
+            self.retrieval_service.search(
+                query=query,
+                source_types=["policy_document"],
+                categories=categories,
+                top_k=top_k,
+                min_similarity=min_similarity,
+            )
         )
 
         # Convert to RetrievedChunk format

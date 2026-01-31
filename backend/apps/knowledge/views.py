@@ -3,7 +3,7 @@
 """
 API views for Knowledge.
 """
-from asgiref.sync import async_to_sync
+from apps.core.async_utils import run_async
 from django.db.models import Count, Max, Q
 from rest_framework import status, viewsets
 from rest_framework.decorators import action
@@ -47,7 +47,7 @@ class EmbeddingConfigViewSet(viewsets.ModelViewSet):
         try:
             service = EmbeddingService.get_instance()
             provider = service._create_provider(config)
-            embedding = async_to_sync(provider.embed)(test_text)
+            embedding = run_async(provider.embed(test_text))
 
             return Response(
                 {
@@ -77,7 +77,7 @@ class KnowledgeSearchViewSet(viewsets.ViewSet):
         service = EmbeddingService.get_instance()
         retrieval_service = KnowledgeRetrievalService(service)
 
-        results = async_to_sync(retrieval_service.search)(**serializer.validated_data)
+        results = run_async(retrieval_service.search(**serializer.validated_data))
 
         result_serializer = RetrievedKnowledgeSerializer(results, many=True)
         return Response(result_serializer.data)
@@ -91,7 +91,7 @@ class KnowledgeSearchViewSet(viewsets.ViewSet):
         service = EmbeddingService.get_instance()
         retrieval_service = KnowledgeRetrievalService(service)
 
-        results = async_to_sync(retrieval_service.hybrid_search)(**serializer.validated_data)
+        results = run_async(retrieval_service.hybrid_search(**serializer.validated_data))
 
         result_serializer = RetrievedKnowledgeSerializer(results, many=True)
         return Response(result_serializer.data)
@@ -105,7 +105,7 @@ class KnowledgeSearchViewSet(viewsets.ViewSet):
         service = EmbeddingService.get_instance()
         pipeline = KnowledgeIndexingPipeline(service)
 
-        count = async_to_sync(pipeline.index_text)(**serializer.validated_data)
+        count = run_async(pipeline.index_text(**serializer.validated_data))
 
         return Response({"success": True, "chunks_indexed": count})
 

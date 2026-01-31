@@ -3,8 +3,7 @@
 """
 Document processing pipeline.
 """
-from asgiref.sync import async_to_sync
-
+from apps.core.async_utils import run_async
 from apps.knowledge.embeddings.factory import EmbeddingService
 from apps.knowledge.services.indexing import KnowledgeIndexingPipeline
 from apps.policy_documents.models import DocumentChunk, PolicyDocument
@@ -42,7 +41,7 @@ class DocumentProcessingPipeline:
 
             # Generate embeddings and store chunks
             chunk_texts = [chunk.content for chunk in chunks]
-            embeddings = async_to_sync(self.embedding_service.embed_batch)(chunk_texts)
+            embeddings = run_async(self.embedding_service.embed_batch(chunk_texts))
 
             # Create DocumentChunk records
             document_chunks = []
@@ -64,13 +63,15 @@ class DocumentProcessingPipeline:
             DocumentChunk.objects.bulk_create(document_chunks)
 
             # Index in knowledge vectors
-            async_to_sync(self.indexing_pipeline.index_text)(
-                source_type="policy_document",
-                source_id=str(document.id),
-                content=text,
-                category=document.category.category_type,
-                tags=document.tags,
-                source_created_at=document.created_at,
+            run_async(
+                self.indexing_pipeline.index_text(
+                    source_type="policy_document",
+                    source_id=str(document.id),
+                    content=text,
+                    category=document.category.category_type,
+                    tags=document.tags,
+                    source_created_at=document.created_at,
+                )
             )
 
             # Update document status

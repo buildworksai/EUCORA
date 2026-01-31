@@ -8,7 +8,7 @@ Provides endpoints for provider configuration, metrics, dashboard, and Green IT 
 import logging
 from datetime import timedelta
 
-from asgiref.sync import async_to_sync
+from apps.core.async_utils import run_async
 from django.db.models import Avg, Count, Q, Sum
 from django.utils import timezone
 from rest_framework import status, viewsets
@@ -64,7 +64,7 @@ class DEXProviderViewSet(viewsets.ModelViewSet):
 
         try:
             service = DEXSyncService(provider)
-            is_healthy = async_to_sync(service.client.health_check)()
+            is_healthy = run_async(service.client.health_check())
 
             if is_healthy:
                 return Response({"status": "success", "message": "Connection successful"}, status=status.HTTP_200_OK)
@@ -88,7 +88,7 @@ class DEXProviderViewSet(viewsets.ModelViewSet):
 
         try:
             service = DEXSyncService(provider)
-            result = async_to_sync(service.sync)()
+            result = run_async(service.sync())
 
             return Response(
                 {

@@ -7,7 +7,7 @@ import logging
 from datetime import timedelta
 from typing import Dict, List
 
-from asgiref.sync import async_to_sync
+from apps.core.async_utils import run_async
 from django.db.models import Count, Q
 from django.utils import timezone
 from rest_framework import status, viewsets
@@ -91,7 +91,7 @@ class TrackedRequestViewSet(viewsets.ModelViewSet):
             finally:
                 await service.close()
 
-        synced_ids = async_to_sync(run_sync)()
+        synced_ids = run_async(run_sync())
 
         return Response({"synced": len(synced_ids), "request_ids": synced_ids})
 

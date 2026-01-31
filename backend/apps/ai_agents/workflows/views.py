@@ -5,12 +5,11 @@ API views for AI Agent Workflows.
 """
 import logging
 
-from asgiref.sync import async_to_sync
-from django.db import transaction
 from rest_framework import status, viewsets
 from rest_framework.decorators import action
 from rest_framework.response import Response
 
+from apps.core.async_utils import run_async
 from apps.rbac.permissions import RBACPermission
 
 from .executor import WorkflowExecutor
@@ -53,9 +52,9 @@ class WorkflowDefinitionViewSet(viewsets.ReadOnlyModelViewSet):
         input_data = serializer.validated_data["input_data"]
 
         try:
-            # Start workflow asynchronously (using async_to_sync for compatibility with running event loops)
+            # Start workflow asynchronously using thread pool
             executor = WorkflowExecutor()
-            execution = async_to_sync(executor.start_workflow)(workflow, request.user, input_data)
+            execution = run_async(executor.start_workflow(workflow, request.user, input_data))
 
             execution_serializer = WorkflowExecutionSerializer(execution)
             return Response(execution_serializer.data, status=status.HTTP_201_CREATED)
@@ -119,8 +118,7 @@ class WorkflowExecutionViewSet(viewsets.ModelViewSet):
             executor = WorkflowExecutor()
             notes = serializer.validated_data.get("notes", "")
 
-            with transaction.atomic():
-                updated_execution = async_to_sync(executor.approve_step)(execution, request.user, notes)
+            updated_execution = run_async(executor.approve_step(execution, request.user, notes))
 
             execution_serializer = WorkflowExecutionSerializer(updated_execution)
             return Response(execution_serializer.data)
@@ -152,8 +150,7 @@ class WorkflowExecutionViewSet(viewsets.ModelViewSet):
             executor = WorkflowExecutor()
             reason = serializer.validated_data["reason"]
 
-            with transaction.atomic():
-                updated_execution = async_to_sync(executor.reject_step)(execution, request.user, reason)
+            updated_execution = run_async(executor.reject_step(execution, request.user, reason))
 
             execution_serializer = WorkflowExecutionSerializer(updated_execution)
             return Response(execution_serializer.data)

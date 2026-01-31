@@ -5,7 +5,7 @@ API views for CMDB Integration.
 """
 import logging
 
-from asgiref.sync import async_to_sync
+from apps.core.async_utils import run_async
 from django.db.models import Count
 from django.utils import timezone
 from rest_framework import status, viewsets
@@ -79,7 +79,7 @@ class CMDBConnectionViewSet(viewsets.ModelViewSet):
             finally:
                 await service.close()
 
-        result = async_to_sync(run_test)()
+        result = run_async(run_test())
 
         return Response(result)
 
@@ -194,7 +194,7 @@ class CMDBSyncRecordViewSet(viewsets.ModelViewSet):
             finally:
                 await service.close()
 
-        async_to_sync(run_sync)()
+        run_async(run_sync())
 
         # Refresh and return
         sync_record.refresh_from_db()

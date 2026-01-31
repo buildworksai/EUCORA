@@ -6,7 +6,7 @@ API views for IAM Security.
 import logging
 from datetime import datetime, timedelta
 
-from asgiref.sync import async_to_sync
+from apps.core.async_utils import run_async
 from django.db.models import Count, Q
 from django.utils import timezone
 from rest_framework import status, viewsets
@@ -87,7 +87,7 @@ class IdentityProviderViewSet(viewsets.ModelViewSet):
                     return {"error": str(e)}
             return {"error": "Provider type not supported"}
 
-        result = async_to_sync(run_sync)()
+        result = run_async(run_sync())
         return Response(result)
 
 
@@ -282,7 +282,7 @@ class SecurityActionsViewSet(viewsets.ViewSet):
             service = ResponseActionsService(provider)
             return await service.disable_account(user_principal)
 
-        result = async_to_sync(run_action)()
+        result = run_async(run_action())
         return Response({"success": result})
 
     @action(detail=False, methods=["post"])
@@ -306,7 +306,7 @@ class SecurityActionsViewSet(viewsets.ViewSet):
             service = ResponseActionsService(provider)
             return await service.revoke_permissions(user_principal)
 
-        result = async_to_sync(run_action)()
+        result = run_async(run_action())
         return Response({"success": result})
 
     @action(detail=False, methods=["post"])
@@ -330,7 +330,7 @@ class SecurityActionsViewSet(viewsets.ViewSet):
             service = ResponseActionsService(provider)
             return await service.force_password_reset(user_principal)
 
-        result = async_to_sync(run_action)()
+        result = run_async(run_action())
         return Response({"success": result})
 
 
