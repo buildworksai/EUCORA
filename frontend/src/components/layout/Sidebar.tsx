@@ -9,7 +9,7 @@ import { ResourceType } from '@/routes/settings/rbac/contracts';
 import { cn } from '@/lib/utils';
 import {
     LayoutDashboard, Box, ShieldCheck, Settings, Database, Activity,
-    HeartPulse, Sparkles, Shield, Users, Bell, Package, FileKey,
+    HeartPulse, Sparkles, Shield, Bell, Package, FileKey,
     Briefcase, TrendingUp, DollarSign, PackageCheck, FileText,
     Server, MessageSquare, Search, ClipboardList, BookOpen, Target, CalendarClock,
     ChevronDown, Rocket, Building2, Wrench, Lock, Brain, Cog
@@ -331,30 +331,8 @@ export function Sidebar() {
             </nav>
 
             {/* Footer */}
-            <div className={cn("mt-auto px-6 w-full pt-4", !isSidebarOpen && "px-3")}>
-                {/* User Role Indicator */}
-                <div className={cn("p-3 rounded-lg bg-white/5", !isSidebarOpen && "p-2")}>
-                    <div className="flex items-center gap-2 text-xs">
-                        {userIsAdmin ? (
-                            <>
-                                <Shield className="w-4 h-4 text-eucora-gold flex-shrink-0" />
-                                <span className={cn("text-eucora-gold", !isSidebarOpen && "hidden")}>Admin Access</span>
-                            </>
-                        ) : userIsDemo ? (
-                            <>
-                                <Sparkles className="w-4 h-4 text-eucora-teal flex-shrink-0" />
-                                <span className={cn("text-eucora-teal", !isSidebarOpen && "hidden")}>Demo Mode</span>
-                            </>
-                        ) : (
-                            <>
-                                <Users className="w-4 h-4 text-muted-foreground flex-shrink-0" />
-                                <span className={cn("text-muted-foreground", !isSidebarOpen && "hidden")}>{user?.role || 'User'}</span>
-                            </>
-                        )}
-                    </div>
-                </div>
-
-                <div className={cn("mt-3 text-[10px] text-center text-muted-foreground/50", !isSidebarOpen && "hidden")}>
+            <div className={cn("mt-auto px-6 w-full pt-4", !isSidebarOpen && "hidden")}>
+                <div className="text-[10px] text-center text-muted-foreground/50">
                     Built by BuildWorks.AI
                 </div>
             </div>
