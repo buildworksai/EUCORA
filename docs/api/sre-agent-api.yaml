@@ -1,0 +1,559 @@
+openapi: 3.0.3
+info:
+  title: SRE Agent API
+  version: v1.0
+  description: |
+    Site Reliability Engineering agent for monitoring integration, health checks,
+    SLO tracking, self-healing automation, and runbook execution.
+servers:
+  - url: https://api.control-plane.corp/api/sre
+    description: Production API
+components:
+  securitySchemes:
+    AzureAD:
+      type: oauth2
+      flows:
+        clientCredentials:
+          tokenUrl: https://login.microsoftonline.com/{tenantId}/oauth2/v2.0/token
+          scopes:
+            control_plane/.default: SRE agent access
+  schemas:
+    MonitoringPlatform:
+      type: object
+      required: [name, platform_type]
+      properties:
+        id:
+          type: string
+          format: uuid
+        name:
+          type: string
+        platform_type:
+          type: string
+          enum: [prometheus, datadog, azure_monitor, newrelic]
+        connection_config:
+          type: object
+        is_active:
+          type: boolean
+    HealthEndpoint:
+      type: object
+      required: [name, url]
+      properties:
+        id:
+          type: string
+          format: uuid
+        name:
+          type: string
+        application:
+          type: string
+          format: uuid
+        url:
+          type: string
+          format: uri
+        method:
+          type: string
+          default: "GET"
+        expected_status:
+          type: integer
+          default: 200
+        timeout_seconds:
+          type: integer
+          default: 30
+        check_interval_minutes:
+          type: integer
+          default: 5
+        is_active:
+          type: boolean
+    HealthCheckResult:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        endpoint:
+          type: string
+          format: uuid
+        check_time:
+          type: string
+          format: date-time
+        status:
+          type: string
+          enum: [healthy, degraded, unhealthy]
+        response_time_ms:
+          type: integer
+        status_code:
+          type: integer
+        error_message:
+          type: string
+    SLODefinition:
+      type: object
+      required: [name, service_name, slo_type, target_value]
+      properties:
+        id:
+          type: string
+          format: uuid
+        name:
+          type: string
+        service_name:
+          type: string
+        slo_type:
+          type: string
+          enum: [availability, latency, error_rate, throughput]
+        target_value:
+          type: number
+        measurement_window_days:
+          type: integer
+          default: 30
+        is_active:
+          type: boolean
+    SLOMetric:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        slo:
+          type: string
+          format: uuid
+        measurement_time:
+          type: string
+          format: date-time
+        actual_value:
+          type: number
+        target_met:
+          type: boolean
+        error_budget_remaining:
+          type: number
+        burn_rate:
+          type: number
+    SelfHealingRule:
+      type: object
+      required: [name, trigger_type, remediation_script]
+      properties:
+        id:
+          type: string
+          format: uuid
+        name:
+          type: string
+        trigger_type:
+          type: string
+          enum: [health_check_failure, slo_breach, metric_threshold]
+        trigger_conditions:
+          type: object
+        remediation_script:
+          type: string
+        risk_level:
+          type: string
+          enum: [low, medium, high, critical]
+        requires_approval:
+          type: boolean
+        is_active:
+          type: boolean
+    SelfHealingExecution:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        correlation_id:
+          type: string
+        rule:
+          type: string
+          format: uuid
+        trigger_event:
+          type: object
+        status:
+          type: string
+          enum: [pending, approved, executing, completed, failed]
+        approved_by:
+          type: string
+          format: uuid
+        execution_log:
+          type: string
+        started_at:
+          type: string
+          format: date-time
+        completed_at:
+          type: string
+          format: date-time
+    Runbook:
+      type: object
+      required: [name, category, steps]
+      properties:
+        id:
+          type: string
+          format: uuid
+        name:
+          type: string
+        category:
+          type: string
+        steps:
+          type: array
+          items:
+            type: object
+        risk_level:
+          type: string
+          enum: [low, medium, high, critical]
+        is_active:
+          type: boolean
+    RunbookExecution:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        correlation_id:
+          type: string
+        runbook:
+          type: string
+          format: uuid
+        executed_by:
+          type: string
+          format: uuid
+        trigger_reason:
+          type: string
+        status:
+          type: string
+          enum: [pending, in_progress, completed, failed]
+        current_step:
+          type: integer
+        step_results:
+          type: array
+          items:
+            type: object
+        started_at:
+          type: string
+          format: date-time
+        completed_at:
+          type: string
+          format: date-time
+paths:
+  /monitoring-platforms/:
+    get:
+      summary: List monitoring platforms
+      operationId: listMonitoringPlatforms
+      security:
+        - AzureAD: []
+      parameters:
+        - name: platform_type
+          in: query
+          schema:
+            type: string
+        - name: is_active
+          in: query
+          schema:
+            type: boolean
+      responses:
+        '200':
+          description: List of platforms
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/MonitoringPlatform'
+  /health-endpoints/:
+    get:
+      summary: List health endpoints
+      operationId: listHealthEndpoints
+      security:
+        - AzureAD: []
+      parameters:
+        - name: is_active
+          in: query
+          schema:
+            type: boolean
+        - name: application_id
+          in: query
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: List of endpoints
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/HealthEndpoint'
+  /health-endpoints/{id}/check/:
+    post:
+      summary: Perform health check
+      operationId: performHealthCheck
+      security:
+        - AzureAD: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Health check result
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HealthCheckResult'
+  /health-check-results/:
+    get:
+      summary: List health check results
+      operationId: listHealthCheckResults
+      security:
+        - AzureAD: []
+      parameters:
+        - name: endpoint_id
+          in: query
+          schema:
+            type: string
+            format: uuid
+        - name: status
+          in: query
+          schema:
+            type: string
+      responses:
+        '200':
+          description: List of results
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/HealthCheckResult'
+  /slos/:
+    get:
+      summary: List SLO definitions
+      operationId: listSLODefinitions
+      security:
+        - AzureAD: []
+      parameters:
+        - name: service_name
+          in: query
+          schema:
+            type: string
+        - name: slo_type
+          in: query
+          schema:
+            type: string
+        - name: is_active
+          in: query
+          schema:
+            type: boolean
+      responses:
+        '200':
+          description: List of SLOs
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/SLODefinition'
+  /slos/{id}/metrics/:
+    get:
+      summary: Get SLO metrics
+      operationId: getSLOMetrics
+      security:
+        - AzureAD: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            default: 100
+      responses:
+        '200':
+          description: List of metrics
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/SLOMetric'
+  /slos/{id}/error-budget/:
+    get:
+      summary: Get error budget status
+      operationId: getErrorBudget
+      security:
+        - AzureAD: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Error budget status
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error_budget_remaining:
+                    type: number
+                  burn_rate:
+                    type: number
+                  target_met:
+                    type: boolean
+  /self-healing-rules/:
+    get:
+      summary: List self-healing rules
+      operationId: listSelfHealingRules
+      security:
+        - AzureAD: []
+      parameters:
+        - name: is_active
+          in: query
+          schema:
+            type: boolean
+        - name: trigger_type
+          in: query
+          schema:
+            type: string
+      responses:
+        '200':
+          description: List of rules
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/SelfHealingRule'
+  /self-healing-rules/{id}/execute/:
+    post:
+      summary: Execute self-healing rule
+      operationId: executeSelfHealingRule
+      security:
+        - AzureAD: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                trigger_event:
+                  type: object
+      responses:
+        '200':
+          description: Execution started
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SelfHealingExecution'
+  /self-healing-executions/{id}/approve/:
+    post:
+      summary: Approve execution
+      operationId: approveSelfHealingExecution
+      security:
+        - AzureAD: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Execution approved
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SelfHealingExecution'
+  /runbooks/:
+    get:
+      summary: List runbooks
+      operationId: listRunbooks
+      security:
+        - AzureAD: []
+      parameters:
+        - name: category
+          in: query
+          schema:
+            type: string
+        - name: risk_level
+          in: query
+          schema:
+            type: string
+        - name: is_active
+          in: query
+          schema:
+            type: boolean
+      responses:
+        '200':
+          description: List of runbooks
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Runbook'
+  /runbooks/{id}/execute/:
+    post:
+      summary: Execute runbook
+      operationId: executeRunbook
+      security:
+        - AzureAD: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                trigger_reason:
+                  type: string
+      responses:
+        '200':
+          description: Execution started
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RunbookExecution'
+  /reports/overview/:
+    get:
+      summary: Get SRE overview
+      operationId: getSREOverview
+      security:
+        - AzureAD: []
+      responses:
+        '200':
+          description: Overview statistics
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  healthy_endpoints:
+                    type: integer
+                  unhealthy_endpoints:
+                    type: integer
+                  active_slos:
+                    type: integer
+                  compliant_slos:
+                    type: integer
+                  active_healing_rules:
+                    type: integer
+                  recent_executions:
+                    type: integer

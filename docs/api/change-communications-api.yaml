@@ -1,0 +1,216 @@
+openapi: 3.0.3
+info:
+  title: Change Communications Agent API
+  version: v1.0
+  description: |
+    Change Communications agent for ServiceNow change record management,
+    stakeholder notifications, and communication tracking.
+servers:
+  - url: https://api.control-plane.corp/api/change-communications
+    description: Production API
+components:
+  securitySchemes:
+    AzureAD:
+      type: oauth2
+      flows:
+        clientCredentials:
+          tokenUrl: https://login.microsoftonline.com/{tenantId}/oauth2/v2.0/token
+          scopes:
+            control_plane/.default: Change Communications agent access
+  schemas:
+    ChangeRecord:
+      type: object
+      required: [servicenow_number, short_description]
+      properties:
+        id:
+          type: string
+          format: uuid
+        servicenow_number:
+          type: string
+        servicenow_sys_id:
+          type: string
+        short_description:
+          type: string
+        description:
+          type: string
+        state:
+          type: string
+          enum: [new, assess, authorize, scheduled, implement, review, closed]
+        priority:
+          type: string
+          enum: [low, medium, high, critical]
+        risk:
+          type: string
+          enum: [low, medium, high]
+        scheduled_start:
+          type: string
+          format: date-time
+        scheduled_end:
+          type: string
+          format: date-time
+    StakeholderGroup:
+      type: object
+      required: [name]
+      properties:
+        id:
+          type: string
+          format: uuid
+        name:
+          type: string
+        description:
+          type: string
+        members:
+          type: array
+          items:
+            type: string
+            format: email
+    CommunicationTemplate:
+      type: object
+      required: [name, template_type, subject, body]
+      properties:
+        id:
+          type: string
+          format: uuid
+        name:
+          type: string
+        template_type:
+          type: string
+          enum: [change_notification, change_reminder, change_completed]
+        channel:
+          type: string
+          enum: [email, teams, slack]
+        subject:
+          type: string
+        body:
+          type: string
+    Communication:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        change_record:
+          type: string
+          format: uuid
+        template:
+          type: string
+          format: uuid
+        channel:
+          type: string
+        recipient:
+          type: string
+        sent_at:
+          type: string
+          format: date-time
+        status:
+          type: string
+          enum: [sent, failed, pending]
+paths:
+  /changes/:
+    get:
+      summary: List change records
+      operationId: listChangeRecords
+      security:
+        - AzureAD: []
+      parameters:
+        - name: state
+          in: query
+          schema:
+            type: string
+        - name: priority
+          in: query
+          schema:
+            type: string
+      responses:
+        '200':
+          description: List of change records
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/ChangeRecord'
+  /stakeholders/:
+    get:
+      summary: List stakeholder groups
+      operationId: listStakeholderGroups
+      security:
+        - AzureAD: []
+      responses:
+        '200':
+          description: List of groups
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/StakeholderGroup'
+  /templates/:
+    get:
+      summary: List communication templates
+      operationId: listTemplates
+      security:
+        - AzureAD: []
+      parameters:
+        - name: template_type
+          in: query
+          schema:
+            type: string
+        - name: channel
+          in: query
+          schema:
+            type: string
+      responses:
+        '200':
+          description: List of templates
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/CommunicationTemplate'
+  /communications/:
+    get:
+      summary: List communications
+      operationId: listCommunications
+      security:
+        - AzureAD: []
+      parameters:
+        - name: change_record
+          in: query
+          schema:
+            type: string
+            format: uuid
+        - name: channel
+          in: query
+          schema:
+            type: string
+      responses:
+        '200':
+          description: List of communications
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Communication'
+  /dashboard/summary/:
+    get:
+      summary: Get change dashboard summary
+      operationId: getChangeDashboardSummary
+      security:
+        - AzureAD: []
+      responses:
+        '200':
+          description: Dashboard summary
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  total_changes:
+                    type: integer
+                  scheduled_changes:
+                    type: integer
+                  communications_sent:
+                    type: integer

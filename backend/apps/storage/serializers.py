@@ -3,9 +3,39 @@
 """
 DRF serializers for Storage API.
 """
+import re
+
 from rest_framework import serializers
 
 from .models import AWSS3Config, AzureBlobConfig, MinIOConfig, StorageMetrics, StorageProvider
+
+
+class FlexibleURLField(serializers.CharField):
+    """
+    URL field that accepts Docker-style hostnames (e.g., http://minio:9000).
+
+    Django's URLField requires FQDN which doesn't work for Docker networks.
+    This field validates that the URL has a valid scheme and host pattern.
+    """
+
+    URL_PATTERN = re.compile(
+        r"^https?://"  # http or https
+        r"(?:[\w\-]+)"  # hostname (letters, numbers, hyphens)
+        r"(?:\.[\w\-]+)*"  # optional domain parts
+        r"(?::\d{1,5})?"  # optional port
+        r"(?:/.*)?$",  # optional path
+        re.IGNORECASE,
+    )
+
+    def __init__(self, **kwargs):
+        kwargs.setdefault("max_length", 500)
+        super().__init__(**kwargs)
+
+    def to_internal_value(self, data):
+        value = super().to_internal_value(data)
+        if not self.URL_PATTERN.match(value):
+            raise serializers.ValidationError("Enter a valid URL (e.g., http://hostname:9000).")
+        return value
 
 
 class StorageProviderSerializer(serializers.ModelSerializer):
@@ -47,6 +77,9 @@ class StorageProviderSerializer(serializers.ModelSerializer):
 class MinIOConfigSerializer(serializers.ModelSerializer):
     """Serializer for MinIOConfig model."""
 
+    # Override endpoint_url to accept Docker-style hostnames
+    endpoint_url = FlexibleURLField(help_text="e.g., http://minio:9000")
+
     class Meta:
         model = MinIOConfig
         fields = [
@@ -68,6 +101,8 @@ class AWSS3ConfigSerializer(serializers.ModelSerializer):
     """Serializer for AWSS3Config model."""
 
     auth_method_label = serializers.CharField(source="get_auth_method_display", read_only=True)
+    # Override endpoint_url to accept Docker-style hostnames (for S3-compatible services)
+    endpoint_url = FlexibleURLField(required=False, allow_blank=True, allow_null=True)
 
     class Meta:
         model = AWSS3Config
@@ -88,7 +123,6 @@ class AWSS3ConfigSerializer(serializers.ModelSerializer):
             "secret_access_key": {"write_only": True, "required": False},
             "role_arn": {"required": False},
             "external_id": {"required": False},
-            "endpoint_url": {"required": False},
             "kms_key_id": {"required": False},
         }
 
@@ -163,7 +197,13 @@ class StorageProviderCreateSerializer(serializers.ModelSerializer):
         s3_config_data = validated_data.pop("s3_config", None)
         azure_config_data = validated_data.pop("azure_config", None)
 
-        provider = StorageProvider.objects.create(**validated_data, configured_by=self.context["request"].user)
+        # Get the user from request context, handling anonymous users
+        request = self.context.get("request")
+        user = None
+        if request and hasattr(request, "user") and request.user.is_authenticated:
+            user = request.user
+
+        provider = StorageProvider.objects.create(**validated_data, configured_by=user)
 
         if minio_config_data:
             MinIOConfig.objects.create(provider=provider, **minio_config_data)
@@ -203,13 +243,22 @@ class StorageMetricsSerializer(serializers.ModelSerializer):
         ]
 
 
+class TestResultSerializer(serializers.Serializer):
+    """Serializer for individual test result."""
+
+    name = serializers.CharField()
+    success = serializers.BooleanField()
+    message = serializers.CharField()
+    latency_ms = serializers.FloatField(required=False, allow_null=True)
+
+
 class ConnectionTestResultSerializer(serializers.Serializer):
     """Serializer for connection test results."""
 
     success = serializers.BooleanField()
     message = serializers.CharField()
     latency_ms = serializers.FloatField(required=False, allow_null=True)
-    tests = serializers.ListField(child=serializers.DictField())
+    tests = TestResultSerializer(many=True)
 
 
 class HealthStatusSerializer(serializers.Serializer):

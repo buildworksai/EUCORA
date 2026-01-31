@@ -68,7 +68,8 @@ class DeploymentIntent(TimeStampedModel, CorrelationIdModel):
         ]
         constraints = [
             models.CheckConstraint(
-                check=models.Q(risk_score__gte=0) & models.Q(risk_score__lte=100), name="risk_score_between_0_and_100"
+                condition=models.Q(risk_score__gte=0) & models.Q(risk_score__lte=100),
+                name="risk_score_between_0_and_100",
             ),
         ]
         ordering = ["-created_at"]
@@ -112,10 +113,10 @@ class RingDeployment(TimeStampedModel):
             models.Index(fields=["deployment_intent", "ring"]),
         ]
         constraints = [
-            models.CheckConstraint(check=models.Q(success_count__gte=0), name="success_count_non_negative"),
-            models.CheckConstraint(check=models.Q(failure_count__gte=0), name="failure_count_non_negative"),
+            models.CheckConstraint(condition=models.Q(success_count__gte=0), name="success_count_non_negative"),
+            models.CheckConstraint(condition=models.Q(failure_count__gte=0), name="failure_count_non_negative"),
             models.CheckConstraint(
-                check=models.Q(success_rate__gte=0.0) & models.Q(success_rate__lte=1.0),
+                condition=models.Q(success_rate__gte=0.0) & models.Q(success_rate__lte=1.0),
                 name="success_rate_between_0_and_1",
             ),
         ]

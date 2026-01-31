@@ -1,0 +1,386 @@
+openapi: 3.0.3
+info:
+  title: SLA Governance Agent API
+  version: v1.0
+  description: |
+    SLA Governance agent for SLA definition, KPI tracking, compliance monitoring,
+    and breach detection with ServiceNow integration.
+servers:
+  - url: https://api.control-plane.corp/api/sla-governance
+    description: Production API
+components:
+  securitySchemes:
+    AzureAD:
+      type: oauth2
+      flows:
+        clientCredentials:
+          tokenUrl: https://login.microsoftonline.com/{tenantId}/oauth2/v2.0/token
+          scopes:
+            control_plane/.default: SLA Governance agent access
+  schemas:
+    ServiceCatalogItem:
+      type: object
+      required: [name, category]
+      properties:
+        id:
+          type: string
+          format: uuid
+        name:
+          type: string
+        description:
+          type: string
+        category:
+          type: string
+        owner:
+          type: string
+        status:
+          type: string
+        servicenow_sys_id:
+          type: string
+    SLADefinition:
+      type: object
+      required: [name, service, version, effective_from]
+      properties:
+        id:
+          type: string
+          format: uuid
+        correlation_id:
+          type: string
+        name:
+          type: string
+        description:
+          type: string
+        service:
+          type: string
+          format: uuid
+        version:
+          type: string
+        effective_from:
+          type: string
+          format: date
+        effective_until:
+          type: string
+          format: date
+        status:
+          type: string
+          enum: [draft, pending_approval, active, expired]
+        original_request:
+          type: string
+        approved_at:
+          type: string
+          format: date-time
+    SLATarget:
+      type: object
+      required: [sla, target_type, target_value]
+      properties:
+        id:
+          type: string
+          format: uuid
+        sla:
+          type: string
+          format: uuid
+        target_type:
+          type: string
+          enum: [response_time, resolution_time, availability, uptime]
+        target_value:
+          type: number
+        unit:
+          type: string
+    KPIDefinition:
+      type: object
+      required: [name, kpi_type]
+      properties:
+        id:
+          type: string
+          format: uuid
+        name:
+          type: string
+        kpi_type:
+          type: string
+          enum: [response_time, resolution_time, availability, customer_satisfaction]
+        measurement_method:
+          type: string
+        target_value:
+          type: number
+    KPIMeasurement:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        kpi:
+          type: string
+          format: uuid
+        measurement_time:
+          type: string
+          format: date-time
+        actual_value:
+          type: number
+        target_met:
+          type: boolean
+    SLACompliance:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        correlation_id:
+          type: string
+        sla:
+          type: string
+          format: uuid
+        compliance_period_start:
+          type: string
+          format: date-time
+        compliance_period_end:
+          type: string
+          format: date-time
+        overall_compliance_percent:
+          type: number
+        target_compliance:
+          type: object
+    SLABreach:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        correlation_id:
+          type: string
+        sla:
+          type: string
+          format: uuid
+        breach_time:
+          type: string
+          format: date-time
+        breach_type:
+          type: string
+          enum: [response_time, resolution_time, availability]
+        breach_duration_minutes:
+          type: integer
+        affected_requests:
+          type: integer
+        resolution_notes:
+          type: string
+paths:
+  /services/:
+    get:
+      summary: List service catalog items
+      operationId: listServiceCatalogItems
+      security:
+        - AzureAD: []
+      parameters:
+        - name: category
+          in: query
+          schema:
+            type: string
+        - name: status
+          in: query
+          schema:
+            type: string
+      responses:
+        '200':
+          description: List of services
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/ServiceCatalogItem'
+  /slas/:
+    get:
+      summary: List SLA definitions
+      operationId: listSLADefinitions
+      security:
+        - AzureAD: []
+      parameters:
+        - name: correlation_id
+          in: query
+          schema:
+            type: string
+        - name: service
+          in: query
+          schema:
+            type: string
+            format: uuid
+        - name: status
+          in: query
+          schema:
+            type: string
+      responses:
+        '200':
+          description: List of SLAs
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/SLADefinition'
+  /slas/{id}/approve/:
+    post:
+      summary: Approve SLA definition
+      operationId: approveSLADefinition
+      security:
+        - AzureAD: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: SLA approved
+  /targets/:
+    get:
+      summary: List SLA targets
+      operationId: listSLATargets
+      security:
+        - AzureAD: []
+      parameters:
+        - name: sla
+          in: query
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: List of targets
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/SLATarget'
+  /kpis/:
+    get:
+      summary: List KPI definitions
+      operationId: listKPIDefinitions
+      security:
+        - AzureAD: []
+      responses:
+        '200':
+          description: List of KPIs
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/KPIDefinition'
+  /measurements/:
+    get:
+      summary: List KPI measurements
+      operationId: listKPIMeasurements
+      security:
+        - AzureAD: []
+      parameters:
+        - name: kpi
+          in: query
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: List of measurements
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/KPIMeasurement'
+  /compliance/:
+    get:
+      summary: List SLA compliance records
+      operationId: listSLACompliance
+      security:
+        - AzureAD: []
+      parameters:
+        - name: correlation_id
+          in: query
+          schema:
+            type: string
+        - name: sla
+          in: query
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: List of compliance records
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/SLACompliance'
+  /breaches/:
+    get:
+      summary: List SLA breaches
+      operationId: listSLABreaches
+      security:
+        - AzureAD: []
+      parameters:
+        - name: correlation_id
+          in: query
+          schema:
+            type: string
+        - name: sla
+          in: query
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: List of breaches
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/SLABreach'
+  /parse-request/:
+    post:
+      summary: Parse natural language SLA request
+      operationId: parseSLARequest
+      security:
+        - AzureAD: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [request_text]
+              properties:
+                request_text:
+                  type: string
+      responses:
+        '200':
+          description: Parsed SLA definition
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SLADefinition'
+  /reports/summary/:
+    get:
+      summary: Get SLA summary report
+      operationId: getSLASummary
+      security:
+        - AzureAD: []
+      responses:
+        '200':
+          description: Summary statistics
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  total_slas:
+                    type: integer
+                  active_slas:
+                    type: integer
+                  compliance_rate:
+                    type: number
+                  breach_count:
+                    type: integer

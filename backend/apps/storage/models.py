@@ -77,7 +77,8 @@ class MinIOConfig(TimeStampedModel):
 
     provider = models.OneToOneField(StorageProvider, on_delete=models.CASCADE, related_name="minio_config")
 
-    endpoint_url = models.URLField(help_text="e.g., http://minio.local:9000")
+    # Use CharField instead of URLField to accept Docker-style hostnames (e.g., http://minio:9000)
+    endpoint_url = models.CharField(max_length=500, help_text="e.g., http://minio:9000")
     bucket_name = models.CharField(max_length=63)
     access_key_id = EncryptedCharField(max_length=256)
     secret_access_key = EncryptedCharField(max_length=256)
@@ -115,8 +116,8 @@ class AWSS3Config(TimeStampedModel):
     role_arn = models.CharField(max_length=256, blank=True, help_text="For assume_role")
     external_id = models.CharField(max_length=256, blank=True, help_text="For assume_role")
 
-    # Optional
-    endpoint_url = models.URLField(blank=True, null=True, help_text="For S3-compatible services")
+    # Optional - Use CharField to accept Docker-style hostnames for S3-compatible services
+    endpoint_url = models.CharField(max_length=500, blank=True, null=True, help_text="For S3-compatible services")
     kms_key_id = models.CharField(max_length=256, blank=True, help_text="Server-side encryption KMS key")
 
     class Meta:

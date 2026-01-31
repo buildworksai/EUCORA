@@ -69,6 +69,12 @@ class AIAgentType(models.TextChoices):
     DOCUMENTATION_AGENT = "documentation", "Documentation Agent"
     AUTOMATION_ADVISOR = "automation_advisor", "Automation Advisor Agent"
     IAM_SECURITY = "iam_security", "IAM Security Agent"
+    REQUEST_COORDINATION = "request_coordination", "Request Coordination Agent"
+    SECOPS_AGENT = "secops", "SecOps Agent"
+    SRE_AGENT = "sre", "SRE Agent"
+    KB_TRIAGE_AGENT = "kb_triage", "KB & Triage Agent"
+    SLA_GOVERNANCE = "sla_governance", "SLA Governance Agent"
+    PLANNING_AGENT = "planning", "Planning Agent"
 
 
 class AIConversation(TimeStampedModel):

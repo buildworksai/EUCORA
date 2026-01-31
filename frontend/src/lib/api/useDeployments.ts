@@ -8,9 +8,10 @@ import type { DeploymentIntent } from '@/types/api';
 export function useDeployments(filters?: { status?: string; ring?: string }) {
     return useQuery({
         queryKey: ['deployments', filters],
-        queryFn: () => {
+        queryFn: async () => {
             const params = new URLSearchParams(filters as Record<string, string>);
-            return api.get<DeploymentIntent[]>(`/api/v1/deployment-intents/?${params}`);
+            const response = await api.get<{ results: DeploymentIntent[] }>(`/api/v1/deployments/?${params}`);
+            return response.results || [];
         },
     });
 }
@@ -18,7 +19,7 @@ export function useDeployments(filters?: { status?: string; ring?: string }) {
 export function useDeployment(id: number) {
     return useQuery({
         queryKey: ['deployment', id],
-        queryFn: () => api.get<DeploymentIntent>(`/api/v1/deployment-intents/${id}/`),
+        queryFn: () => api.get<DeploymentIntent>(`/api/v1/deployments/${id}/`),
     });
 }
 
@@ -27,7 +28,7 @@ export function useCreateDeployment() {
 
     return useMutation({
         mutationFn: (data: { app_name: string; version: string; target_ring: string; evidence_pack: unknown }) =>
-            api.post<DeploymentIntent>('/api/v1/deployment-intents/', data),
+            api.post<DeploymentIntent>('/api/v1/deployments/', data),
         onSuccess: () => {
             // Invalidate cache to refetch deployment list
             queryClient.invalidateQueries({ queryKey: ['deployments'] });
@@ -39,7 +40,7 @@ export function usePromoteRing(id: number) {
     const queryClient = useQueryClient();
 
     return useMutation({
-        mutationFn: () => api.post<DeploymentIntent>(`/api/v1/deployment-intents/${id}/promote_ring/`, {}),
+        mutationFn: () => api.post<DeploymentIntent>(`/api/v1/deployments/${id}/promote_ring/`, {}),
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: ['deployment', id] });
             queryClient.invalidateQueries({ queryKey: ['deployments'] });

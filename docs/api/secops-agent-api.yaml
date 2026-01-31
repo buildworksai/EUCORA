@@ -1,0 +1,595 @@
+openapi: 3.0.3
+info:
+  title: SecOps Agent API
+  version: v1.0
+  description: |
+    Security Operations agent for vulnerability management, SIEM integration,
+    compliance monitoring, and automated remediation workflows.
+servers:
+  - url: https://api.control-plane.corp/api/secops
+    description: Production API
+components:
+  securitySchemes:
+    AzureAD:
+      type: oauth2
+      flows:
+        clientCredentials:
+          tokenUrl: https://login.microsoftonline.com/{tenantId}/oauth2/v2.0/token
+          scopes:
+            control_plane/.default: SecOps agent access
+  schemas:
+    VulnerabilityScanner:
+      type: object
+      required: [name, scanner_type]
+      properties:
+        id:
+          type: string
+          format: uuid
+        name:
+          type: string
+        scanner_type:
+          type: string
+          enum: [qualys, nessus, rapid7, defender]
+        connection_config:
+          type: object
+        sync_schedule:
+          type: string
+          default: "0 */6 * * *"
+        last_sync:
+          type: string
+          format: date-time
+        is_active:
+          type: boolean
+    Vulnerability:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        cve_id:
+          type: string
+          example: "CVE-2024-0001"
+        title:
+          type: string
+        description:
+          type: string
+        severity:
+          type: string
+          enum: [critical, high, medium, low]
+        cvss_score:
+          type: number
+        cvss_vector:
+          type: string
+        exploitability_score:
+          type: number
+        published_date:
+          type: string
+          format: date
+        modified_date:
+          type: string
+          format: date
+        references:
+          type: array
+          items:
+            type: string
+        affected_products:
+          type: array
+          items:
+            type: string
+    VulnerabilityInstance:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        correlation_id:
+          type: string
+        vulnerability:
+          type: string
+          format: uuid
+        asset_id:
+          type: string
+        asset_name:
+          type: string
+        application:
+          type: string
+          format: uuid
+        scanner:
+          type: string
+          format: uuid
+        detected_at:
+          type: string
+          format: date-time
+        status:
+          type: string
+          enum: [open, remediated, accepted, false_positive]
+        remediation_due:
+          type: string
+          format: date
+        remediation_notes:
+          type: string
+    RemediationPlan:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        correlation_id:
+          type: string
+        vulnerability:
+          type: string
+          format: uuid
+        risk_level:
+          type: string
+          enum: [critical, high, medium, low]
+        remediation_steps:
+          type: array
+          items:
+            type: object
+        status:
+          type: string
+          enum: [draft, pending_approval, approved, executing, completed]
+        approved_by:
+          type: string
+          format: uuid
+        approved_at:
+          type: string
+          format: date-time
+    SIEMConnection:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        name:
+          type: string
+        siem_type:
+          type: string
+          enum: [splunk, sentinel, qradar, arcsiht]
+        connection_config:
+          type: object
+        is_active:
+          type: boolean
+    SecurityAlert:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        correlation_id:
+          type: string
+        siem:
+          type: string
+          format: uuid
+        alert_id:
+          type: string
+        title:
+          type: string
+        severity:
+          type: string
+          enum: [critical, high, medium, low]
+        description:
+          type: string
+        source:
+          type: string
+        affected_assets:
+          type: array
+          items:
+            type: string
+        alert_time:
+          type: string
+          format: date-time
+        status:
+          type: string
+          enum: [new, investigating, resolved, false_positive]
+    ComplianceBaseline:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        name:
+          type: string
+        framework:
+          type: string
+          enum: [cis, nist, soc2, iso27001]
+        controls:
+          type: array
+          items:
+            type: object
+        is_active:
+          type: boolean
+    ComplianceCheck:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        correlation_id:
+          type: string
+        baseline:
+          type: string
+          format: uuid
+        asset_id:
+          type: string
+        check_time:
+          type: string
+          format: date-time
+        overall_score:
+          type: number
+        passed_controls:
+          type: integer
+        failed_controls:
+          type: integer
+        control_results:
+          type: object
+paths:
+  /scanners/:
+    get:
+      summary: List vulnerability scanners
+      operationId: listScanners
+      security:
+        - AzureAD: []
+      parameters:
+        - name: scanner_type
+          in: query
+          schema:
+            type: string
+        - name: is_active
+          in: query
+          schema:
+            type: boolean
+      responses:
+        '200':
+          description: List of scanners
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/VulnerabilityScanner'
+    post:
+      summary: Create scanner
+      operationId: createScanner
+      security:
+        - AzureAD: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/VulnerabilityScanner'
+      responses:
+        '201':
+          description: Scanner created
+  /scanners/{id}/sync/:
+    post:
+      summary: Sync vulnerabilities from scanner
+      operationId: syncVulnerabilities
+      security:
+        - AzureAD: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Sync completed
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  synced:
+                    type: integer
+                  vulnerabilities:
+                    type: integer
+  /vulnerabilities/:
+    get:
+      summary: List vulnerabilities
+      operationId: listVulnerabilities
+      security:
+        - AzureAD: []
+      parameters:
+        - name: severity
+          in: query
+          schema:
+            type: string
+        - name: cve_id
+          in: query
+          schema:
+            type: string
+        - name: search
+          in: query
+          schema:
+            type: string
+      responses:
+        '200':
+          description: List of vulnerabilities
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Vulnerability'
+  /vulnerabilities/{id}/instances/:
+    get:
+      summary: Get vulnerability instances
+      operationId: getVulnerabilityInstances
+      security:
+        - AzureAD: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: List of instances
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/VulnerabilityInstance'
+  /instances/:
+    get:
+      summary: List vulnerability instances
+      operationId: listVulnerabilityInstances
+      security:
+        - AzureAD: []
+      parameters:
+        - name: correlation_id
+          in: query
+          schema:
+            type: string
+        - name: status
+          in: query
+          schema:
+            type: string
+        - name: asset_id
+          in: query
+          schema:
+            type: string
+      responses:
+        '200':
+          description: List of instances
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/VulnerabilityInstance'
+  /instances/{id}/remediate/:
+    post:
+      summary: Mark instance as remediated
+      operationId: remediateInstance
+      security:
+        - AzureAD: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                notes:
+                  type: string
+      responses:
+        '200':
+          description: Instance remediated
+  /remediation-plans/:
+    get:
+      summary: List remediation plans
+      operationId: listRemediationPlans
+      security:
+        - AzureAD: []
+      parameters:
+        - name: correlation_id
+          in: query
+          schema:
+            type: string
+        - name: status
+          in: query
+          schema:
+            type: string
+      responses:
+        '200':
+          description: List of remediation plans
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/RemediationPlan'
+  /remediation-plans/{id}/approve/:
+    post:
+      summary: Approve remediation plan
+      operationId: approveRemediationPlan
+      security:
+        - AzureAD: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Plan approved
+  /siem/:
+    get:
+      summary: List SIEM connections
+      operationId: listSIEMConnections
+      security:
+        - AzureAD: []
+      parameters:
+        - name: siem_type
+          in: query
+          schema:
+            type: string
+        - name: is_active
+          in: query
+          schema:
+            type: boolean
+      responses:
+        '200':
+          description: List of SIEM connections
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/SIEMConnection'
+  /siem/{id}/sync-alerts/:
+    post:
+      summary: Sync alerts from SIEM
+      operationId: syncSIEMAlerts
+      security:
+        - AzureAD: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                since:
+                  type: string
+                  format: date-time
+      responses:
+        '200':
+          description: Alerts synced
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  synced:
+                    type: integer
+  /alerts/:
+    get:
+      summary: List security alerts
+      operationId: listSecurityAlerts
+      security:
+        - AzureAD: []
+      parameters:
+        - name: correlation_id
+          in: query
+          schema:
+            type: string
+        - name: status
+          in: query
+          schema:
+            type: string
+        - name: severity
+          in: query
+          schema:
+            type: string
+      responses:
+        '200':
+          description: List of alerts
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/SecurityAlert'
+  /compliance-baselines/:
+    get:
+      summary: List compliance baselines
+      operationId: listComplianceBaselines
+      security:
+        - AzureAD: []
+      parameters:
+        - name: framework
+          in: query
+          schema:
+            type: string
+        - name: is_active
+          in: query
+          schema:
+            type: boolean
+      responses:
+        '200':
+          description: List of baselines
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/ComplianceBaseline'
+  /compliance-checks/run-check/:
+    post:
+      summary: Run compliance check
+      operationId: runComplianceCheck
+      security:
+        - AzureAD: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [baseline_id, asset_id]
+              properties:
+                baseline_id:
+                  type: string
+                  format: uuid
+                asset_id:
+                  type: string
+                asset_config:
+                  type: object
+      responses:
+        '200':
+          description: Check completed
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ComplianceCheck'
+  /reports/summary/:
+    get:
+      summary: Get SecOps summary
+      operationId: getSecOpsSummary
+      security:
+        - AzureAD: []
+      responses:
+        '200':
+          description: Summary statistics
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  critical_vulnerabilities:
+                    type: integer
+                  high_vulnerabilities:
+                    type: integer
+                  medium_vulnerabilities:
+                    type: integer
+                  pending_remediation_plans:
+                    type: integer
+                  executing_remediation_plans:
+                    type: integer
+                  critical_alerts:
+                    type: integer
+                  high_alerts:
+                    type: integer

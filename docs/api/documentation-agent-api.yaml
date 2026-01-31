@@ -1,0 +1,224 @@
+openapi: 3.0.3
+info:
+  title: Documentation Agent API
+  version: v1.0
+  description: |
+    Documentation agent for automated code documentation generation,
+    repository analysis, and module documentation management.
+servers:
+  - url: https://api.control-plane.corp/api/documentation
+    description: Production API
+components:
+  securitySchemes:
+    AzureAD:
+      type: oauth2
+      flows:
+        clientCredentials:
+          tokenUrl: https://login.microsoftonline.com/{tenantId}/oauth2/v2.0/token
+          scopes:
+            control_plane/.default: Documentation agent access
+  schemas:
+    CodeRepository:
+      type: object
+      required: [name, repository_type, repository_url]
+      properties:
+        id:
+          type: string
+          format: uuid
+        name:
+          type: string
+        repository_type:
+          type: string
+          enum: [github, gitlab, local]
+        repository_url:
+          type: string
+          format: uri
+        branch:
+          type: string
+        is_active:
+          type: boolean
+    CodeAnalysis:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        repository:
+          type: string
+          format: uuid
+        status:
+          type: string
+          enum: [pending, running, completed, failed]
+        modules_analyzed:
+          type: integer
+        started_at:
+          type: string
+          format: date-time
+        completed_at:
+          type: string
+          format: date-time
+    DocumentedModule:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        repository:
+          type: string
+          format: uuid
+        module_path:
+          type: string
+        module_name:
+          type: string
+        documentation_status:
+          type: string
+          enum: [missing, outdated, current]
+        last_analyzed:
+          type: string
+          format: date-time
+    GeneratedDocument:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        repository:
+          type: string
+          format: uuid
+        document_type:
+          type: string
+          enum: [api_docs, readme, architecture, runbook]
+        file_path:
+          type: string
+        content:
+          type: string
+        generated_at:
+          type: string
+          format: date-time
+paths:
+  /repositories/:
+    get:
+      summary: List code repositories
+      operationId: listRepositories
+      security:
+        - AzureAD: []
+      parameters:
+        - name: repository_type
+          in: query
+          schema:
+            type: string
+        - name: is_active
+          in: query
+          schema:
+            type: boolean
+      responses:
+        '200':
+          description: List of repositories
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/CodeRepository'
+  /analyses/:
+    get:
+      summary: List code analyses
+      operationId: listAnalyses
+      security:
+        - AzureAD: []
+      parameters:
+        - name: repository
+          in: query
+          schema:
+            type: string
+            format: uuid
+        - name: status
+          in: query
+          schema:
+            type: string
+      responses:
+        '200':
+          description: List of analyses
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/CodeAnalysis'
+  /modules/:
+    get:
+      summary: List documented modules
+      operationId: listModules
+      security:
+        - AzureAD: []
+      parameters:
+        - name: repository
+          in: query
+          schema:
+            type: string
+            format: uuid
+        - name: documentation_status
+          in: query
+          schema:
+            type: string
+      responses:
+        '200':
+          description: List of modules
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/DocumentedModule'
+  /documents/:
+    get:
+      summary: List generated documents
+      operationId: listDocuments
+      security:
+        - AzureAD: []
+      parameters:
+        - name: repository
+          in: query
+          schema:
+            type: string
+            format: uuid
+        - name: document_type
+          in: query
+          schema:
+            type: string
+      responses:
+        '200':
+          description: List of documents
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/GeneratedDocument'
+  /generate/:
+    post:
+      summary: Generate documentation
+      operationId: generateDocumentation
+      security:
+        - AzureAD: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [repository_id, document_type]
+              properties:
+                repository_id:
+                  type: string
+                  format: uuid
+                document_type:
+                  type: string
+                  enum: [api_docs, readme, architecture, runbook]
+      responses:
+        '200':
+          description: Documentation generation started
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GeneratedDocument'

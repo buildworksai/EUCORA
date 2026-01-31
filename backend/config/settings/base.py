@@ -61,6 +61,12 @@ INSTALLED_APPS = [
     "apps.documentation_agent",
     "apps.automation_advisor",
     "apps.iam_security",
+    "apps.request_coordination",
+    "apps.secops_agent",
+    "apps.sre_agent",
+    "apps.kb_triage",
+    "apps.sla_governance",
+    "apps.planning_agent",
 ]
 
 # Django Channels (optional - for WebSocket support)

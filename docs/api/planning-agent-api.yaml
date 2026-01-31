@@ -1,0 +1,706 @@
+openapi: 3.0.3
+info:
+  title: Planning Agent API
+  version: v1.0
+  description: |
+    AI-powered deployment planning agent for generating deployment plans, ring assignments,
+    blast radius analysis, and rollback strategies. Supports natural language plan generation.
+servers:
+  - url: https://api.control-plane.corp/api/planning
+    description: Production API
+components:
+  securitySchemes:
+    AzureAD:
+      type: oauth2
+      flows:
+        clientCredentials:
+          tokenUrl: https://login.microsoftonline.com/{tenantId}/oauth2/v2.0/token
+          scopes:
+            control_plane/.default: Planning agent access
+  schemas:
+    DeploymentPlan:
+      type: object
+      required: [name, application, version, target_scope]
+      properties:
+        id:
+          type: string
+          format: uuid
+        correlation_id:
+          type: string
+          example: dp-20260104-000A
+        name:
+          type: string
+          example: "Office 365 v2.4 Deployment"
+        application:
+          type: string
+          format: uuid
+        version:
+          type: string
+          example: "2.4.0"
+        target_scope:
+          type: object
+          properties:
+            departments:
+              type: array
+              items:
+                type: string
+            regions:
+              type: array
+              items:
+                type: string
+        status:
+          type: string
+          enum: [draft, pending_approval, approved, executing, completed, cancelled]
+        input_request:
+          type: string
+          example: "Deploy Office 365 v2.4 to IT department first, then Finance"
+        reasoning:
+          type: string
+        overall_risk_score:
+          type: number
+          minimum: 0
+          maximum: 100
+        risk_factors:
+          type: object
+        created_at:
+          type: string
+          format: date-time
+        approved_at:
+          type: string
+          format: date-time
+    RingAssignment:
+      type: object
+      required: [plan, ring_number, ring_name, scheduled_start, scheduled_end]
+      properties:
+        id:
+          type: string
+          format: uuid
+        plan:
+          type: string
+          format: uuid
+        ring_number:
+          type: integer
+          minimum: 0
+          maximum: 4
+        ring_name:
+          type: string
+          example: "Ring 1 - IT Canary"
+        device_count:
+          type: integer
+        device_criteria:
+          type: object
+        scheduled_start:
+          type: string
+          format: date-time
+        scheduled_end:
+          type: string
+          format: date-time
+        success_threshold:
+          type: number
+          default: 98.0
+        status:
+          type: string
+          enum: [pending, in_progress, completed, failed, paused]
+    RingDevice:
+      type: object
+      required: [ring, device_id, device_name]
+      properties:
+        id:
+          type: string
+          format: uuid
+        ring:
+          type: string
+          format: uuid
+        device_id:
+          type: string
+        device_name:
+          type: string
+        user_principal:
+          type: string
+        selection_reason:
+          type: string
+        health_score:
+          type: number
+          minimum: 0
+          maximum: 100
+        criticality:
+          type: string
+          enum: [vip, standard, low]
+    DeploymentWindow:
+      type: object
+      required: [name, day_of_week, start_time, end_time]
+      properties:
+        id:
+          type: string
+          format: uuid
+        name:
+          type: string
+          example: "Business Hours - EST"
+        description:
+          type: string
+        day_of_week:
+          type: array
+          items:
+            type: integer
+          example: [0, 1, 2, 3, 4]
+        start_time:
+          type: string
+          format: time
+        end_time:
+          type: string
+          format: time
+        timezone:
+          type: string
+          default: "UTC"
+        is_active:
+          type: boolean
+    ChangeFreezePeriod:
+      type: object
+      required: [name, start_date, end_date]
+      properties:
+        id:
+          type: string
+          format: uuid
+        name:
+          type: string
+        description:
+          type: string
+        start_date:
+          type: string
+          format: date-time
+        end_date:
+          type: string
+          format: date-time
+        is_active:
+          type: boolean
+    BlastRadiusAnalysis:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        plan:
+          type: string
+          format: uuid
+        correlation_id:
+          type: string
+        affected_devices:
+          type: integer
+        affected_users:
+          type: integer
+        affected_departments:
+          type: array
+          items:
+            type: string
+        risk_level:
+          type: string
+          enum: [low, medium, high, critical]
+        analysis_details:
+          type: object
+    RollbackPlan:
+      type: object
+      required: [deployment_plan]
+      properties:
+        id:
+          type: string
+          format: uuid
+        deployment_plan:
+          type: string
+          format: uuid
+        rollback_strategy:
+          type: string
+          enum: [version_rollback, uninstall, configuration_revert]
+        steps:
+          type: array
+          items:
+            type: object
+        estimated_duration_minutes:
+          type: integer
+        risk_assessment:
+          type: object
+    Error:
+      type: object
+      properties:
+        error:
+          type: string
+        detail:
+          type: string
+paths:
+  /plans/:
+    get:
+      summary: List deployment plans
+      operationId: listDeploymentPlans
+      security:
+        - AzureAD: []
+      parameters:
+        - name: correlation_id
+          in: query
+          schema:
+            type: string
+        - name: application
+          in: query
+          schema:
+            type: string
+            format: uuid
+        - name: status
+          in: query
+          schema:
+            type: string
+            enum: [draft, pending_approval, approved, executing, completed, cancelled]
+      responses:
+        '200':
+          description: List of deployment plans
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/DeploymentPlan'
+    post:
+      summary: Create deployment plan
+      operationId: createDeploymentPlan
+      security:
+        - AzureAD: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/DeploymentPlan'
+      responses:
+        '201':
+          description: Deployment plan created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DeploymentPlan'
+        '400':
+          description: Invalid input
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+  /plans/{id}/:
+    get:
+      summary: Get deployment plan
+      operationId: getDeploymentPlan
+      security:
+        - AzureAD: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Deployment plan details
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DeploymentPlan'
+        '404':
+          description: Plan not found
+    patch:
+      summary: Update deployment plan
+      operationId: updateDeploymentPlan
+      security:
+        - AzureAD: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/DeploymentPlan'
+      responses:
+        '200':
+          description: Plan updated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DeploymentPlan'
+    delete:
+      summary: Delete deployment plan
+      operationId: deleteDeploymentPlan
+      security:
+        - AzureAD: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '204':
+          description: Plan deleted
+  /plans/{id}/approve/:
+    post:
+      summary: Approve deployment plan
+      operationId: approveDeploymentPlan
+      security:
+        - AzureAD: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Plan approved
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DeploymentPlan'
+        '400':
+          description: Plan not pending approval
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+  /plans/{id}/execute/:
+    post:
+      summary: Execute deployment plan
+      operationId: executeDeploymentPlan
+      security:
+        - AzureAD: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Plan execution started
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DeploymentPlan'
+        '400':
+          description: Plan must be approved first
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+  /rings/:
+    get:
+      summary: List ring assignments
+      operationId: listRingAssignments
+      security:
+        - AzureAD: []
+      parameters:
+        - name: plan
+          in: query
+          schema:
+            type: string
+            format: uuid
+        - name: status
+          in: query
+          schema:
+            type: string
+            enum: [pending, in_progress, completed, failed, paused]
+      responses:
+        '200':
+          description: List of ring assignments
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/RingAssignment'
+    post:
+      summary: Create ring assignment
+      operationId: createRingAssignment
+      security:
+        - AzureAD: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RingAssignment'
+      responses:
+        '201':
+          description: Ring assignment created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RingAssignment'
+  /rings/{id}/:
+    get:
+      summary: Get ring assignment
+      operationId: getRingAssignment
+      security:
+        - AzureAD: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Ring assignment details
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RingAssignment'
+  /devices/:
+    get:
+      summary: List ring devices
+      operationId: listRingDevices
+      security:
+        - AzureAD: []
+      parameters:
+        - name: ring
+          in: query
+          schema:
+            type: string
+            format: uuid
+        - name: criticality
+          in: query
+          schema:
+            type: string
+            enum: [vip, standard, low]
+      responses:
+        '200':
+          description: List of ring devices
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/RingDevice'
+    post:
+      summary: Add device to ring
+      operationId: createRingDevice
+      security:
+        - AzureAD: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RingDevice'
+      responses:
+        '201':
+          description: Device added to ring
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RingDevice'
+  /windows/:
+    get:
+      summary: List deployment windows
+      operationId: listDeploymentWindows
+      security:
+        - AzureAD: []
+      parameters:
+        - name: is_active
+          in: query
+          schema:
+            type: boolean
+      responses:
+        '200':
+          description: List of deployment windows
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/DeploymentWindow'
+    post:
+      summary: Create deployment window
+      operationId: createDeploymentWindow
+      security:
+        - AzureAD: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/DeploymentWindow'
+      responses:
+        '201':
+          description: Deployment window created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DeploymentWindow'
+  /freezes/:
+    get:
+      summary: List change freeze periods
+      operationId: listChangeFreezePeriods
+      security:
+        - AzureAD: []
+      parameters:
+        - name: is_active
+          in: query
+          schema:
+            type: boolean
+        - name: start_date
+          in: query
+          schema:
+            type: string
+            format: date-time
+        - name: end_date
+          in: query
+          schema:
+            type: string
+            format: date-time
+      responses:
+        '200':
+          description: List of change freeze periods
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/ChangeFreezePeriod'
+    post:
+      summary: Create change freeze period
+      operationId: createChangeFreezePeriod
+      security:
+        - AzureAD: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ChangeFreezePeriod'
+      responses:
+        '201':
+          description: Change freeze period created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ChangeFreezePeriod'
+  /blast-radius/:
+    get:
+      summary: List blast radius analyses
+      operationId: listBlastRadiusAnalyses
+      security:
+        - AzureAD: []
+      parameters:
+        - name: correlation_id
+          in: query
+          schema:
+            type: string
+        - name: plan
+          in: query
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: List of blast radius analyses
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/BlastRadiusAnalysis'
+  /rollback/:
+    get:
+      summary: List rollback plans
+      operationId: listRollbackPlans
+      security:
+        - AzureAD: []
+      parameters:
+        - name: plan
+          in: query
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: List of rollback plans
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/RollbackPlan'
+    post:
+      summary: Create rollback plan
+      operationId: createRollbackPlan
+      security:
+        - AzureAD: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RollbackPlan'
+      responses:
+        '201':
+          description: Rollback plan created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RollbackPlan'
+  /generate/:
+    post:
+      summary: Generate deployment plan from natural language
+      operationId: generateDeploymentPlan
+      security:
+        - AzureAD: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [request]
+              properties:
+                request:
+                  type: string
+                  example: "Deploy Office 365 v2.4 to IT department first, then Finance"
+      responses:
+        '200':
+          description: Plan generation initiated
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  generated:
+                    type: boolean
+                  request:
+                    type: string
+                  message:
+                    type: string
+  /reports/summary/:
+    get:
+      summary: Get planning summary report
+      operationId: getPlanningSummary
+      security:
+        - AzureAD: []
+      responses:
+        '200':
+          description: Planning summary statistics
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  total_plans:
+                    type: integer
+                  active_plans:
+                    type: integer
+                  approved_plans:
+                    type: integer
+                  completed_plans:
+                    type: integer

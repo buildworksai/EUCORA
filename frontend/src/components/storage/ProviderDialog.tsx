@@ -29,14 +29,15 @@ import { Loader2 } from 'lucide-react';
 
 interface ProviderDialogProps {
   provider?: StorageProvider | null;
+  preselectedType?: ProviderType | null;
   onClose: () => void;
   onSave: () => void;
 }
 
-export function ProviderDialog({ provider = null, onClose, onSave }: ProviderDialogProps) {
+export function ProviderDialog({ provider = null, preselectedType = null, onClose, onSave }: ProviderDialogProps) {
   // Initialize state from provider props with defaults
   const [name, setName] = useState(provider?.name ?? '');
-  const [providerType, setProviderType] = useState<ProviderType>(provider?.provider_type ?? 'minio');
+  const [providerType, setProviderType] = useState<ProviderType>(provider?.provider_type ?? preselectedType ?? 'minio');
   const [priority, setPriority] = useState(provider?.priority ?? 100);
   const [isPrimary, setIsPrimary] = useState(provider?.is_primary ?? false);
   const [isEnabled, setIsEnabled] = useState(provider?.is_enabled ?? true);

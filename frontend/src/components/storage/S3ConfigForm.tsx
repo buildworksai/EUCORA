@@ -36,15 +36,10 @@ export function S3ConfigForm({ config, onChange }: S3ConfigFormProps) {
   const [endpointUrl, setEndpointUrl] = useState(config?.endpoint_url ?? '');
   const [kmsKeyId, setKmsKeyId] = useState(config?.kms_key_id ?? '');
 
-  // Track if this is initial mount to avoid triggering onChange on mount
-  const isInitialMount = useRef(true);
+  // Track if initial onChange has been called
+  const hasCalledInitialOnChange = useRef(false);
 
-  useEffect(() => {
-    // Skip initial mount to avoid unnecessary onChange calls
-    if (isInitialMount.current) {
-      isInitialMount.current = false;
-      return;
-    }
+  const buildConfig = (): AWSS3Config => {
     const s3Config: AWSS3Config = {
       bucket_name: bucketName,
       region,
@@ -63,8 +58,23 @@ export function S3ConfigForm({ config, onChange }: S3ConfigFormProps) {
     if (endpointUrl) s3Config.endpoint_url = endpointUrl;
     if (kmsKeyId) s3Config.kms_key_id = kmsKeyId;
 
-    onChange(s3Config);
-  }, [bucketName, region, authMethod, accessKeyId, secretAccessKey, roleArn, externalId, endpointUrl, kmsKeyId, onChange]);
+    return s3Config;
+  };
+
+  // Call onChange on mount to populate parent state with defaults
+  useEffect(() => {
+    if (!hasCalledInitialOnChange.current) {
+      hasCalledInitialOnChange.current = true;
+      onChange(buildConfig());
+    }
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Call onChange when any field changes
+  useEffect(() => {
+    if (hasCalledInitialOnChange.current) {
+      onChange(buildConfig());
+    }
+  }, [bucketName, region, authMethod, accessKeyId, secretAccessKey, roleArn, externalId, endpointUrl, kmsKeyId]); // eslint-disable-line react-hooks/exhaustive-deps
 
   return (
     <div className="space-y-4 border-t pt-4">

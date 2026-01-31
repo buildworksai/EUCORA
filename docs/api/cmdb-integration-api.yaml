@@ -1,0 +1,280 @@
+openapi: 3.0.3
+info:
+  title: CMDB Integration Agent API
+  version: v1.0
+  description: |
+    CMDB Integration agent for ServiceNow CMDB synchronization, data quality monitoring,
+    and discrepancy resolution.
+servers:
+  - url: https://api.control-plane.corp/api/cmdb
+    description: Production API
+components:
+  securitySchemes:
+    AzureAD:
+      type: oauth2
+      flows:
+        clientCredentials:
+          tokenUrl: https://login.microsoftonline.com/{tenantId}/oauth2/v2.0/token
+          scopes:
+            control_plane/.default: CMDB Integration agent access
+  schemas:
+    CMDBConnection:
+      type: object
+      required: [name, connection_type]
+      properties:
+        id:
+          type: string
+          format: uuid
+        name:
+          type: string
+        connection_type:
+          type: string
+          enum: [servicenow]
+        connection_config:
+          type: object
+        is_active:
+          type: boolean
+    CMDBTableMapping:
+      type: object
+      required: [connection, source_table, cmdb_table]
+      properties:
+        id:
+          type: string
+          format: uuid
+        connection:
+          type: string
+          format: uuid
+        source_table:
+          type: string
+        cmdb_table:
+          type: string
+        field_mappings:
+          type: object
+    CMDBValidationRule:
+      type: object
+      required: [name, rule_type, validation_logic]
+      properties:
+        id:
+          type: string
+          format: uuid
+        name:
+          type: string
+        rule_type:
+          type: string
+          enum: [required_field, data_format, referential_integrity]
+        validation_logic:
+          type: object
+        is_active:
+          type: boolean
+    CMDBSyncRecord:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        connection:
+          type: string
+          format: uuid
+        sync_type:
+          type: string
+          enum: [full, incremental]
+        status:
+          type: string
+          enum: [pending, running, completed, failed]
+        records_synced:
+          type: integer
+        records_failed:
+          type: integer
+        started_at:
+          type: string
+          format: date-time
+        completed_at:
+          type: string
+          format: date-time
+    CMDBDiscrepancy:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        sync_record:
+          type: string
+          format: uuid
+        discrepancy_type:
+          type: string
+          enum: [missing_in_cmdb, missing_in_source, data_mismatch]
+        source_record_id:
+          type: string
+        cmdb_record_id:
+          type: string
+        field_name:
+          type: string
+        source_value:
+          type: string
+        cmdb_value:
+          type: string
+        status:
+          type: string
+          enum: [open, resolved, ignored]
+paths:
+  /connections/:
+    get:
+      summary: List CMDB connections
+      operationId: listCMDBConnections
+      security:
+        - AzureAD: []
+      responses:
+        '200':
+          description: List of connections
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/CMDBConnection'
+  /mappings/:
+    get:
+      summary: List table mappings
+      operationId: listTableMappings
+      security:
+        - AzureAD: []
+      parameters:
+        - name: connection
+          in: query
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: List of mappings
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/CMDBTableMapping'
+  /validation-rules/:
+    get:
+      summary: List validation rules
+      operationId: listValidationRules
+      security:
+        - AzureAD: []
+      parameters:
+        - name: is_active
+          in: query
+          schema:
+            type: boolean
+      responses:
+        '200':
+          description: List of rules
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/CMDBValidationRule'
+  /sync/:
+    get:
+      summary: List sync records
+      operationId: listSyncRecords
+      security:
+        - AzureAD: []
+      parameters:
+        - name: connection
+          in: query
+          schema:
+            type: string
+            format: uuid
+        - name: status
+          in: query
+          schema:
+            type: string
+      responses:
+        '200':
+          description: List of sync records
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/CMDBSyncRecord'
+  /sync/start/:
+    post:
+      summary: Start CMDB sync
+      operationId: startCMDBSync
+      security:
+        - AzureAD: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [connection_id]
+              properties:
+                connection_id:
+                  type: string
+                  format: uuid
+                sync_type:
+                  type: string
+                  enum: [full, incremental]
+      responses:
+        '200':
+          description: Sync started
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CMDBSyncRecord'
+  /discrepancies/:
+    get:
+      summary: List discrepancies
+      operationId: listDiscrepancies
+      security:
+        - AzureAD: []
+      parameters:
+        - name: sync_record
+          in: query
+          schema:
+            type: string
+            format: uuid
+        - name: status
+          in: query
+          schema:
+            type: string
+      responses:
+        '200':
+          description: List of discrepancies
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/CMDBDiscrepancy'
+  /reports/data-quality/:
+    get:
+      summary: Get data quality report
+      operationId: getDataQualityReport
+      security:
+        - AzureAD: []
+      parameters:
+        - name: connection
+          in: query
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Data quality report
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  total_records:
+                    type: integer
+                  valid_records:
+                    type: integer
+                  invalid_records:
+                    type: integer
+                  discrepancy_count:
+                    type: integer

@@ -12,34 +12,47 @@ interface MinIOConfigFormProps {
 }
 
 export function MinIOConfigForm({ config, onChange }: MinIOConfigFormProps) {
-  // Initialize from config prop
-  const [endpointUrl, setEndpointUrl] = useState(config?.endpoint_url ?? '');
-  const [bucketName, setBucketName] = useState(config?.bucket_name ?? '');
-  const [accessKeyId, setAccessKeyId] = useState(config?.access_key_id ?? '');
-  const [secretAccessKey, setSecretAccessKey] = useState(config?.secret_access_key ?? '');
-  const [useSsl, setUseSsl] = useState(config?.use_ssl ?? true);
+  // Initialize from config prop with Docker MinIO defaults for easy setup
+  const [endpointUrl, setEndpointUrl] = useState(config?.endpoint_url ?? 'http://minio:9000');
+  const [bucketName, setBucketName] = useState(config?.bucket_name ?? 'eucora-storage');
+  const [accessKeyId, setAccessKeyId] = useState(config?.access_key_id ?? 'minioadmin');
+  const [secretAccessKey, setSecretAccessKey] = useState(config?.secret_access_key ?? 'minioadmin');
+  const [useSsl, setUseSsl] = useState(config?.use_ssl ?? false);
   const [region, setRegion] = useState(config?.region ?? 'us-east-1');
   const [pathStyle, setPathStyle] = useState(config?.path_style ?? true);
 
-  // Track if this is initial mount to avoid triggering onChange on mount
-  const isInitialMount = useRef(true);
+  // Track if initial onChange has been called
+  const hasCalledInitialOnChange = useRef(false);
 
+  // Call onChange on mount to populate parent state with defaults
   useEffect(() => {
-    // Skip initial mount to avoid unnecessary onChange calls
-    if (isInitialMount.current) {
-      isInitialMount.current = false;
-      return;
+    if (!hasCalledInitialOnChange.current) {
+      hasCalledInitialOnChange.current = true;
+      onChange({
+        endpoint_url: endpointUrl,
+        bucket_name: bucketName,
+        access_key_id: accessKeyId,
+        secret_access_key: secretAccessKey,
+        use_ssl: useSsl,
+        region,
+        path_style: pathStyle,
+      });
     }
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
-    onChange({
-      endpoint_url: endpointUrl,
-      bucket_name: bucketName,
-      access_key_id: accessKeyId,
-      secret_access_key: secretAccessKey,
-      use_ssl: useSsl,
-      region,
-      path_style: pathStyle,
-    });
+  // Call onChange when any field changes
+  useEffect(() => {
+    if (hasCalledInitialOnChange.current) {
+      onChange({
+        endpoint_url: endpointUrl,
+        bucket_name: bucketName,
+        access_key_id: accessKeyId,
+        secret_access_key: secretAccessKey,
+        use_ssl: useSsl,
+        region,
+        path_style: pathStyle,
+      });
+    }
   }, [endpointUrl, bucketName, accessKeyId, secretAccessKey, useSsl, region, pathStyle, onChange]);
 
   return (

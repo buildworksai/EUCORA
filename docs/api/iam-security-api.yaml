@@ -1,0 +1,380 @@
+openapi: 3.0.3
+info:
+  title: IAM Security Agent API
+  version: v1.0
+  description: |
+    IAM Security agent for identity provider monitoring, anomaly detection,
+    permission change tracking, and security alert management.
+servers:
+  - url: https://api.control-plane.corp/api/iam-security
+    description: Production API
+components:
+  securitySchemes:
+    AzureAD:
+      type: oauth2
+      flows:
+        clientCredentials:
+          tokenUrl: https://login.microsoftonline.com/{tenantId}/oauth2/v2.0/token
+          scopes:
+            control_plane/.default: IAM Security agent access
+  schemas:
+    IdentityProvider:
+      type: object
+      required: [name, provider_type]
+      properties:
+        id:
+          type: string
+          format: uuid
+        name:
+          type: string
+        provider_type:
+          type: string
+          enum: [entra_id, okta, ad, servicenow_iam]
+        connection_config:
+          type: object
+        is_active:
+          type: boolean
+    SignInEvent:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        provider:
+          type: string
+          format: uuid
+        user_principal:
+          type: string
+        ip_address:
+          type: string
+        location:
+          type: string
+        sign_in_time:
+          type: string
+          format: date-time
+        success:
+          type: boolean
+        failure_reason:
+          type: string
+    PermissionChange:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        provider:
+          type: string
+          format: uuid
+        user_principal:
+          type: string
+        change_type:
+          type: string
+          enum: [role_assignment, permission_grant, permission_revoke]
+        resource:
+          type: string
+        changed_at:
+          type: string
+          format: date-time
+        changed_by:
+          type: string
+    AnomalyDetection:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        provider:
+          type: string
+          format: uuid
+        anomaly_type:
+          type: string
+          enum: [unusual_sign_in, privilege_escalation, suspicious_activity]
+        user_principal:
+          type: string
+        detected_at:
+          type: string
+          format: date-time
+        confidence_score:
+          type: number
+        status:
+          type: string
+          enum: [new, investigating, resolved, false_positive]
+    DetectionRule:
+      type: object
+      required: [name, rule_type, conditions]
+      properties:
+        id:
+          type: string
+          format: uuid
+        name:
+          type: string
+        rule_type:
+          type: string
+          enum: [sign_in_anomaly, privilege_change, access_pattern]
+        conditions:
+          type: object
+        is_active:
+          type: boolean
+    SecurityAlert:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        provider:
+          type: string
+          format: uuid
+        alert_type:
+          type: string
+          enum: [anomaly, permission_change, policy_violation]
+        severity:
+          type: string
+          enum: [low, medium, high, critical]
+        title:
+          type: string
+        description:
+          type: string
+        alert_time:
+          type: string
+          format: date-time
+        status:
+          type: string
+          enum: [new, investigating, resolved]
+paths:
+  /providers/:
+    get:
+      summary: List identity providers
+      operationId: listIdentityProviders
+      security:
+        - AzureAD: []
+      parameters:
+        - name: provider_type
+          in: query
+          schema:
+            type: string
+        - name: is_active
+          in: query
+          schema:
+            type: boolean
+      responses:
+        '200':
+          description: List of providers
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/IdentityProvider'
+  /sign-ins/:
+    get:
+      summary: List sign-in events
+      operationId: listSignInEvents
+      security:
+        - AzureAD: []
+      parameters:
+        - name: provider
+          in: query
+          schema:
+            type: string
+            format: uuid
+        - name: user_principal
+          in: query
+          schema:
+            type: string
+        - name: success
+          in: query
+          schema:
+            type: boolean
+      responses:
+        '200':
+          description: List of events
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/SignInEvent'
+  /permission-changes/:
+    get:
+      summary: List permission changes
+      operationId: listPermissionChanges
+      security:
+        - AzureAD: []
+      parameters:
+        - name: provider
+          in: query
+          schema:
+            type: string
+            format: uuid
+        - name: user_principal
+          in: query
+          schema:
+            type: string
+        - name: change_type
+          in: query
+          schema:
+            type: string
+      responses:
+        '200':
+          description: List of changes
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/PermissionChange'
+  /anomalies/:
+    get:
+      summary: List anomalies
+      operationId: listAnomalies
+      security:
+        - AzureAD: []
+      parameters:
+        - name: provider
+          in: query
+          schema:
+            type: string
+            format: uuid
+        - name: status
+          in: query
+          schema:
+            type: string
+        - name: anomaly_type
+          in: query
+          schema:
+            type: string
+      responses:
+        '200':
+          description: List of anomalies
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/AnomalyDetection'
+  /anomalies/{id}/resolve/:
+    post:
+      summary: Resolve anomaly
+      operationId: resolveAnomaly
+      security:
+        - AzureAD: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                resolution_notes:
+                  type: string
+                status:
+                  type: string
+                  enum: [resolved, false_positive]
+      responses:
+        '200':
+          description: Anomaly resolved
+  /rules/:
+    get:
+      summary: List detection rules
+      operationId: listDetectionRules
+      security:
+        - AzureAD: []
+      parameters:
+        - name: is_active
+          in: query
+          schema:
+            type: boolean
+        - name: rule_type
+          in: query
+          schema:
+            type: string
+      responses:
+        '200':
+          description: List of rules
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/DetectionRule'
+  /alerts/:
+    get:
+      summary: List security alerts
+      operationId: listSecurityAlerts
+      security:
+        - AzureAD: []
+      parameters:
+        - name: provider
+          in: query
+          schema:
+            type: string
+            format: uuid
+        - name: severity
+          in: query
+          schema:
+            type: string
+        - name: status
+          in: query
+          schema:
+            type: string
+      responses:
+        '200':
+          description: List of alerts
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/SecurityAlert'
+  /actions/revoke-access/:
+    post:
+      summary: Revoke user access
+      operationId: revokeAccess
+      security:
+        - AzureAD: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [provider_id, user_principal]
+              properties:
+                provider_id:
+                  type: string
+                  format: uuid
+                user_principal:
+                  type: string
+                reason:
+                  type: string
+      responses:
+        '200':
+          description: Access revoked
+  /reports/summary/:
+    get:
+      summary: Get IAM security summary
+      operationId: getIAMSecuritySummary
+      security:
+        - AzureAD: []
+      responses:
+        '200':
+          description: Summary statistics
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  total_sign_ins:
+                    type: integer
+                  failed_sign_ins:
+                    type: integer
+                  active_anomalies:
+                    type: integer
+                  critical_alerts:
+                    type: integer

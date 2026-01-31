@@ -52,6 +52,12 @@ urlpatterns = [
     path("api/documentation/", include("apps.documentation_agent.urls")),
     path("api/automation-advisor/", include("apps.automation_advisor.urls")),
     path("api/iam-security/", include("apps.iam_security.urls")),
+    path("api/request-coordination/", include("apps.request_coordination.urls")),
+    path("api/secops/", include("apps.secops_agent.urls")),
+    path("api/sre/", include("apps.sre_agent.urls")),
+    path("api/kb-triage/", include("apps.kb_triage.urls")),
+    path("api/sla-governance/", include("apps.sla_governance.urls")),
+    path("api/planning/", include("apps.planning_agent.urls")),
     # OpenAPI / Swagger
     path("api/schema/", SpectacularAPIView.as_view(), name="schema"),
     path("api/docs/", SpectacularSwaggerView.as_view(url_name="schema"), name="swagger-ui"),

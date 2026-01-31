@@ -10,7 +10,7 @@ import {
     LayoutDashboard, Box, ShieldCheck, Settings, Database, Activity,
     HeartPulse, Sparkles, Shield, Users, Bell, Package, FileKey,
     Briefcase, TrendingUp, DollarSign, PackageCheck, FileText,
-    Server, MessageSquare, Search
+    Server, MessageSquare, Search, ClipboardList, BookOpen, Target, CalendarClock
 } from 'lucide-react';
 import { NavLink } from 'react-router-dom';
 import { LicenseSummaryWidget } from '@/components/licenses';
@@ -36,6 +36,12 @@ const navItems: NavItem[] = [
     { href: '/cmdb', label: 'CMDB Integration', icon: Server, resource: 'cmdb_connections', action: 'read' },
     { href: '/communications', label: 'Communications', icon: MessageSquare, resource: 'change_records', action: 'read' },
     { href: '/discovery', label: 'Discovery', icon: Search, resource: 'discovery_sources', action: 'read' },
+    { href: '/request-coordination', label: 'Request Coordination', icon: ClipboardList, resource: 'tracked_requests', action: 'read' },
+    { href: '/secops', label: 'SecOps', icon: ShieldCheck, resource: 'vulnerabilities', action: 'read' },
+    { href: '/sre', label: 'SRE', icon: HeartPulse, resource: 'health_endpoints', action: 'read' },
+    { href: '/kb-triage', label: 'KB & Triage', icon: BookOpen, resource: 'knowledge_articles', action: 'read' },
+    { href: '/sla-governance', label: 'SLA Governance', icon: Target, resource: 'sla_definitions', action: 'read' },
+    { href: '/planning', label: 'Planning', icon: CalendarClock, resource: 'deployment_plans', action: 'read' },
     { href: '/licenses', label: 'Licenses', icon: FileKey, resource: 'license_inventory', action: 'read' },
     { href: '/portfolios', label: 'Portfolios', icon: Briefcase, resource: 'portfolios', action: 'read' },
     { href: '/performance', label: 'Performance', icon: TrendingUp, resource: 'portfolio_metrics', action: 'read' },
@@ -85,8 +91,8 @@ export function Sidebar() {
                 </div>
             </div>
 
-            {/* Navigation */}
-            <nav className="w-full flex-1 px-3 space-y-1">
+            {/* Navigation - Scrollable */}
+            <nav className="w-full flex-1 min-h-0 px-3 space-y-1 overflow-y-auto">
                 {visibleNavItems.map((item) => (
                     <NavLink
                         key={item.href}

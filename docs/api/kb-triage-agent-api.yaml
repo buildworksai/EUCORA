@@ -1,0 +1,344 @@
+openapi: 3.0.3
+info:
+  title: KB & Triage Agent API
+  version: v1.0
+  description: |
+    Knowledge Base and Triage agent for semantic search, AI-powered ticket triage,
+    incident pattern detection, and resolution guidance.
+servers:
+  - url: https://api.control-plane.corp/api/kb-triage
+    description: Production API
+components:
+  securitySchemes:
+    AzureAD:
+      type: oauth2
+      flows:
+        clientCredentials:
+          tokenUrl: https://login.microsoftonline.com/{tenantId}/oauth2/v2.0/token
+          scopes:
+            control_plane/.default: KB Triage agent access
+  schemas:
+    KnowledgeSource:
+      type: object
+      required: [name, source_type]
+      properties:
+        id:
+          type: string
+          format: uuid
+        name:
+          type: string
+        source_type:
+          type: string
+          enum: [servicenow_kb, confluence, sharepoint, vendor, custom]
+        connection_config:
+          type: object
+        sync_schedule:
+          type: string
+        last_sync:
+          type: string
+          format: date-time
+        article_count:
+          type: integer
+        is_active:
+          type: boolean
+    KnowledgeArticle:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        source:
+          type: string
+          format: uuid
+        external_id:
+          type: string
+        title:
+          type: string
+        content:
+          type: string
+        category:
+          type: string
+        tags:
+          type: array
+          items:
+            type: string
+        url:
+          type: string
+          format: uri
+        published_date:
+          type: string
+          format: date-time
+        view_count:
+          type: integer
+    TriageRequest:
+      type: object
+      required: [caller_name, short_description]
+      properties:
+        id:
+          type: string
+          format: uuid
+        correlation_id:
+          type: string
+        servicenow_number:
+          type: string
+        caller_name:
+          type: string
+        caller_email:
+          type: string
+        affected_service:
+          type: string
+        short_description:
+          type: string
+        description:
+          type: string
+        priority:
+          type: string
+          enum: ["1", "2", "3", "4"]
+        status:
+          type: string
+          enum: [pending, triaged, escalated, resolved]
+        ai_suggestions:
+          type: array
+          items:
+            type: object
+        matched_articles:
+          type: array
+          items:
+            type: string
+            format: uuid
+    TriageSuggestion:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        triage_request:
+          type: string
+          format: uuid
+        suggestion_type:
+          type: string
+          enum: [category, priority, resolution, escalation]
+        confidence_score:
+          type: number
+        suggestion_text:
+          type: string
+        reasoning:
+          type: string
+    IncidentPattern:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        pattern_name:
+          type: string
+        pattern_description:
+          type: string
+        matching_keywords:
+          type: array
+          items:
+            type: string
+        frequency:
+          type: integer
+        last_seen:
+          type: string
+          format: date-time
+        suggested_resolution:
+          type: string
+paths:
+  /sources/:
+    get:
+      summary: List knowledge sources
+      operationId: listKnowledgeSources
+      security:
+        - AzureAD: []
+      parameters:
+        - name: source_type
+          in: query
+          schema:
+            type: string
+        - name: is_active
+          in: query
+          schema:
+            type: boolean
+      responses:
+        '200':
+          description: List of sources
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/KnowledgeSource'
+  /sources/{id}/sync/:
+    post:
+      summary: Sync articles from source
+      operationId: syncKnowledgeSource
+      security:
+        - AzureAD: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Sync completed
+  /articles/:
+    get:
+      summary: List knowledge articles
+      operationId: listKnowledgeArticles
+      security:
+        - AzureAD: []
+      parameters:
+        - name: source_id
+          in: query
+          schema:
+            type: string
+            format: uuid
+        - name: category
+          in: query
+          schema:
+            type: string
+        - name: search
+          in: query
+          schema:
+            type: string
+      responses:
+        '200':
+          description: List of articles
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/KnowledgeArticle'
+  /articles/search/:
+    post:
+      summary: Semantic search articles
+      operationId: searchKnowledgeArticles
+      security:
+        - AzureAD: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [query]
+              properties:
+                query:
+                  type: string
+                limit:
+                  type: integer
+                  default: 10
+      responses:
+        '200':
+          description: Search results
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/KnowledgeArticle'
+  /triage/:
+    get:
+      summary: List triage requests
+      operationId: listTriageRequests
+      security:
+        - AzureAD: []
+      parameters:
+        - name: correlation_id
+          in: query
+          schema:
+            type: string
+        - name: status
+          in: query
+          schema:
+            type: string
+        - name: priority
+          in: query
+          schema:
+            type: string
+      responses:
+        '200':
+          description: List of requests
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/TriageRequest'
+    post:
+      summary: Create triage request
+      operationId: createTriageRequest
+      security:
+        - AzureAD: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TriageRequest'
+      responses:
+        '201':
+          description: Request created
+  /triage/{id}/triage/:
+    post:
+      summary: Perform AI triage
+      operationId: performTriage
+      security:
+        - AzureAD: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Triage completed
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TriageRequest'
+  /patterns/:
+    get:
+      summary: List incident patterns
+      operationId: listIncidentPatterns
+      security:
+        - AzureAD: []
+      responses:
+        '200':
+          description: List of patterns
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/IncidentPattern'
+  /reports/summary/:
+    get:
+      summary: Get triage summary
+      operationId: getTriageSummary
+      security:
+        - AzureAD: []
+      responses:
+        '200':
+          description: Summary statistics
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  total_requests:
+                    type: integer
+                  pending_triage:
+                    type: integer
+                  triaged:
+                    type: integer
+                  resolved:
+                    type: integer

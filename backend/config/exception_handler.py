@@ -52,7 +52,8 @@ def custom_exception_handler(exc, context):
     correlation_id = getattr(request, "correlation_id", None) if request else None
 
     # Handle JSON parsing errors explicitly as 400 Bad Request
-    if isinstance(exc, (json.JSONDecodeError, ValueError)):
+    # Only treat as JSON error if it's actually a JSONDecodeError
+    if isinstance(exc, json.JSONDecodeError):
         logger.warning(
             f"Malformed JSON in request: {str(exc)[:200]}",
             extra={"correlation_id": correlation_id},
@@ -60,6 +61,20 @@ def custom_exception_handler(exc, context):
         return Response(
             {
                 "error": "Malformed JSON in request body",
+                "correlation_id": correlation_id,
+            },
+            status=status.HTTP_400_BAD_REQUEST,
+        )
+
+    # Handle ValueError separately - these are often validation errors, not JSON issues
+    if isinstance(exc, ValueError):
+        logger.warning(
+            f"Validation error: {str(exc)[:200]}",
+            extra={"correlation_id": correlation_id},
+        )
+        return Response(
+            {
+                "error": str(exc)[:200] if str(exc) else "Invalid value provided",
                 "correlation_id": correlation_id,
             },
             status=status.HTTP_400_BAD_REQUEST,

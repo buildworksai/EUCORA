@@ -61,6 +61,12 @@ const getStatusBadge = (status: ProviderStatus) => {
 export default function StorageTab() {
   const [selectedProvider, setSelectedProvider] = useState<StorageProvider | null>(null);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [preselectedType, setPreselectedType] = useState<'minio' | 'aws_s3' | 'azure_blob' | null>(null);
+
+  const openDialogWithType = (type: 'minio' | 'aws_s3' | 'azure_blob') => {
+    setPreselectedType(type);
+    setIsDialogOpen(true);
+  };
 
   const { data: providers, isLoading: providersLoading } = useStorageProviders();
   const { data: health, isLoading: healthLoading } = useStorageHealth();
@@ -257,10 +263,36 @@ export default function StorageTab() {
               ))}
             </div>
           ) : (
-            <div className="text-center py-8 text-muted-foreground">
-              <HardDrive className="h-12 w-12 mx-auto mb-4 opacity-50" />
-              <p>No storage providers configured</p>
-              <p className="text-sm">Add a provider to get started</p>
+            <div className="text-center py-12 text-muted-foreground">
+              <HardDrive className="h-16 w-16 mx-auto mb-4 opacity-50" />
+              <p className="text-lg font-medium mb-2">No storage providers configured</p>
+              <p className="text-sm mb-6">Configure object storage to store artifacts, evidence packs, and policy documents.</p>
+              <div className="flex flex-col sm:flex-row gap-3 justify-center">
+                <Button
+                  variant="outline"
+                  onClick={() => openDialogWithType('minio')}
+                  className="gap-2"
+                >
+                  <Plus className="h-4 w-4" />
+                  Add MinIO (Local)
+                </Button>
+                <Button
+                  variant="outline"
+                  onClick={() => openDialogWithType('aws_s3')}
+                  className="gap-2"
+                >
+                  <Plus className="h-4 w-4" />
+                  Add AWS S3
+                </Button>
+                <Button
+                  variant="outline"
+                  onClick={() => openDialogWithType('azure_blob')}
+                  className="gap-2"
+                >
+                  <Plus className="h-4 w-4" />
+                  Add Azure Blob
+                </Button>
+              </div>
             </div>
           )}
         </CardContent>
@@ -271,17 +303,21 @@ export default function StorageTab() {
         if (!open) {
           setIsDialogOpen(false);
           setSelectedProvider(null);
+          setPreselectedType(null);
         }
       }}>
         <ProviderDialog
           provider={selectedProvider}
+          preselectedType={preselectedType}
           onClose={() => {
             setIsDialogOpen(false);
             setSelectedProvider(null);
+            setPreselectedType(null);
           }}
           onSave={() => {
             setIsDialogOpen(false);
             setSelectedProvider(null);
+            setPreselectedType(null);
             toast.success(selectedProvider ? 'Provider updated successfully' : 'Provider created successfully');
           }}
         />

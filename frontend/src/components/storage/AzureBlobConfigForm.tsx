@@ -23,16 +23,10 @@ export function AzureBlobConfigForm({ config, onChange }: AzureBlobConfigFormPro
   const [clientId, setClientId] = useState(config?.client_id ?? '');
   const [clientSecret, setClientSecret] = useState(config?.client_secret ?? '');
 
-  // Track if this is initial mount to avoid triggering onChange on mount
-  const isInitialMount = useRef(true);
+  // Track if initial onChange has been called
+  const hasCalledInitialOnChange = useRef(false);
 
-  useEffect(() => {
-    // Skip initial mount to avoid unnecessary onChange calls
-    if (isInitialMount.current) {
-      isInitialMount.current = false;
-      return;
-    }
-
+  const buildConfig = (): AzureBlobConfig => {
     const azureConfig: AzureBlobConfig = {
       account_name: accountName,
       container_name: containerName,
@@ -52,7 +46,23 @@ export function AzureBlobConfigForm({ config, onChange }: AzureBlobConfigFormPro
       azureConfig.client_secret = clientSecret;
     }
 
-    onChange(azureConfig);
+    return azureConfig;
+  };
+
+  // Call onChange on mount to populate parent state with defaults
+  useEffect(() => {
+    if (!hasCalledInitialOnChange.current) {
+      hasCalledInitialOnChange.current = true;
+      onChange(buildConfig());
+    }
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Call onChange when any field changes
+  useEffect(() => {
+    if (hasCalledInitialOnChange.current) {
+      onChange(buildConfig());
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [
     accountName,
     containerName,
@@ -63,7 +73,6 @@ export function AzureBlobConfigForm({ config, onChange }: AzureBlobConfigFormPro
     tenantId,
     clientId,
     clientSecret,
-    onChange,
   ]);
 
   return (

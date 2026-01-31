@@ -1,0 +1,297 @@
+openapi: 3.0.3
+info:
+  title: Discovery Agent API
+  version: v1.0
+  description: |
+    Discovery agent for multi-source application discovery, normalization,
+    license gap detection, and patch gap analysis.
+servers:
+  - url: https://api.control-plane.corp/api/discovery
+    description: Production API
+components:
+  securitySchemes:
+    AzureAD:
+      type: oauth2
+      flows:
+        clientCredentials:
+          tokenUrl: https://login.microsoftonline.com/{tenantId}/oauth2/v2.0/token
+          scopes:
+            control_plane/.default: Discovery agent access
+  schemas:
+    DiscoverySource:
+      type: object
+      required: [name, source_type]
+      properties:
+        id:
+          type: string
+          format: uuid
+        name:
+          type: string
+        source_type:
+          type: string
+          enum: [sccm, intune, ad, cmdb, spreadsheet]
+        connection_config:
+          type: object
+        last_sync:
+          type: string
+          format: date-time
+        is_active:
+          type: boolean
+    DiscoveryRun:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        source:
+          type: string
+          format: uuid
+        status:
+          type: string
+          enum: [pending, running, completed, failed]
+        applications_discovered:
+          type: integer
+        started_at:
+          type: string
+          format: date-time
+        completed_at:
+          type: string
+          format: date-time
+    NormalizedApplication:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        normalized_name:
+          type: string
+        vendor:
+          type: string
+        version:
+          type: string
+        source_applications:
+          type: array
+          items:
+            type: string
+            format: uuid
+        confidence_score:
+          type: number
+    DiscoveredApplication:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        source:
+          type: string
+          format: uuid
+        source_application_name:
+          type: string
+        vendor:
+          type: string
+        version:
+          type: string
+        device_count:
+          type: integer
+        normalized_application:
+          type: string
+          format: uuid
+    LicenseGap:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        application:
+          type: string
+          format: uuid
+        gap_type:
+          type: string
+          enum: [unlicensed, over_licensed, version_mismatch]
+        affected_devices:
+          type: integer
+        status:
+          type: string
+          enum: [open, resolved, accepted]
+    PatchGap:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        application:
+          type: string
+          format: uuid
+        current_version:
+          type: string
+        latest_version:
+          type: string
+        affected_devices:
+          type: integer
+        status:
+          type: string
+          enum: [open, patched, accepted]
+paths:
+  /sources/:
+    get:
+      summary: List discovery sources
+      operationId: listDiscoverySources
+      security:
+        - AzureAD: []
+      parameters:
+        - name: source_type
+          in: query
+          schema:
+            type: string
+        - name: is_active
+          in: query
+          schema:
+            type: boolean
+      responses:
+        '200':
+          description: List of sources
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/DiscoverySource'
+  /runs/:
+    get:
+      summary: List discovery runs
+      operationId: listDiscoveryRuns
+      security:
+        - AzureAD: []
+      parameters:
+        - name: source
+          in: query
+          schema:
+            type: string
+            format: uuid
+        - name: status
+          in: query
+          schema:
+            type: string
+      responses:
+        '200':
+          description: List of runs
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/DiscoveryRun'
+  /runs/start/:
+    post:
+      summary: Start discovery run
+      operationId: startDiscoveryRun
+      security:
+        - AzureAD: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [source_id]
+              properties:
+                source_id:
+                  type: string
+                  format: uuid
+      responses:
+        '200':
+          description: Run started
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DiscoveryRun'
+  /applications/:
+    get:
+      summary: List normalized applications
+      operationId: listNormalizedApplications
+      security:
+        - AzureAD: []
+      parameters:
+        - name: vendor
+          in: query
+          schema:
+            type: string
+        - name: search
+          in: query
+          schema:
+            type: string
+      responses:
+        '200':
+          description: List of applications
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/NormalizedApplication'
+  /license-gaps/:
+    get:
+      summary: List license gaps
+      operationId: listLicenseGaps
+      security:
+        - AzureAD: []
+      parameters:
+        - name: gap_type
+          in: query
+          schema:
+            type: string
+        - name: status
+          in: query
+          schema:
+            type: string
+      responses:
+        '200':
+          description: List of gaps
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/LicenseGap'
+  /patch-gaps/:
+    get:
+      summary: List patch gaps
+      operationId: listPatchGaps
+      security:
+        - AzureAD: []
+      parameters:
+        - name: status
+          in: query
+          schema:
+            type: string
+      responses:
+        '200':
+          description: List of gaps
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/PatchGap'
+  /reports/summary/:
+    get:
+      summary: Get discovery summary
+      operationId: getDiscoverySummary
+      security:
+        - AzureAD: []
+      responses:
+        '200':
+          description: Summary statistics
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  total_applications:
+                    type: integer
+                  normalized_applications:
+                    type: integer
+                  license_gaps:
+                    type: integer
+                  patch_gaps:
+                    type: integer

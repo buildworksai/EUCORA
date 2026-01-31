@@ -1,0 +1,325 @@
+openapi: 3.0.3
+info:
+  title: Request Coordination Agent API
+  version: v1.0
+  description: |
+    Request Coordination agent for ServiceNow request tracking, SLA monitoring,
+    escalations, and stakeholder communications.
+servers:
+  - url: https://api.control-plane.corp/api/request-coordination
+    description: Production API
+components:
+  securitySchemes:
+    AzureAD:
+      type: oauth2
+      flows:
+        clientCredentials:
+          tokenUrl: https://login.microsoftonline.com/{tenantId}/oauth2/v2.0/token
+          scopes:
+            control_plane/.default: Request Coordination agent access
+  schemas:
+    TrackedRequest:
+      type: object
+      required: [servicenow_number, servicenow_sys_id, request_type, short_description]
+      properties:
+        id:
+          type: string
+          format: uuid
+        correlation_id:
+          type: string
+        servicenow_number:
+          type: string
+          example: "REQ0012345"
+        servicenow_sys_id:
+          type: string
+        request_type:
+          type: string
+          enum: [software_install, access_request, hardware, config_change, exception]
+        short_description:
+          type: string
+        requestor_email:
+          type: string
+          format: email
+        requestor_name:
+          type: string
+        assigned_to:
+          type: string
+        assignment_group:
+          type: string
+        status:
+          type: string
+          enum: [new, in_progress, pending, resolved, closed, cancelled]
+        priority:
+          type: string
+          enum: ["1", "2", "3", "4"]
+        sla_due:
+          type: string
+          format: date-time
+        is_escalated:
+          type: boolean
+        escalation_level:
+          type: integer
+        last_updated:
+          type: string
+          format: date-time
+        blocked_reason:
+          type: string
+    RequestStakeholder:
+      type: object
+      required: [request, email]
+      properties:
+        id:
+          type: string
+          format: uuid
+        request:
+          type: string
+          format: uuid
+        email:
+          type: string
+          format: email
+        name:
+          type: string
+        role:
+          type: string
+        notification_preferences:
+          type: object
+    RequestCommunication:
+      type: object
+      required: [request, channel, message]
+      properties:
+        id:
+          type: string
+          format: uuid
+        request:
+          type: string
+          format: uuid
+        channel:
+          type: string
+          enum: [email, teams, slack, servicenow]
+        message:
+          type: string
+        sent_at:
+          type: string
+          format: date-time
+        recipient:
+          type: string
+    EscalationRule:
+      type: object
+      required: [name, trigger_condition]
+      properties:
+        id:
+          type: string
+          format: uuid
+        name:
+          type: string
+        trigger_condition:
+          type: string
+          enum: [sla_breach, status_change, manual]
+        escalation_level:
+          type: integer
+        notify_stakeholders:
+          type: boolean
+        is_active:
+          type: boolean
+    EscalationEvent:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        correlation_id:
+          type: string
+        request:
+          type: string
+          format: uuid
+        rule:
+          type: string
+          format: uuid
+        escalation_level:
+          type: integer
+        escalated_at:
+          type: string
+          format: date-time
+        resolved_at:
+          type: string
+          format: date-time
+paths:
+  /requests/:
+    get:
+      summary: List tracked requests
+      operationId: listTrackedRequests
+      security:
+        - AzureAD: []
+      parameters:
+        - name: correlation_id
+          in: query
+          schema:
+            type: string
+        - name: status
+          in: query
+          schema:
+            type: string
+        - name: priority
+          in: query
+          schema:
+            type: string
+        - name: request_type
+          in: query
+          schema:
+            type: string
+      responses:
+        '200':
+          description: List of requests
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/TrackedRequest'
+    post:
+      summary: Create tracked request
+      operationId: createTrackedRequest
+      security:
+        - AzureAD: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TrackedRequest'
+      responses:
+        '201':
+          description: Request created
+  /requests/{id}/:
+    get:
+      summary: Get tracked request
+      operationId: getTrackedRequest
+      security:
+        - AzureAD: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Request details
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TrackedRequest'
+  /stakeholders/:
+    get:
+      summary: List request stakeholders
+      operationId: listRequestStakeholders
+      security:
+        - AzureAD: []
+      parameters:
+        - name: request
+          in: query
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: List of stakeholders
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/RequestStakeholder'
+  /communications/:
+    get:
+      summary: List communications
+      operationId: listCommunications
+      security:
+        - AzureAD: []
+      parameters:
+        - name: request
+          in: query
+          schema:
+            type: string
+            format: uuid
+        - name: channel
+          in: query
+          schema:
+            type: string
+      responses:
+        '200':
+          description: List of communications
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/RequestCommunication'
+  /escalation-rules/:
+    get:
+      summary: List escalation rules
+      operationId: listEscalationRules
+      security:
+        - AzureAD: []
+      parameters:
+        - name: is_active
+          in: query
+          schema:
+            type: boolean
+      responses:
+        '200':
+          description: List of rules
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/EscalationRule'
+  /escalations/:
+    get:
+      summary: List escalation events
+      operationId: listEscalationEvents
+      security:
+        - AzureAD: []
+      parameters:
+        - name: correlation_id
+          in: query
+          schema:
+            type: string
+        - name: request
+          in: query
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: List of escalations
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/EscalationEvent'
+  /reports/summary/:
+    get:
+      summary: Get coordination summary
+      operationId: getCoordinationSummary
+      security:
+        - AzureAD: []
+      responses:
+        '200':
+          description: Summary statistics
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  total_requests:
+                    type: integer
+                  active_requests:
+                    type: integer
+                  escalated_requests:
+                    type: integer
+                  sla_breaches:
+                    type: integer

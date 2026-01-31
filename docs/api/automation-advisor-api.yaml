@@ -1,0 +1,197 @@
+openapi: 3.0.3
+info:
+  title: Automation Advisor Agent API
+  version: v1.0
+  description: |
+    Automation Advisor agent for identifying automation opportunities,
+    ROI analysis, and automation candidate tracking.
+servers:
+  - url: https://api.control-plane.corp/api/automation-advisor
+    description: Production API
+components:
+  securitySchemes:
+    AzureAD:
+      type: oauth2
+      flows:
+        clientCredentials:
+          tokenUrl: https://login.microsoftonline.com/{tenantId}/oauth2/v2.0/token
+          scopes:
+            control_plane/.default: Automation Advisor agent access
+  schemas:
+    TaskPattern:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        pattern_name:
+          type: string
+        pattern_description:
+          type: string
+        frequency:
+          type: integer
+        average_duration_minutes:
+          type: number
+        task_type:
+          type: string
+          enum: [repetitive, manual, error_prone]
+    AutomationCandidate:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        candidate_name:
+          type: string
+        description:
+          type: string
+        automation_score:
+          type: number
+        roi_score:
+          type: number
+        estimated_savings_hours:
+          type: number
+        implementation_effort:
+          type: string
+          enum: [low, medium, high]
+        status:
+          type: string
+          enum: [identified, under_review, approved, implemented, rejected]
+    AutomationAnalysis:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        analysis_date:
+          type: string
+          format: date-time
+        candidates_identified:
+          type: integer
+        total_potential_savings:
+          type: number
+        top_opportunities:
+          type: array
+          items:
+            type: string
+            format: uuid
+    ROIConfiguration:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        hourly_rate:
+          type: number
+        implementation_cost_factor:
+          type: number
+        maintenance_cost_factor:
+          type: number
+paths:
+  /patterns/:
+    get:
+      summary: List task patterns
+      operationId: listTaskPatterns
+      security:
+        - AzureAD: []
+      parameters:
+        - name: task_type
+          in: query
+          schema:
+            type: string
+      responses:
+        '200':
+          description: List of patterns
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/TaskPattern'
+  /candidates/:
+    get:
+      summary: List automation candidates
+      operationId: listAutomationCandidates
+      security:
+        - AzureAD: []
+      parameters:
+        - name: status
+          in: query
+          schema:
+            type: string
+        - name: min_roi_score
+          in: query
+          schema:
+            type: number
+      responses:
+        '200':
+          description: List of candidates
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/AutomationCandidate'
+  /analyses/:
+    get:
+      summary: List automation analyses
+      operationId: listAnalyses
+      security:
+        - AzureAD: []
+      responses:
+        '200':
+          description: List of analyses
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/AutomationAnalysis'
+  /roi-config/:
+    get:
+      summary: Get ROI configuration
+      operationId: getROIConfiguration
+      security:
+        - AzureAD: []
+      responses:
+        '200':
+          description: ROI configuration
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ROIConfiguration'
+    patch:
+      summary: Update ROI configuration
+      operationId: updateROIConfiguration
+      security:
+        - AzureAD: []
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ROIConfiguration'
+      responses:
+        '200':
+          description: Configuration updated
+  /reports/summary/:
+    get:
+      summary: Get automation summary
+      operationId: getAutomationSummary
+      security:
+        - AzureAD: []
+      responses:
+        '200':
+          description: Summary statistics
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  total_candidates:
+                    type: integer
+                  implemented_automations:
+                    type: integer
+                  total_savings_hours:
+                    type: number
+                  top_opportunity_roi:
+                    type: number

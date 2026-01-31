@@ -36,6 +36,14 @@ The Control Plane is the **thin orchestration layer** that acts as the system-of
 │  │ Store        │  │ (Immutable)  │  │ Plane        │    │
 │  │ (Immutable)  │  │              │  │ Connectors   │    │
 │  └──────────────┘  └──────────────┘  └──────┬───────┘    │
+│                                               │             │
+│  ┌───────────────────────────────────────────▼───────────┐ │
+│  │         AI Workflow Engine (Phase 2)                  │ │
+│  │  ┌──────────────┐  ┌──────────────┐  ┌───────────┐  │ │
+│  │  │ ALM Agents   │  │ RAG Pipeline │  │ Vector DB │  │ │
+│  │  │ (E10-E21)   │  │ (E1, E7)     │  │ (pgvector)│  │ │
+│  │  └──────────────┘  └──────────────┘  └───────────┘  │ │
+│  └───────────────────────────────────────────────────────┘ │
 └─────────────────────────────────────────────┼─────────────┘
                                               │
                     ┌─────────────────────────▼─────────────┐
@@ -603,9 +611,73 @@ LOOP every 1 hour (configurable):
 
 ---
 
+## Phase 2 Enhancements
+
+### AI Workflow Engine
+
+The AI Workflow Engine (E8) orchestrates AI agent workflows with risk-based approval gates:
+
+**Components**:
+- **Task Router**: Routes tasks to appropriate agents based on task type and scope
+- **Risk Classifier**: Classifies agent operations as R1 (autonomous), R2 (approval required), or R3 (mandatory approval)
+- **Approval Workflow**: Manages approval workflows for R2/R3 operations
+- **Event Publisher**: Publishes agent events to event store with correlation IDs
+
+**Integration Points**:
+- Policy Engine: Risk assessment and approval enforcement
+- Event Store: Agent action audit trail
+- Telemetry: Agent performance metrics
+
+See [AI Agents Architecture](ai-agents-architecture.md) for detailed design.
+
+### RAG Pipeline
+
+The RAG Pipeline (E1, E7) provides document management and semantic search:
+
+**Components**:
+- **Document Ingester**: Ingests documents from ServiceNow KB, Confluence, SharePoint, code repos
+- **Text Processor**: Extracts text, chunks documents, extracts metadata
+- **Embedding Service**: Generates vector embeddings using OpenAI/Azure OpenAI
+- **Vector Database**: Stores embeddings in PostgreSQL with pgvector extension
+- **Semantic Search**: Provides natural language query interface
+
+**Integration Points**:
+- KB & Triage Agent: Semantic search for ticket resolution
+- Documentation Agent: Code documentation indexing
+- Planning Agent: Deployment best practices retrieval
+
+See [RAG Pipeline Architecture](rag-pipeline-architecture.md) for detailed design.
+
+### ALM Agents
+
+Twelve specialized agents (E10-E21) automate application lifecycle management:
+
+**Wave 1 Agents (E10-E16)**:
+- CMDB Integration: ServiceNow CMDB synchronization
+- Change Communications: Change record and stakeholder management
+- Documentation: Automated code documentation generation
+- Automation Advisor: Automation opportunity identification
+- Discovery: Multi-source application discovery
+- IAM Security: Identity provider monitoring and anomaly detection
+- Request Coordination: ServiceNow request tracking and SLA monitoring
+
+**Wave 2 Agents (E17-E21)**:
+- SecOps: Vulnerability management and compliance
+- SRE: Monitoring, SLO tracking, self-healing
+- SLA Governance: SLA definition and compliance monitoring
+- Planning: AI-powered deployment planning
+- KB & Triage: Knowledge base integration and ticket triage
+
+See [ALM Agents Architecture](alm-agents-architecture.md) for detailed design.
+
+---
+
 ## Related Documentation
 
 - [Architecture Overview](architecture-overview.md)
+- [AI Agents Architecture](ai-agents-architecture.md)
+- [ALM Agents Architecture](alm-agents-architecture.md)
+- [RAG Pipeline Architecture](rag-pipeline-architecture.md)
 - [Risk Model](risk-model.md)
 - [Evidence Pack Schema](evidence-pack-schema.md)
 - [Execution Plane Connectors](execution-plane-connectors.md)

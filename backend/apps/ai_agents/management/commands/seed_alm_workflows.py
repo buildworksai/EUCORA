@@ -16,7 +16,7 @@ from apps.ai_agents.workflows.models import WorkflowDefinition
 class Command(BaseCommand):
     """Seed ALM Agent workflow definitions."""
 
-    help = "Seed ALM Agent workflow definitions for E10, E11, E12, E13, E14, E15"
+    help = "Seed ALM Agent workflow definitions for E10, E11, E12, E13, E14, E15, E16"
 
     def handle(self, *args, **options):  # noqa: C901
         """Execute the command."""
@@ -97,6 +97,90 @@ class Command(BaseCommand):
         # E15: IAM Security Agent Workflows
         e15_workflows = self._get_e15_workflows()
         for workflow_data in e15_workflows:
+            workflow, created = WorkflowDefinition.objects.update_or_create(
+                agent_type=workflow_data["agent_type"],
+                name=workflow_data["name"],
+                defaults=workflow_data,
+            )
+            if created:
+                workflows_created += 1
+                self.stdout.write(f"  Created: {workflow.name}")
+            else:
+                self.stdout.write(f"  Updated: {workflow.name}")
+
+        # E16: Request Coordination Agent Workflows
+        e16_workflows = self._get_e16_workflows()
+        for workflow_data in e16_workflows:
+            workflow, created = WorkflowDefinition.objects.update_or_create(
+                agent_type=workflow_data["agent_type"],
+                name=workflow_data["name"],
+                defaults=workflow_data,
+            )
+            if created:
+                workflows_created += 1
+                self.stdout.write(f"  Created: {workflow.name}")
+            else:
+                self.stdout.write(f"  Updated: {workflow.name}")
+
+        # E17: SecOps Agent Workflows
+        e17_workflows = self._get_e17_workflows()
+        for workflow_data in e17_workflows:
+            workflow, created = WorkflowDefinition.objects.update_or_create(
+                agent_type=workflow_data["agent_type"],
+                name=workflow_data["name"],
+                defaults=workflow_data,
+            )
+            if created:
+                workflows_created += 1
+                self.stdout.write(f"  Created: {workflow.name}")
+            else:
+                self.stdout.write(f"  Updated: {workflow.name}")
+
+        # E18: SRE Agent Workflows
+        e18_workflows = self._get_e18_workflows()
+        for workflow_data in e18_workflows:
+            workflow, created = WorkflowDefinition.objects.update_or_create(
+                agent_type=workflow_data["agent_type"],
+                name=workflow_data["name"],
+                defaults=workflow_data,
+            )
+            if created:
+                workflows_created += 1
+                self.stdout.write(f"  Created: {workflow.name}")
+            else:
+                self.stdout.write(f"  Updated: {workflow.name}")
+
+        # E21: KB & Triage Agent Workflows
+        e21_workflows = self._get_e21_workflows()
+        for workflow_data in e21_workflows:
+            workflow, created = WorkflowDefinition.objects.update_or_create(
+                agent_type=workflow_data["agent_type"],
+                name=workflow_data["name"],
+                defaults=workflow_data,
+            )
+            if created:
+                workflows_created += 1
+                self.stdout.write(f"  Created: {workflow.name}")
+            else:
+                self.stdout.write(f"  Updated: {workflow.name}")
+
+        # E19: SLA Governance Agent Workflows
+        e19_workflows = self._get_e19_workflows()
+        for workflow_data in e19_workflows:
+            workflow, created = WorkflowDefinition.objects.update_or_create(
+                agent_type=workflow_data["agent_type"],
+                name=workflow_data["name"],
+                defaults=workflow_data,
+            )
+            if created:
+                workflows_created += 1
+                self.stdout.write(f"  Created: {workflow.name}")
+            else:
+                self.stdout.write(f"  Updated: {workflow.name}")
+
+        # E20: Planning Agent Workflows
+        e20_workflows = self._get_e20_workflows()
+        for workflow_data in e20_workflows:
             workflow, created = WorkflowDefinition.objects.update_or_create(
                 agent_type=workflow_data["agent_type"],
                 name=workflow_data["name"],
@@ -992,6 +1076,951 @@ class Command(BaseCommand):
                         "output_schema": {"actions_executed": "list"},
                         "policy_tags": ["response_execution"],
                         "risk_level": "R3",
+                    },
+                ],
+                "is_active": True,
+            },
+        ]
+
+    def _get_e16_workflows(self) -> list:
+        """Get E16 Request Coordination Agent workflows."""
+        return [
+            {
+                "agent_type": "request_coordination",
+                "name": "Request Coordination Workflow",
+                "description": "Sync requests from ServiceNow, track SLA status, detect changes, and trigger escalations",
+                "risk_level": "R1",
+                "required_policies": ["sla_policy", "escalation_policy"],
+                "steps": [
+                    {
+                        "name": "Sync Requests",
+                        "type": "ai_action",
+                        "description": "Sync request status from ServiceNow",
+                        "instructions": "Sync request status from ServiceNow for all tracked requests.",
+                        "task": "Sync requests",
+                        "output_schema": {"synced_count": "integer", "requests": "list"},
+                        "policy_tags": ["request_sync"],
+                        "risk_level": "R1",
+                    },
+                    {
+                        "name": "Check SLA Status",
+                        "type": "ai_action",
+                        "description": "Check SLA status for all tracked requests",
+                        "instructions": "Check SLA status and identify requests at risk or breached.",
+                        "task": "Check SLA status",
+                        "output_schema": {"at_risk": "list", "breached": "list"},
+                        "policy_tags": ["sla_tracking"],
+                        "risk_level": "R1",
+                    },
+                    {
+                        "name": "Detect Status Changes",
+                        "type": "ai_action",
+                        "description": "Detect requests with status changes since last check",
+                        "instructions": "Detect requests with status changes and prepare notifications.",
+                        "task": "Detect status changes",
+                        "output_schema": {"changed_requests": "list"},
+                        "policy_tags": ["change_detection"],
+                        "risk_level": "R1",
+                    },
+                    {
+                        "name": "Identify Blocked",
+                        "type": "ai_action",
+                        "description": "Identify blocked or stalled requests",
+                        "instructions": "Identify requests that are blocked or stalled.",
+                        "task": "Identify blocked",
+                        "output_schema": {"blocked_requests": "list"},
+                        "policy_tags": ["blocked_detection"],
+                        "risk_level": "R1",
+                    },
+                    {
+                        "name": "Send Updates",
+                        "type": "ai_action",
+                        "description": "Send status update notifications to stakeholders",
+                        "instructions": "Send status update notifications to stakeholders.",
+                        "task": "Send updates",
+                        "output_schema": {"notifications_sent": "list"},
+                        "policy_tags": ["notification"],
+                        "risk_level": "R1",
+                    },
+                    {
+                        "name": "Trigger Escalations",
+                        "type": "approval_gate",
+                        "description": "Trigger escalations based on rules",
+                        "instructions": "Review escalation before notifying management.",
+                        "task": "Trigger escalations",
+                        "output_schema": {"escalations_triggered": "list"},
+                        "policy_tags": ["escalation"],
+                        "risk_level": "R2",
+                    },
+                    {
+                        "name": "Generate Digest",
+                        "type": "ai_action",
+                        "description": "Generate periodic digest for managers",
+                        "instructions": "Generate periodic digest report for managers.",
+                        "task": "Generate digest",
+                        "output_schema": {"digest": "object"},
+                        "policy_tags": ["reporting"],
+                        "risk_level": "R1",
+                    },
+                ],
+                "is_active": True,
+            },
+        ]
+
+    def _get_e17_workflows(self) -> list:
+        """Get E17 SecOps Agent workflows."""
+        return [
+            {
+                "agent_type": "secops",
+                "name": "secops_vulnerability_workflow",
+                "description": "Vulnerability scanning, correlation, risk assessment, and remediation planning",
+                "risk_level": "R2",
+                "required_policies": ["security_policy", "patch_management_policy", "change_management_policy"],
+                "steps": [
+                    {
+                        "name": "sync_vulnerabilities",
+                        "type": "ai_action",
+                        "description": "Sync latest vulnerability scan results",
+                        "instructions": "Sync vulnerabilities from configured scanners (Qualys, Nessus, Defender).",
+                        "task": "Sync vulnerabilities",
+                        "output_schema": {"synced_count": "integer", "vulnerabilities": "list"},
+                        "policy_tags": ["vulnerability_scanning"],
+                        "risk_level": "R1",
+                    },
+                    {
+                        "name": "correlate_assets",
+                        "type": "ai_action",
+                        "description": "Correlate vulnerabilities with application inventory",
+                        "instructions": "Match vulnerabilities to installed applications and assets.",
+                        "task": "Correlate vulnerabilities",
+                        "output_schema": {"correlated_instances": "list"},
+                        "policy_tags": ["asset_correlation"],
+                        "risk_level": "R1",
+                    },
+                    {
+                        "name": "calculate_risk",
+                        "type": "ai_action",
+                        "description": "Calculate risk scores and prioritize",
+                        "instructions": "Calculate risk scores based on CVSS, exploitability, and asset criticality.",
+                        "task": "Calculate risk scores",
+                        "output_schema": {"risk_scores": "list", "prioritized": "list"},
+                        "policy_tags": ["risk_assessment"],
+                        "risk_level": "R1",
+                    },
+                    {
+                        "name": "check_compliance",
+                        "type": "ai_action",
+                        "description": "Check affected assets against compliance baselines",
+                        "instructions": "Check compliance status for affected assets.",
+                        "task": "Check compliance",
+                        "output_schema": {"compliance_status": "object"},
+                        "policy_tags": ["compliance"],
+                        "risk_level": "R1",
+                    },
+                    {
+                        "name": "generate_remediation_plan",
+                        "type": "ai_action",
+                        "description": "Generate remediation plan for critical/high vulnerabilities",
+                        "instructions": "Generate remediation plans with steps and risk levels.",
+                        "task": "Generate remediation plans",
+                        "output_schema": {"remediation_plans": "list"},
+                        "policy_tags": ["remediation"],
+                        "risk_level": "R1",
+                    },
+                    {
+                        "name": "execute_remediation",
+                        "type": "approval_gate",
+                        "description": "Execute approved remediation actions",
+                        "instructions": "CRITICAL: Review and approve remediation actions before execution.",
+                        "task": "Execute remediation",
+                        "output_schema": {"executed": "boolean", "results": "list"},
+                        "policy_tags": ["remediation_execution"],
+                        "risk_level": "R3",
+                    },
+                    {
+                        "name": "verify_remediation",
+                        "type": "ai_action",
+                        "description": "Verify remediation was successful",
+                        "instructions": "Verify vulnerabilities are remediated.",
+                        "task": "Verify remediation",
+                        "output_schema": {"verified": "boolean", "remaining": "list"},
+                        "policy_tags": ["verification"],
+                        "risk_level": "R1",
+                    },
+                    {
+                        "name": "update_compliance_status",
+                        "type": "ai_action",
+                        "description": "Update compliance status post-remediation",
+                        "instructions": "Update compliance status after remediation.",
+                        "task": "Update compliance",
+                        "output_schema": {"updated": "boolean"},
+                        "policy_tags": ["compliance"],
+                        "risk_level": "R1",
+                    },
+                ],
+                "is_active": True,
+            },
+            {
+                "agent_type": "secops",
+                "name": "secops_compliance_workflow",
+                "description": "Compliance baseline checking and drift detection",
+                "risk_level": "R1",
+                "required_policies": ["compliance_policy"],
+                "steps": [
+                    {
+                        "name": "Select Baseline",
+                        "type": "ai_action",
+                        "description": "Select compliance baseline to check",
+                        "instructions": "Select appropriate compliance baseline (CIS, NIST, SOC2, ISO27001).",
+                        "task": "Select baseline",
+                        "output_schema": {"baseline": "string"},
+                        "policy_tags": ["compliance"],
+                        "risk_level": "R1",
+                    },
+                    {
+                        "name": "Run Compliance Check",
+                        "type": "ai_action",
+                        "description": "Run compliance check against baseline",
+                        "instructions": "Execute compliance checks for all assets.",
+                        "task": "Run compliance checks",
+                        "output_schema": {"check_results": "list"},
+                        "policy_tags": ["compliance"],
+                        "risk_level": "R1",
+                    },
+                    {
+                        "name": "Detect Drift",
+                        "type": "ai_action",
+                        "description": "Detect compliance drift",
+                        "instructions": "Compare current state to baseline and detect drift.",
+                        "task": "Detect drift",
+                        "output_schema": {"drift_detected": "list"},
+                        "policy_tags": ["drift_detection"],
+                        "risk_level": "R1",
+                    },
+                    {
+                        "name": "Generate Report",
+                        "type": "ai_action",
+                        "description": "Generate compliance report",
+                        "instructions": "Generate compliance report with scores and recommendations.",
+                        "task": "Generate report",
+                        "output_schema": {"report": "object"},
+                        "policy_tags": ["reporting"],
+                        "risk_level": "R1",
+                    },
+                ],
+                "is_active": True,
+            },
+            {
+                "agent_type": "secops",
+                "name": "secops_siem_response_workflow",
+                "description": "SIEM alert correlation and incident response",
+                "risk_level": "R2",
+                "required_policies": ["security_policy", "incident_response"],
+                "steps": [
+                    {
+                        "name": "Sync SIEM Alerts",
+                        "type": "ai_action",
+                        "description": "Sync alerts from SIEM platforms",
+                        "instructions": "Sync security alerts from Sentinel, Splunk, QRadar.",
+                        "task": "Sync alerts",
+                        "output_schema": {"alerts": "list"},
+                        "policy_tags": ["siem_integration"],
+                        "risk_level": "R1",
+                    },
+                    {
+                        "name": "Correlate with Vulnerabilities",
+                        "type": "ai_action",
+                        "description": "Correlate alerts with known vulnerabilities",
+                        "instructions": "Match alerts to known vulnerabilities.",
+                        "task": "Correlate alerts",
+                        "output_schema": {"correlated": "list"},
+                        "policy_tags": ["correlation"],
+                        "risk_level": "R1",
+                    },
+                    {
+                        "name": "Assess Severity",
+                        "type": "ai_action",
+                        "description": "Assess alert severity and impact",
+                        "instructions": "Assess alert severity and business impact.",
+                        "task": "Assess severity",
+                        "output_schema": {"severity": "string", "impact": "string"},
+                        "policy_tags": ["risk_assessment"],
+                        "risk_level": "R1",
+                    },
+                    {
+                        "name": "Create Incident",
+                        "type": "approval_gate",
+                        "description": "Create security incident",
+                        "instructions": "CRITICAL: Review before creating incident.",
+                        "task": "Create incident",
+                        "output_schema": {"incident_id": "string"},
+                        "policy_tags": ["incident_management"],
+                        "risk_level": "R2",
+                    },
+                    {
+                        "name": "Generate Response Plan",
+                        "type": "ai_action",
+                        "description": "Generate incident response plan",
+                        "instructions": "Generate response plan with remediation steps.",
+                        "task": "Generate response plan",
+                        "output_schema": {"response_plan": "object"},
+                        "policy_tags": ["incident_response"],
+                        "risk_level": "R2",
+                    },
+                ],
+                "is_active": True,
+            },
+        ]
+
+    def _get_e18_workflows(self) -> list:
+        """Get E18 SRE Agent workflows."""
+        return [
+            {
+                "agent_type": "sre",
+                "name": "sre_self_healing_workflow",
+                "description": "Self-healing automation with monitoring and remediation",
+                "risk_level": "R2",
+                "required_policies": ["operations_policy", "change_management_policy"],
+                "steps": [
+                    {
+                        "name": "collect_metrics",
+                        "type": "ai_action",
+                        "description": "Collect metrics from monitoring platforms",
+                        "instructions": "Collect metrics from Prometheus, Datadog, Azure Monitor.",
+                        "task": "Collect metrics",
+                        "output_schema": {"metrics": "object"},
+                        "policy_tags": ["monitoring"],
+                        "risk_level": "R1",
+                    },
+                    {
+                        "name": "check_health_endpoints",
+                        "type": "ai_action",
+                        "description": "Check all configured health endpoints",
+                        "instructions": "Check health endpoints and record results.",
+                        "task": "Check health endpoints",
+                        "output_schema": {"health_results": "list"},
+                        "policy_tags": ["health_checks"],
+                        "risk_level": "R1",
+                    },
+                    {
+                        "name": "evaluate_slos",
+                        "type": "ai_action",
+                        "description": "Evaluate SLO compliance and error budget",
+                        "instructions": "Evaluate SLO compliance and calculate error budget burn rate.",
+                        "task": "Evaluate SLOs",
+                        "output_schema": {"slo_status": "list"},
+                        "policy_tags": ["slo_tracking"],
+                        "risk_level": "R1",
+                    },
+                    {
+                        "name": "detect_anomalies",
+                        "type": "ai_action",
+                        "description": "Detect anomalies and degradation patterns",
+                        "instructions": "Detect anomalies and degradation patterns.",
+                        "task": "Detect anomalies",
+                        "output_schema": {"anomalies": "list"},
+                        "policy_tags": ["anomaly_detection"],
+                        "risk_level": "R1",
+                    },
+                    {
+                        "name": "trigger_self_healing",
+                        "type": "approval_gate",
+                        "description": "Trigger self-healing rules if conditions met",
+                        "instructions": "Review self-healing triggers before execution.",
+                        "task": "Trigger self-healing",
+                        "output_schema": {"triggered_rules": "list"},
+                        "policy_tags": ["self_healing"],
+                        "risk_level": "R2",
+                    },
+                    {
+                        "name": "execute_remediation",
+                        "type": "ai_action",
+                        "description": "Execute remediation scripts",
+                        "instructions": "Execute PowerShell or other remediation scripts.",
+                        "task": "Execute remediation",
+                        "output_schema": {"executed": "boolean", "results": "list"},
+                        "policy_tags": ["remediation"],
+                        "risk_level": "R2",
+                    },
+                    {
+                        "name": "verify_recovery",
+                        "type": "ai_action",
+                        "description": "Verify system recovery after remediation",
+                        "instructions": "Verify system recovery and health restoration.",
+                        "task": "Verify recovery",
+                        "output_schema": {"recovered": "boolean", "metrics": "object"},
+                        "policy_tags": ["verification"],
+                        "risk_level": "R1",
+                    },
+                    {
+                        "name": "update_metrics",
+                        "type": "ai_action",
+                        "description": "Update metrics and SLO status",
+                        "instructions": "Update metrics and SLO status after remediation.",
+                        "task": "Update metrics",
+                        "output_schema": {"updated": "boolean"},
+                        "policy_tags": ["metrics"],
+                        "risk_level": "R1",
+                    },
+                ],
+                "is_active": True,
+            },
+            {
+                "agent_type": "sre",
+                "name": "sre_slo_monitoring_workflow",
+                "description": "Continuous SLO monitoring and error budget tracking",
+                "risk_level": "R1",
+                "required_policies": ["slo_policy"],
+                "steps": [
+                    {
+                        "name": "Collect SLO Metrics",
+                        "type": "ai_action",
+                        "description": "Collect SLO metrics from monitoring",
+                        "instructions": "Collect SLO metrics for all active SLOs.",
+                        "task": "Collect SLO metrics",
+                        "output_schema": {"metrics": "list"},
+                        "policy_tags": ["slo_tracking"],
+                        "risk_level": "R1",
+                    },
+                    {
+                        "name": "Calculate Error Budget",
+                        "type": "ai_action",
+                        "description": "Calculate error budget remaining",
+                        "instructions": "Calculate error budget burn rate and remaining budget.",
+                        "task": "Calculate error budget",
+                        "output_schema": {"error_budgets": "list"},
+                        "policy_tags": ["error_budget"],
+                        "risk_level": "R1",
+                    },
+                    {
+                        "name": "Detect Budget Alerts",
+                        "type": "ai_action",
+                        "description": "Detect error budget alerts",
+                        "instructions": "Detect SLOs with error budget alerts.",
+                        "task": "Detect alerts",
+                        "output_schema": {"alerts": "list"},
+                        "policy_tags": ["alerting"],
+                        "risk_level": "R1",
+                    },
+                    {
+                        "name": "Generate SLO Report",
+                        "type": "ai_action",
+                        "description": "Generate SLO compliance report",
+                        "instructions": "Generate SLO compliance report.",
+                        "task": "Generate report",
+                        "output_schema": {"report": "object"},
+                        "policy_tags": ["reporting"],
+                        "risk_level": "R1",
+                    },
+                ],
+                "is_active": True,
+            },
+            {
+                "agent_type": "sre",
+                "name": "sre_runbook_workflow",
+                "description": "Runbook execution with step-by-step guidance",
+                "risk_level": "R1",
+                "required_policies": ["runbook_policy"],
+                "steps": [
+                    {
+                        "name": "Select Runbook",
+                        "type": "ai_action",
+                        "description": "Select appropriate runbook",
+                        "instructions": "Select runbook based on incident type.",
+                        "task": "Select runbook",
+                        "output_schema": {"runbook": "string"},
+                        "policy_tags": ["runbook_selection"],
+                        "risk_level": "R1",
+                    },
+                    {
+                        "name": "Execute Steps",
+                        "type": "ai_action",
+                        "description": "Execute runbook steps",
+                        "instructions": "Execute runbook steps sequentially.",
+                        "task": "Execute steps",
+                        "output_schema": {"step_results": "list"},
+                        "policy_tags": ["runbook_execution"],
+                        "risk_level": "R1",
+                    },
+                    {
+                        "name": "Collect Evidence",
+                        "type": "ai_action",
+                        "description": "Collect evidence during execution",
+                        "instructions": "Collect evidence for each step.",
+                        "task": "Collect evidence",
+                        "output_schema": {"evidence": "list"},
+                        "policy_tags": ["evidence_collection"],
+                        "risk_level": "R1",
+                    },
+                    {
+                        "name": "Verify Completion",
+                        "type": "ai_action",
+                        "description": "Verify runbook completion",
+                        "instructions": "Verify all steps completed successfully.",
+                        "task": "Verify completion",
+                        "output_schema": {"completed": "boolean"},
+                        "policy_tags": ["verification"],
+                        "risk_level": "R1",
+                    },
+                ],
+                "is_active": True,
+            },
+        ]
+
+    def _get_e21_workflows(self) -> list:
+        """Get E21 KB & Triage Agent workflows."""
+        return [
+            {
+                "agent_type": "kb_triage",
+                "name": "kb_triage_workflow",
+                "description": "AI-powered ticket triage with knowledge synthesis",
+                "risk_level": "R1",
+                "required_policies": ["incident_management_policy"],
+                "steps": [
+                    {
+                        "name": "parse_incident",
+                        "type": "ai_action",
+                        "description": "Parse incident description and extract key information",
+                        "instructions": "Parse incident description and extract entities, symptoms, and context.",
+                        "task": "Parse incident",
+                        "output_schema": {"entities": "object", "symptoms": "list"},
+                        "policy_tags": ["incident_parsing"],
+                        "risk_level": "R1",
+                    },
+                    {
+                        "name": "search_knowledge",
+                        "type": "ai_action",
+                        "description": "Search knowledge base for relevant articles",
+                        "instructions": "Perform semantic search across knowledge sources.",
+                        "task": "Search knowledge",
+                        "output_schema": {"articles": "list"},
+                        "policy_tags": ["knowledge_search"],
+                        "risk_level": "R1",
+                    },
+                    {
+                        "name": "categorize_incident",
+                        "type": "ai_action",
+                        "description": "Determine category and subcategory",
+                        "instructions": "Categorize incident using AI and knowledge context.",
+                        "task": "Categorize incident",
+                        "output_schema": {"category": "string", "subcategory": "string", "confidence": "float"},
+                        "policy_tags": ["categorization"],
+                        "risk_level": "R1",
+                    },
+                    {
+                        "name": "assess_priority",
+                        "type": "ai_action",
+                        "description": "Assess priority and urgency",
+                        "instructions": "Assess priority based on impact and urgency.",
+                        "task": "Assess priority",
+                        "output_schema": {"priority": "string", "urgency": "string"},
+                        "policy_tags": ["priority_assessment"],
+                        "risk_level": "R1",
+                    },
+                    {
+                        "name": "check_duplicates",
+                        "type": "ai_action",
+                        "description": "Check for duplicate or related incidents",
+                        "instructions": "Check for duplicate or related incidents.",
+                        "task": "Check duplicates",
+                        "output_schema": {"duplicates": "list", "related": "list"},
+                        "policy_tags": ["duplicate_detection"],
+                        "risk_level": "R1",
+                    },
+                    {
+                        "name": "generate_resolution",
+                        "type": "ai_action",
+                        "description": "Generate step-by-step resolution guidance",
+                        "instructions": "Generate step-by-step resolution steps from knowledge articles.",
+                        "task": "Generate resolution",
+                        "output_schema": {"resolution_steps": "list"},
+                        "policy_tags": ["resolution_generation"],
+                        "risk_level": "R1",
+                    },
+                    {
+                        "name": "suggest_assignment",
+                        "type": "ai_action",
+                        "description": "Suggest assignment group",
+                        "instructions": "Suggest assignment group based on category and priority.",
+                        "task": "Suggest assignment",
+                        "output_schema": {"assignment_group": "string"},
+                        "policy_tags": ["assignment"],
+                        "risk_level": "R1",
+                    },
+                    {
+                        "name": "detect_patterns",
+                        "type": "ai_action",
+                        "description": "Check for incident patterns",
+                        "instructions": "Detect recurring or trending incident patterns.",
+                        "task": "Detect patterns",
+                        "output_schema": {"patterns": "list"},
+                        "policy_tags": ["pattern_detection"],
+                        "risk_level": "R1",
+                    },
+                    {
+                        "name": "present_triage",
+                        "type": "ai_action",
+                        "description": "Present triage results to agent",
+                        "instructions": "Present triage results with confidence scores and recommendations.",
+                        "task": "Present triage",
+                        "output_schema": {"triage_results": "object"},
+                        "policy_tags": ["presentation"],
+                        "risk_level": "R1",
+                    },
+                ],
+                "is_active": True,
+            },
+            {
+                "agent_type": "kb_triage",
+                "name": "kb_pattern_detection_workflow",
+                "description": "Detect incident patterns and trends",
+                "risk_level": "R1",
+                "required_policies": ["pattern_detection"],
+                "steps": [
+                    {
+                        "name": "Analyze Incident History",
+                        "type": "ai_action",
+                        "description": "Analyze historical incidents",
+                        "instructions": "Analyze historical incidents for patterns.",
+                        "task": "Analyze history",
+                        "output_schema": {"analysis": "object"},
+                        "policy_tags": ["pattern_analysis"],
+                        "risk_level": "R1",
+                    },
+                    {
+                        "name": "Detect Recurring Patterns",
+                        "type": "ai_action",
+                        "description": "Detect recurring incident patterns",
+                        "instructions": "Detect recurring patterns in incidents.",
+                        "task": "Detect recurring",
+                        "output_schema": {"recurring_patterns": "list"},
+                        "policy_tags": ["pattern_detection"],
+                        "risk_level": "R1",
+                    },
+                    {
+                        "name": "Detect Trending Issues",
+                        "type": "ai_action",
+                        "description": "Detect trending issues",
+                        "instructions": "Detect trending issues and spikes.",
+                        "task": "Detect trending",
+                        "output_schema": {"trending": "list"},
+                        "policy_tags": ["trend_detection"],
+                        "risk_level": "R1",
+                    },
+                    {
+                        "name": "Correlate with Changes",
+                        "type": "ai_action",
+                        "description": "Correlate patterns with changes",
+                        "instructions": "Correlate incident patterns with recent changes.",
+                        "task": "Correlate changes",
+                        "output_schema": {"correlations": "list"},
+                        "policy_tags": ["change_correlation"],
+                        "risk_level": "R1",
+                    },
+                    {
+                        "name": "Generate Pattern Report",
+                        "type": "ai_action",
+                        "description": "Generate pattern detection report",
+                        "instructions": "Generate report on detected patterns.",
+                        "task": "Generate report",
+                        "output_schema": {"report": "object"},
+                        "policy_tags": ["reporting"],
+                        "risk_level": "R1",
+                    },
+                ],
+                "is_active": True,
+            },
+            {
+                "agent_type": "kb_triage",
+                "name": "kb_knowledge_sync_workflow",
+                "description": "Synchronize knowledge sources",
+                "risk_level": "R1",
+                "required_policies": ["knowledge_management"],
+                "steps": [
+                    {
+                        "name": "Select Source",
+                        "type": "ai_action",
+                        "description": "Select knowledge source to sync",
+                        "instructions": "Select knowledge source (ServiceNow KB, Confluence, etc.).",
+                        "task": "Select source",
+                        "output_schema": {"source": "string"},
+                        "policy_tags": ["source_selection"],
+                        "risk_level": "R1",
+                    },
+                    {
+                        "name": "Fetch Articles",
+                        "type": "ai_action",
+                        "description": "Fetch articles from source",
+                        "instructions": "Fetch articles from knowledge source.",
+                        "task": "Fetch articles",
+                        "output_schema": {"articles": "list"},
+                        "policy_tags": ["article_fetch"],
+                        "risk_level": "R1",
+                    },
+                    {
+                        "name": "Generate Embeddings",
+                        "type": "ai_action",
+                        "description": "Generate embeddings for semantic search",
+                        "instructions": "Generate vector embeddings for articles using E7 pgvector.",
+                        "task": "Generate embeddings",
+                        "output_schema": {"embeddings_generated": "integer"},
+                        "policy_tags": ["embedding_generation"],
+                        "risk_level": "R1",
+                    },
+                    {
+                        "name": "Index Articles",
+                        "type": "ai_action",
+                        "description": "Index articles in knowledge base",
+                        "instructions": "Index articles with embeddings for semantic search.",
+                        "task": "Index articles",
+                        "output_schema": {"indexed": "integer"},
+                        "policy_tags": ["indexing"],
+                        "risk_level": "R1",
+                    },
+                ],
+                "is_active": True,
+            },
+        ]
+
+    def _get_e19_workflows(self) -> list:
+        """Get E19 SLA Governance Agent workflows."""
+        return [
+            {
+                "agent_type": "sla_governance",
+                "name": "sla_creation_workflow",
+                "description": "Create SLA from natural language request",
+                "risk_level": "R2",
+                "required_policies": ["sla_policy", "contract_policy"],
+                "steps": [
+                    {
+                        "name": "parse_request",
+                        "type": "ai_action",
+                        "description": "Parse natural language SLA request",
+                        "instructions": "Parse the user's natural language request and extract service name, targets, and requirements.",
+                        "task": "Parse SLA request",
+                        "output_schema": {"service": "string", "targets": "list", "requirements": "object"},
+                        "policy_tags": ["sla_parsing"],
+                        "risk_level": "R1",
+                    },
+                    {
+                        "name": "identify_service",
+                        "type": "ai_action",
+                        "description": "Identify or create service catalog item",
+                        "instructions": "Identify existing service or create new service catalog item.",
+                        "task": "Identify service",
+                        "output_schema": {"service_id": "string", "created": "boolean"},
+                        "policy_tags": ["service_catalog"],
+                        "risk_level": "R1",
+                    },
+                    {
+                        "name": "generate_sla_draft",
+                        "type": "ai_action",
+                        "description": "Generate SLA definition draft",
+                        "instructions": "Generate SLA definition with targets and thresholds.",
+                        "task": "Generate SLA draft",
+                        "output_schema": {"sla_draft": "object"},
+                        "policy_tags": ["sla_generation"],
+                        "risk_level": "R1",
+                    },
+                    {
+                        "name": "define_targets",
+                        "type": "ai_action",
+                        "description": "Define SLA targets and thresholds",
+                        "instructions": "Define availability, response time, resolution time, and quality targets.",
+                        "task": "Define targets",
+                        "output_schema": {"targets": "list"},
+                        "policy_tags": ["target_definition"],
+                        "risk_level": "R1",
+                    },
+                    {
+                        "name": "link_kpis",
+                        "type": "ai_action",
+                        "description": "Link or create KPIs for measurement",
+                        "instructions": "Link existing KPIs or create new KPIs for SLA measurement.",
+                        "task": "Link KPIs",
+                        "output_schema": {"kpi_links": "list"},
+                        "policy_tags": ["kpi_linking"],
+                        "risk_level": "R1",
+                    },
+                    {
+                        "name": "review_and_approve",
+                        "type": "approval_gate",
+                        "description": "Submit for review and approval",
+                        "instructions": "Review SLA definition before activation. Approve for R1 (low risk) or escalate for R2/R3.",
+                        "task": "Review and approve SLA",
+                        "output_schema": {"approved": "boolean", "approver": "string", "conditions": "list"},
+                        "policy_tags": ["sla_approval"],
+                        "risk_level": "R2",
+                    },
+                    {
+                        "name": "activate_sla",
+                        "type": "approval_gate",
+                        "description": "Activate SLA and begin monitoring",
+                        "instructions": "Activate SLA and begin compliance monitoring.",
+                        "task": "Activate SLA",
+                        "output_schema": {"activated": "boolean", "monitoring_started": "boolean"},
+                        "policy_tags": ["sla_activation"],
+                        "risk_level": "R2",
+                    },
+                ],
+                "is_active": True,
+            },
+            {
+                "agent_type": "sla_governance",
+                "name": "sla_monitoring_workflow",
+                "description": "Monitor SLA compliance and detect breaches",
+                "risk_level": "R1",
+                "required_policies": ["sla_policy"],
+                "steps": [
+                    {
+                        "name": "collect_measurements",
+                        "type": "ai_action",
+                        "description": "Collect KPI measurements",
+                        "instructions": "Collect KPI measurements from data sources.",
+                        "task": "Collect measurements",
+                        "output_schema": {"measurements": "list"},
+                        "policy_tags": ["measurement_collection"],
+                        "risk_level": "R1",
+                    },
+                    {
+                        "name": "calculate_compliance",
+                        "type": "ai_action",
+                        "description": "Calculate SLA compliance",
+                        "instructions": "Calculate compliance for each SLA target and overall compliance.",
+                        "task": "Calculate compliance",
+                        "output_schema": {"compliance": "object"},
+                        "policy_tags": ["compliance_calculation"],
+                        "risk_level": "R1",
+                    },
+                    {
+                        "name": "detect_breaches",
+                        "type": "ai_action",
+                        "description": "Detect SLA breaches",
+                        "instructions": "Detect breaches and near-misses based on thresholds.",
+                        "task": "Detect breaches",
+                        "output_schema": {"breaches": "list", "near_misses": "list"},
+                        "policy_tags": ["breach_detection"],
+                        "risk_level": "R1",
+                    },
+                    {
+                        "name": "generate_alerts",
+                        "type": "ai_action",
+                        "description": "Generate alerts for breaches",
+                        "instructions": "Generate alerts and create ServiceNow incidents for breaches.",
+                        "task": "Generate alerts",
+                        "output_schema": {"alerts": "list", "incidents": "list"},
+                        "policy_tags": ["alerting"],
+                        "risk_level": "R1",
+                    },
+                ],
+                "is_active": True,
+            },
+        ]
+
+    def _get_e20_workflows(self) -> list:
+        """Get E20 Planning Agent workflows."""
+        return [
+            {
+                "agent_type": "planning",
+                "name": "deployment_planning_workflow",
+                "description": "Generate deployment plan from natural language request",
+                "risk_level": "R2",
+                "required_policies": ["deployment_policy", "change_management_policy", "risk_policy"],
+                "steps": [
+                    {
+                        "name": "parse_request",
+                        "type": "ai_action",
+                        "description": "Parse deployment request and requirements",
+                        "instructions": "Parse the user's natural language request and extract application, version, scope, and preferences.",
+                        "task": "Parse deployment request",
+                        "output_schema": {
+                            "application": "string",
+                            "version": "string",
+                            "scope": "object",
+                            "preferences": "object",
+                        },
+                        "policy_tags": ["plan_parsing"],
+                        "risk_level": "R1",
+                    },
+                    {
+                        "name": "gather_inventory",
+                        "type": "ai_action",
+                        "description": "Gather device and user inventory from sources",
+                        "instructions": "Gather device and user inventory from Intune, SCCM, and other sources.",
+                        "task": "Gather inventory",
+                        "output_schema": {"devices": "list", "users": "list"},
+                        "policy_tags": ["inventory_gathering"],
+                        "risk_level": "R1",
+                    },
+                    {
+                        "name": "analyze_compatibility",
+                        "type": "ai_action",
+                        "description": "Analyze hardware/software compatibility",
+                        "instructions": "Analyze device compatibility with application requirements.",
+                        "task": "Analyze compatibility",
+                        "output_schema": {"compatible_devices": "list", "incompatible_devices": "list"},
+                        "policy_tags": ["compatibility_analysis"],
+                        "risk_level": "R1",
+                    },
+                    {
+                        "name": "calculate_blast_radius",
+                        "type": "ai_action",
+                        "description": "Calculate blast radius and impact",
+                        "instructions": "Calculate blast radius including users affected, departments, regions, and productivity impact.",
+                        "task": "Calculate blast radius",
+                        "output_schema": {"blast_radius": "object", "impact_score": "number"},
+                        "policy_tags": ["blast_radius"],
+                        "risk_level": "R1",
+                    },
+                    {
+                        "name": "generate_ring_strategy",
+                        "type": "ai_action",
+                        "description": "Generate optimal ring assignment strategy",
+                        "instructions": "Generate ring assignment strategy based on device scores, risk tolerance, and ring sizes.",
+                        "task": "Generate ring strategy",
+                        "output_schema": {"rings": "list", "strategy": "object"},
+                        "policy_tags": ["ring_strategy"],
+                        "risk_level": "R1",
+                    },
+                    {
+                        "name": "optimize_schedule",
+                        "type": "ai_action",
+                        "description": "Optimize deployment schedule",
+                        "instructions": "Optimize schedule considering deployment windows, change freezes, and business hours.",
+                        "task": "Optimize schedule",
+                        "output_schema": {"schedule": "object", "windows": "list", "freezes": "list"},
+                        "policy_tags": ["schedule_optimization"],
+                        "risk_level": "R1",
+                    },
+                    {
+                        "name": "generate_rollback_plan",
+                        "type": "ai_action",
+                        "description": "Generate rollback plan",
+                        "instructions": "Generate rollback plan with trigger conditions and steps.",
+                        "task": "Generate rollback plan",
+                        "output_schema": {"rollback_plan": "object"},
+                        "policy_tags": ["rollback_planning"],
+                        "risk_level": "R1",
+                    },
+                    {
+                        "name": "present_plan",
+                        "type": "approval_gate",
+                        "description": "Present deployment plan for review",
+                        "instructions": "Review deployment plan including rings, schedule, blast radius, and rollback plan. Approve for R1 (low risk) or escalate for R2/R3.",
+                        "task": "Review and approve plan",
+                        "output_schema": {"approved": "boolean", "approver": "string", "conditions": "list"},
+                        "policy_tags": ["plan_approval"],
+                        "risk_level": "R2",
+                    },
+                    {
+                        "name": "create_deployment",
+                        "type": "approval_gate",
+                        "description": "Create deployment intent from approved plan",
+                        "instructions": "Create deployment intent from approved plan.",
+                        "task": "Create deployment intent",
+                        "output_schema": {"deployment_id": "string", "created": "boolean"},
+                        "policy_tags": ["deployment_creation"],
+                        "risk_level": "R2",
                     },
                 ],
                 "is_active": True,

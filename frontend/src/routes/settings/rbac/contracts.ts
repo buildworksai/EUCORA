@@ -73,7 +73,37 @@ export type ResourceType =
   | 'discovery_sources'
   | 'normalized_applications'
   | 'license_gaps'
-  | 'patch_gaps';
+  | 'patch_gaps'
+  // E16: Request Coordination Agent
+  | 'tracked_requests'
+  | 'request_stakeholders'
+  | 'escalation_rules'
+  // E17: SecOps Agent
+  | 'vulnerabilities'
+  | 'vulnerability_scanners'
+  | 'remediation_plans'
+  | 'siem_connections'
+  | 'security_alerts'
+  | 'compliance_baselines'
+  // E18: SRE Agent
+  | 'health_endpoints'
+  | 'slo_definitions'
+  | 'self_healing_rules'
+  | 'runbooks'
+  // E21: KB & Triage Agent
+  | 'knowledge_articles'
+  | 'knowledge_sources'
+  | 'triage_requests'
+  | 'incident_patterns'
+  // E19: SLA Governance Agent
+  | 'sla_definitions'
+  | 'sla_targets'
+  | 'kpi_definitions'
+  | 'sla_compliance'
+  // E20: Planning Agent
+  | 'deployment_plans'
+  | 'ring_assignments'
+  | 'rollback_plans';
 
 export type ActionType =
   | 'create'

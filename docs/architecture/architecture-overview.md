@@ -84,6 +84,16 @@ It is **not** the system-of-record for **device configuration** or **runtime com
                    ┌──────────────────────────────────────────────┐
                    │                  Control Plane               │
                    │ Policy + Orchestration + Evidence (Thin)     │
+                   │                                               │
+                   │  ┌─────────────────────────────────────┐    │
+                   │  │   AI Workflow Engine (Phase 2)      │    │
+                   │  │   + ALM Agents (E10-E21)            │    │
+                   │  └─────────────────────────────────────┘    │
+                   │                                               │
+                   │  ┌─────────────────────────────────────┐    │
+                   │  │   RAG Pipeline (Phase 2)            │    │
+                   │  │   Document → Embedding → Vector DB  │    │
+                   │  └─────────────────────────────────────┘    │
                    └───────────────┬──────────────────────────────┘
                                    │
                    ┌───────────────▼──────────────────────────────┐
@@ -577,6 +587,19 @@ Exit criteria:
 
 Exit criteria:
 - Offline site pilot validated with at least one constrained site per OS.
+
+### Phase 2 — AI Agents & ALM Automation (Complete)
+- **AI Workflow Engine** (E8): Orchestrates AI agent workflows with risk-based approval gates
+- **RAG Pipeline** (E1, E7): Document management, vector storage (pgvector), semantic search
+- **ALM Wave 1 Agents** (E10-E16): CMDB Integration, Change Communications, Documentation, Automation Advisor, Discovery, IAM Security, Request Coordination
+- **ALM Wave 2 Agents** (E17-E21): SecOps, SRE, SLA Governance, Planning, KB & Triage
+- **Storage Configuration** (E2): Multi-cloud storage abstraction (MinIO, AWS S3, Azure Blob)
+- **Comprehensive RBAC** (E3): 9 roles, 197 permissions with scope isolation
+- **Application Policy UI** (E5): Policy configuration and management interface
+- **Application Stack UX** (E6): Tree and timeline views for application dependencies
+- **1E DEX Integration** (E4): Digital employee experience metrics and telemetry
+
+See [AI Agents Architecture](ai-agents-architecture.md), [ALM Agents Architecture](alm-agents-architecture.md), and [RAG Pipeline Architecture](rag-pipeline-architecture.md) for detailed Phase 2 architecture.
 
 ### Phase 3 — Scale + Optimization (ongoing)
 - Advanced reconciliation/drift remediation, richer telemetry, automated exception expiry.

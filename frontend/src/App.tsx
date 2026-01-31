@@ -37,6 +37,12 @@ import DiscoveryDashboard from './routes/discovery/DiscoveryDashboard';
 import DocumentationDashboard from './routes/documentation/DocumentationDashboard';
 import AdvisorDashboard from './routes/automation-advisor/AdvisorDashboard';
 import IAMSecurityDashboard from './routes/iam-security/IAMSecurityDashboard';
+import RequestCoordinationDashboard from './routes/request-coordination/RequestCoordinationDashboard';
+import SecOpsDashboard from './routes/secops/SecOpsDashboard';
+import SREDashboard from './routes/sre/SREDashboard';
+import KBTriageDashboard from './routes/kb-triage/KBTriageDashboard';
+import SLAGovernanceDashboard from './routes/sla-governance/SLAGovernanceDashboard';
+import PlanningDashboard from './routes/planning/PlanningDashboard';
 
 function App() {
   const isAuthenticated = useAuthStore((state) => state.isAuthenticated);
@@ -108,6 +114,12 @@ function App() {
             <Route path="/documentation" element={<DocumentationDashboard />} />
             <Route path="/automation-advisor" element={<AdvisorDashboard />} />
             <Route path="/iam-security" element={<IAMSecurityDashboard />} />
+            <Route path="/request-coordination" element={<RequestCoordinationDashboard />} />
+            <Route path="/secops" element={<SecOpsDashboard />} />
+            <Route path="/sre" element={<SREDashboard />} />
+            <Route path="/kb-triage" element={<KBTriageDashboard />} />
+            <Route path="/sla-governance" element={<SLAGovernanceDashboard />} />
+            <Route path="/planning" element={<PlanningDashboard />} />
           </Route>
         </Routes>
       </QueryClientProvider>

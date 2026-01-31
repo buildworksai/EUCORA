@@ -50,8 +50,8 @@ class StorageProviderViewSet(viewsets.ModelViewSet):
             return [RBACPermission("storage_config", "create")()]
         return super().get_permissions()
 
-    @action(detail=True, methods=["post"])
-    def test(self, request: Request, pk=None) -> Response:
+    @action(detail=True, methods=["post"], url_path="test")
+    def test(self, request: Request, id=None) -> Response:
         """Test storage provider connection."""
         provider = self.get_object()
 
@@ -69,8 +69,8 @@ class StorageProviderViewSet(viewsets.ModelViewSet):
         serializer = ConnectionTestResultSerializer(result)
         return Response(serializer.data)
 
-    @action(detail=True, methods=["post"])
-    def set_primary(self, request: Request, pk=None) -> Response:
+    @action(detail=True, methods=["post"], url_path="set_primary")
+    def set_primary(self, request: Request, id=None) -> Response:
         """Set provider as primary."""
         provider = self.get_object()
 
@@ -83,8 +83,8 @@ class StorageProviderViewSet(viewsets.ModelViewSet):
 
         return Response({"message": f"{provider.name} set as primary provider"})
 
-    @action(detail=True, methods=["get"])
-    def metrics(self, request: Request, pk=None) -> Response:
+    @action(detail=True, methods=["get"], url_path="metrics")
+    def metrics(self, request: Request, id=None) -> Response:
         """Get metrics for a provider."""
         provider = self.get_object()
         metrics = provider.metrics.all()[:100]  # Last 100 metrics
@@ -118,7 +118,7 @@ class StorageHealthView(APIView):
         serializer = HealthStatusSerializer(
             {
                 "is_healthy": available_count > 0,
-                "primary_provider": StorageProviderSerializer(primary_provider).data if primary_provider else None,
+                "primary_provider": primary_provider,  # Pass object, let serializer handle it
                 "available_providers": available_count,
                 "total_providers": providers.count(),
             }
