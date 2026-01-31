@@ -8,7 +8,6 @@ Exposes metrics at /api/v1/metrics/ for Prometheus scraping.
 import logging
 import os
 
-from django.conf import settings
 from django.http import HttpResponse
 from django.views.decorators.http import require_http_methods
 from prometheus_client import CONTENT_TYPE_LATEST, REGISTRY, CollectorRegistry, generate_latest

@@ -4,7 +4,6 @@
 Correlation ID isolation tests for KB & Triage Agent (MANDATORY).
 """
 import pytest
-from django.utils import timezone
 
 from apps.kb_triage.models import IncidentPattern, TriageRequest
 

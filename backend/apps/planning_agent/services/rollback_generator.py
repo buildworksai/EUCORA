@@ -6,7 +6,6 @@ Rollback Plan Generator.
 Generates rollback plans for deployments.
 """
 import logging
-from typing import List
 
 from apps.planning_agent.models import DeploymentPlan, RollbackPlan
 

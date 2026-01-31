@@ -14,7 +14,6 @@ from decimal import Decimal
 
 from django.contrib.auth.models import User
 from django.test import TestCase
-from django.utils import timezone
 
 from apps.evidence_store.models import EvidencePackage, RiskFactor, RiskScoreBreakdown
 from apps.evidence_store.services import EvidenceGenerationService

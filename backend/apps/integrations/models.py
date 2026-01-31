@@ -3,10 +3,8 @@
 """
 Models for external system integrations.
 """
-import uuid
 
 from django.db import models
-from django.utils import timezone
 
 from apps.core.models import CorrelationIdModel, TimeStampedModel
 

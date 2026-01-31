@@ -142,7 +142,6 @@ def check_celery_health():
         # Use Celery app from django-celery-beat configuration
         from celery import Celery
         from celery.app.control import Inspect
-        from django.conf import settings
 
         # Get Celery app from configuration
         celery_app = Celery()
@@ -257,7 +256,6 @@ def comprehensive_health_check(request):
         - 200: All healthy
         - 503: One or more checks degraded/unhealthy
     """
-    import json
     from datetime import datetime, timezone
 
     checks = {

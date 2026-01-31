@@ -86,8 +86,6 @@ except ImportError:
     class WorkflowExecutionConsumer:
         """Stub consumer when Channels is not available."""
 
-        pass
-
 
 def broadcast_workflow_update(execution_id: str, update_type: str, data: dict) -> None:
     """

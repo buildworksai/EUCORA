@@ -4,9 +4,8 @@
 API views for SLA Governance Agent.
 """
 import logging
-from datetime import datetime, timedelta
+from datetime import timedelta
 
-from django.db.models import Count, Q
 from django.utils import timezone
 from rest_framework import status, viewsets
 from rest_framework.decorators import action

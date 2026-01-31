@@ -5,13 +5,7 @@ Phase P5.5: Serializers for Defense-in-Depth Security Controls
 """
 from rest_framework import serializers
 
-from .models_p5_5 import (
-    BlastRadiusClass,
-    DeploymentIncident,
-    RiskModelVersion,
-    TrustMaturityLevel,
-    TrustMaturityProgress,
-)
+from .models_p5_5 import DeploymentIncident, RiskModelVersion
 
 
 class DeploymentIncidentSerializer(serializers.ModelSerializer):

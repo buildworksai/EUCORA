@@ -545,4 +545,3 @@ class MockServiceNowCMDBClient(ServiceNowCMDBClient):
 
     async def close(self) -> None:
         """No-op for mock client."""
-        pass

@@ -8,7 +8,7 @@ from django.contrib.auth import get_user_model
 from django.utils import timezone
 from rest_framework.test import APIClient
 
-from apps.sla_governance.models import KPIDefinition, ServiceCatalogItem, SLADefinition, SLATarget
+from apps.sla_governance.models import ServiceCatalogItem, SLADefinition
 
 User = get_user_model()
 
@@ -22,7 +22,7 @@ def api_client():
 @pytest.fixture
 def user():
     """Create test user."""
-    return User.objects.create_user(username="testuser", password="testpass")
+    return User.objects.create_user(username="testuser", password="testpass")  # pragma: allowlist secret
 
 
 @pytest.fixture

@@ -23,7 +23,10 @@ export default function PlanningDashboard() {
 
   const { data: plans } = useQuery<DeploymentPlan[]>({
     queryKey: ['planning', 'plans'],
-    queryFn: () => api.get<DeploymentPlan[]>(ENDPOINTS.plans + '?status=executing&status=approved'),
+    queryFn: async () => {
+      const response = await api.get<{ results: DeploymentPlan[] } | DeploymentPlan[]>(ENDPOINTS.plans + '?status=executing&status=approved');
+      return Array.isArray(response) ? response : response.results || [];
+    },
   });
 
   const getStatusColor = (status: string) => {

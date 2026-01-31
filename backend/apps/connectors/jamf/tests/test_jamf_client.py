@@ -4,9 +4,8 @@
 Comprehensive tests for Jamf Pro connector client.
 Tests device management, package deployment, and policy operations.
 """
-from unittest.mock import MagicMock, Mock, patch
+from unittest.mock import Mock, patch
 
-import pytest
 from django.core.cache import cache
 from django.test import TestCase
 
@@ -99,7 +98,7 @@ class TestJamfComputerManagement(TestCase):
         self.connector.client = mock_client
 
         filter_query = 'general.platform=="Mac"'
-        result = self.connector.list_computers(
+        _result = self.connector.list_computers(  # noqa: F841
             page=0, page_size=50, filter_query=filter_query, correlation_id="TEST-456"
         )
 

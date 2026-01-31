@@ -4,9 +4,8 @@
 Comprehensive tests for Intune connector client.
 Tests device management, app deployment, and assignment operations.
 """
-from unittest.mock import MagicMock, Mock, patch
+from unittest.mock import Mock, patch
 
-import pytest
 from django.core.cache import cache
 from django.test import TestCase
 
@@ -91,7 +90,9 @@ class TestIntuneDeviceManagement(TestCase):
         self.connector.client = mock_client
 
         filter_query = "operatingSystem eq 'Windows' and complianceState eq 'compliant'"
-        devices = self.connector.list_managed_devices(top=50, filter_query=filter_query, correlation_id="TEST-456")
+        _devices = self.connector.list_managed_devices(  # noqa: F841
+            top=50, filter_query=filter_query, correlation_id="TEST-456"
+        )
 
         # Verify filter parameter
         call_kwargs = mock_client.get.call_args[1]

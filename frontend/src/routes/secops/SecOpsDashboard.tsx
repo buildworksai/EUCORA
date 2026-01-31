@@ -19,12 +19,18 @@ export default function SecOpsDashboard() {
 
   const { data: vulnerabilities } = useQuery({
     queryKey: ['secops', 'instances'],
-    queryFn: () => api.get<VulnerabilityInstance[]>(ENDPOINTS.instances + '?status=open&limit=20'),
+    queryFn: async () => {
+      const response = await api.get<{ results: VulnerabilityInstance[] } | VulnerabilityInstance[]>(ENDPOINTS.instances + '?status=open&limit=20');
+      return Array.isArray(response) ? response : response.results || [];
+    },
   });
 
   const { data: remediationPlans } = useQuery({
     queryKey: ['secops', 'remediation-plans'],
-    queryFn: () => api.get<RemediationPlan[]>(ENDPOINTS.remediationPlans + '?status=pending_approval'),
+    queryFn: async () => {
+      const response = await api.get<{ results: RemediationPlan[] } | RemediationPlan[]>(ENDPOINTS.remediationPlans + '?status=pending_approval');
+      return Array.isArray(response) ? response : response.results || [];
+    },
   });
 
   const getSeverityColor = (severity: string) => {

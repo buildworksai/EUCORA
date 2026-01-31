@@ -75,7 +75,7 @@ export const ENDPOINTS = {
   COMPLIANCE_METRICS: '/compliance/metrics/',
   COMPLIANCE_REPORT: '/compliance/report/',
   COMPLIANCE_VIOLATIONS: '/compliance/violations/',
-  COMPLIANCE_STATS: '/health/compliance-stats',
+  COMPLIANCE_STATS: '/api/v1/telemetry/compliance-stats',
 } as const;
 
 /**

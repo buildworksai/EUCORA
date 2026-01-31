@@ -8,7 +8,6 @@ deployment events and audit trails.
 """
 import pytest
 from django.contrib.auth import get_user_model
-from django.utils import timezone
 
 from apps.planning_agent.models import BlastRadiusAnalysis, DeploymentPlan
 

@@ -5,10 +5,8 @@ API views for Request Coordination.
 """
 import logging
 from datetime import timedelta
-from typing import Dict, List
 
-from apps.core.async_utils import run_async
-from django.db.models import Count, Q
+from django.db.models import Count
 from django.utils import timezone
 from rest_framework import status, viewsets
 from rest_framework.decorators import action
@@ -17,6 +15,7 @@ from rest_framework.request import Request
 from rest_framework.response import Response
 
 from apps.cmdb_integration.models import CMDBConnection
+from apps.core.async_utils import run_async
 
 from .models import (
     CommunicationTemplate,
@@ -36,9 +35,7 @@ from .serializers import (
     RequestStatusUpdateSerializer,
     TrackedRequestSerializer,
 )
-from .services.escalation_engine import EscalationEngine
 from .services.notification_service import RequestNotificationService
-from .services.sla_tracker import SLATracker
 from .services.sync_service import RequestSyncService
 
 logger = logging.getLogger(__name__)

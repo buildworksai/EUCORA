@@ -17,7 +17,6 @@ Usage:
     response = client.get(url, headers=headers, correlation_id='DEPLOY-123')
 """
 import logging
-from decimal import Decimal
 from typing import Any, Dict, Optional
 
 import requests

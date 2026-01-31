@@ -6,7 +6,6 @@ Agent Management service layer.
 Handles agent registration, task assignment, offline queue management,
 and telemetry processing.
 """
-import logging
 from datetime import timedelta
 from typing import Dict, List, Optional
 
@@ -15,7 +14,7 @@ from django.utils import timezone
 
 from apps.core.structured_logging import StructuredLogger
 
-from .models import Agent, AgentDeploymentStatus, AgentOfflineQueue, AgentTask, AgentTelemetry
+from .models import Agent, AgentOfflineQueue, AgentTask, AgentTelemetry
 
 logger = StructuredLogger(__name__, user="system")
 

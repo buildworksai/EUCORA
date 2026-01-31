@@ -22,7 +22,7 @@ class TestMinIOStorage:
         mock_client.bucket_exists.return_value = False
         mock_minio_class.return_value = mock_client
 
-        storage = MinIOStorage()
+        MinIOStorage()
 
         mock_client.make_bucket.assert_called_once()
 
@@ -33,7 +33,7 @@ class TestMinIOStorage:
         mock_client.bucket_exists.return_value = True
         mock_minio_class.return_value = mock_client
 
-        storage = MinIOStorage()
+        MinIOStorage()
 
         mock_client.make_bucket.assert_not_called()
 

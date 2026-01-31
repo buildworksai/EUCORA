@@ -1,7 +1,7 @@
 # SPDX-License-Identifier: Apache-2.0
 # Copyright (c) 2026 BuildWorks.AI
 """Tests for SCCM connector client."""
-from unittest.mock import AsyncMock, Mock, patch
+from unittest.mock import Mock, patch
 
 import pytest
 import requests
@@ -40,7 +40,7 @@ class TestSCCMConnectorInit:
         with patch("apps.connectors.sccm.client.SCCMAuth") as mock_auth_class:
             mock_auth_class.return_value.server_url = "https://sccm.test/AdminService"
             mock_auth_class.return_value.site_code = "PS1"
-            connector = SCCMConnector()
+            SCCMConnector()
             mock_auth_class.assert_called_once()
 
 
@@ -413,7 +413,7 @@ class TestSCCMConnectorListCollections:
         mock_session.get.return_value = mock_response
         mock_auth.get_session.return_value = mock_session
 
-        result = await connector.list_collections(collection_type="User")
+        _result = await connector.list_collections(collection_type="User")  # noqa: F841
 
         # Verify filter includes CollectionType eq 1 (User)
         call_args = mock_session.get.call_args

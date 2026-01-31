@@ -5,7 +5,7 @@ Abstract base class for LLM providers.
 """
 import logging
 from abc import ABC, abstractmethod
-from typing import Any, AsyncGenerator, Dict, List
+from typing import AsyncGenerator, Dict, List
 
 logger = logging.getLogger(__name__)
 
@@ -32,7 +32,6 @@ class BaseModelProvider(ABC):
         Returns:
             Response text from the model
         """
-        pass
 
     @abstractmethod
     async def stream_chat(self, messages: List[Dict[str, str]], **kwargs) -> AsyncGenerator[str, None]:
@@ -46,7 +45,6 @@ class BaseModelProvider(ABC):
         Yields:
             Chunks of response text
         """
-        pass
 
     def count_tokens(self, text: str) -> int:
         """

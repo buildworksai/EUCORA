@@ -52,17 +52,14 @@ class LLMProvider(ABC):
         Returns:
             LLMCompletion with content and metadata
         """
-        pass
 
     @abstractmethod
     def get_provider_name(self) -> str:
         """Return provider name."""
-        pass
 
     @abstractmethod
     def get_model_name(self) -> str:
         """Return model name."""
-        pass
 
     @abstractmethod
     def health_check(self) -> bool:
@@ -72,4 +69,3 @@ class LLMProvider(ABC):
         Returns:
             True if provider is healthy
         """
-        pass

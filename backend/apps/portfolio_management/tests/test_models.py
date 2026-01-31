@@ -85,7 +85,6 @@ class ApplicationOwnershipModelTestCase(TestCase):
         """Test creating an application ownership."""
         # Skipping test that requires Application model
         # TODO: Import Application model and create test instance
-        pass
 
     def test_ownership_types(self):
         """Test ownership type choices."""
@@ -221,13 +220,11 @@ class PackagingRequestModelTestCase(TestCase):
         """Test creating a packaging request."""
         # Skipping test that requires Application model
         # TODO: Import Application model and create test instance
-        pass
 
     def test_turnaround_time_calculation(self):
         """Test turnaround time calculation."""
         # Skipping test that requires Application model
         # TODO: Import Application model and create test instance
-        pass
 
     def test_status_choices(self):
         """Test packaging request status choices."""

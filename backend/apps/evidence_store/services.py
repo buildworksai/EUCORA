@@ -4,7 +4,6 @@
 Evidence Generation Service for P5.1
 Collects and generates evidence packages for CAB decision-making.
 """
-import json
 from decimal import Decimal
 
 from django.utils import timezone

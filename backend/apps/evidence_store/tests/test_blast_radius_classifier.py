@@ -4,7 +4,6 @@
 P5.5: Comprehensive tests for Blast Radius Classifier.
 Tests rule-based classification, CMDB integration, and manual overrides.
 """
-import pytest
 from django.test import TestCase
 
 from apps.evidence_store.blast_radius_classifier import BlastRadiusClassifier

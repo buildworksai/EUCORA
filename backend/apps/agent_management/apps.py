@@ -16,4 +16,3 @@ class AgentManagementConfig(AppConfig):
     def ready(self):
         """Import signal handlers when app is ready."""
         # Import signals if any
-        pass

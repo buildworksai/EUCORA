@@ -16,16 +16,14 @@ https://learn.microsoft.com/en-us/mem/configmgr/develop/adminservice/overview
 import hashlib
 import json
 import logging
-import uuid
 from datetime import datetime
 from typing import Any, Dict, List, Optional, Tuple
 
 import requests
-from decouple import config
 
 from apps.core.structured_logging import StructuredLogger
 
-from .auth import SCCMAuth, SCCMAuthError
+from .auth import SCCMAuth
 
 logger = logging.getLogger(__name__)
 
@@ -242,7 +240,7 @@ class SCCMConnector:
                 "LocalizedDisplayName": name,
                 "SoftwareVersion": version,
                 "Manufacturer": publisher,
-                "LocalizedDescription": f"Deployed via EUCORA Control Plane",
+                "LocalizedDescription": "Deployed via EUCORA Control Plane",
             }
 
             url = f"{self.server_url}{self.API_APPLICATIONS}"

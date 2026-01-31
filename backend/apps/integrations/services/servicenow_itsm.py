@@ -6,7 +6,7 @@ ServiceNow ITSM integration service.
 Handles Change Request creation, approval tracking, and CAB workflow integration.
 """
 import logging
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List
 
 import requests
 

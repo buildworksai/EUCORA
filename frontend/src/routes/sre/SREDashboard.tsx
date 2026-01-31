@@ -19,12 +19,18 @@ export default function SREDashboard() {
 
   const { data: endpoints } = useQuery({
     queryKey: ['sre', 'health-endpoints'],
-    queryFn: () => api.get<HealthEndpoint[]>(ENDPOINTS.healthEndpoints + '?is_active=true'),
+    queryFn: async () => {
+      const response = await api.get<{ results: HealthEndpoint[] } | HealthEndpoint[]>(ENDPOINTS.healthEndpoints + '?is_active=true');
+      return Array.isArray(response) ? response : response.results || [];
+    },
   });
 
   const { data: healingExecutions } = useQuery({
     queryKey: ['sre', 'healing-executions'],
-    queryFn: () => api.get<SelfHealingExecution[]>(ENDPOINTS.selfHealingExecutions + '?status=pending&limit=10'),
+    queryFn: async () => {
+      const response = await api.get<{ results: SelfHealingExecution[] } | SelfHealingExecution[]>(ENDPOINTS.selfHealingExecutions + '?status=pending&limit=10');
+      return Array.isArray(response) ? response : response.results || [];
+    },
   });
 
   const checkHealthMutation = useMutation({

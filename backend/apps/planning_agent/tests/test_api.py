@@ -5,7 +5,6 @@ Tests for Planning Agent API endpoints.
 """
 import pytest
 from django.contrib.auth import get_user_model
-from django.utils import timezone
 from rest_framework.test import APIClient
 
 from apps.planning_agent.models import DeploymentPlan
@@ -22,7 +21,7 @@ def api_client():
 @pytest.fixture
 def user():
     """Create test user."""
-    return User.objects.create_user(username="testuser", password="testpass")
+    return User.objects.create_user(username="testuser", password="testpass")  # pragma: allowlist secret
 
 
 @pytest.fixture

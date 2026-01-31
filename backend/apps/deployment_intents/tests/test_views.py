@@ -8,7 +8,6 @@ import uuid
 import pytest
 
 from apps.deployment_intents.models import DeploymentIntent
-from apps.policy_engine.models import RiskModel
 
 
 @pytest.mark.django_db
@@ -79,4 +78,4 @@ class TestDeploymentIntentsViews:
 
     def test_get_deployment_not_found(self, authenticated_client):
         """Test getting non-existent deployment."""
-        url = f"/api/v1/deployments/{uuid.uuid4()}/"
+        f"/api/v1/deployments/{uuid.uuid4()}/"

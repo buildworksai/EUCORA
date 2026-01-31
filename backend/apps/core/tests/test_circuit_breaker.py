@@ -9,15 +9,11 @@ Verifies circuit breaker behavior:
 - Reset behavior
 - Service registry
 """
-from unittest.mock import MagicMock, Mock, patch
+from unittest.mock import Mock
 
 import pytest
-from pybreaker import CircuitBreakerError
 
 from apps.core.circuit_breaker import (
-    INTUNE_BREAKER,
-    JIRA_BREAKER,
-    SERVICENOW_BREAKER,
     CircuitBreakerListener,
     CircuitBreakerOpen,
     check_breaker_status,

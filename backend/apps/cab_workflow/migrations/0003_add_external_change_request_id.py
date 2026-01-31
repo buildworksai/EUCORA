@@ -9,13 +9,11 @@ def add_external_change_request_id_if_not_exists(apps, schema_editor):
     """Add external_change_request_id column if it doesn't exist."""
     # Skip - this is handled by AddField operation in Django's migration framework
     # This function exists for backward compatibility with existing databases
-    pass
 
 
 def remove_external_change_request_id_if_exists(apps, schema_editor):
     """Remove external_change_request_id column if it exists."""
     # Skip - this is handled by RemoveField operation in Django's migration framework
-    pass
 
 
 class Migration(migrations.Migration):

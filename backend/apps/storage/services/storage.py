@@ -44,13 +44,9 @@ logger = logging.getLogger(__name__)
 class StorageUnavailableError(Exception):
     """Raised when no healthy storage providers are available."""
 
-    pass
-
 
 class TransientError(Exception):
     """Raised for transient storage errors that can be retried."""
-
-    pass
 
 
 class StorageService:

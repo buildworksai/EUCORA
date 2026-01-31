@@ -15,4 +15,3 @@ class CmdbIntegrationConfig(AppConfig):
 
     def ready(self) -> None:
         """Import signals when app is ready."""
-        pass

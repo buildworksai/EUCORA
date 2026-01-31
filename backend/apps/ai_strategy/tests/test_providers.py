@@ -5,7 +5,7 @@ Tests for LLM providers (10 tests).
 """
 from django.test import TestCase
 
-from apps.ai_strategy.providers import LLMMessage, LLMProvider, MockLLMProvider
+from apps.ai_strategy.providers import LLMMessage, MockLLMProvider
 
 
 class MockProviderTests(TestCase):

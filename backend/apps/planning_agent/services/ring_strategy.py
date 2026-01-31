@@ -8,7 +8,7 @@ Generates optimal ring assignment strategy for deployments.
 import logging
 from typing import Dict, List, Tuple
 
-from apps.planning_agent.models import DeploymentPlan, RingAssignment
+from apps.planning_agent.models import RingAssignment
 
 logger = logging.getLogger(__name__)
 

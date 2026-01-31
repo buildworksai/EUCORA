@@ -4,7 +4,6 @@
 API tests for SRE Agent.
 """
 import pytest
-from django.utils import timezone
 from rest_framework.test import APIClient
 
 from apps.sre_agent.models import HealthEndpoint, SelfHealingRule, SLODefinition

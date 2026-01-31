@@ -4,9 +4,7 @@
 API views for Planning Agent.
 """
 import logging
-from datetime import datetime
 
-from django.db.models import Count, Q
 from django.utils import timezone
 from rest_framework import status, viewsets
 from rest_framework.decorators import action

@@ -6,11 +6,9 @@ SLA Compliance Calculator.
 Calculates SLA compliance from KPI measurements.
 """
 import logging
-from datetime import date, timedelta
-from typing import Dict, List
+from datetime import date
 
-from django.db.models import Avg, Count, Q
-from django.utils import timezone
+from django.db.models import Avg
 
 from apps.sla_governance.models import KPIMeasurement, SLACompliance, SLADefinition, SLATarget
 

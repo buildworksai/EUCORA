@@ -45,7 +45,6 @@ class DEXClientBase(ABC):
             - power_consumption_kwh: float
             - collected_at: str (ISO format)
         """
-        pass
 
     @abstractmethod
     async def health_check(self) -> bool:
@@ -55,4 +54,3 @@ class DEXClientBase(ABC):
         Returns:
             True if healthy, False otherwise
         """
-        pass

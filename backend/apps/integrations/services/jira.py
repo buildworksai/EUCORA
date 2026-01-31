@@ -46,7 +46,7 @@ class JiraAssetsService(IntegrationService):
         test_url = f"{api_url}/rest/insight/1.0/objectschema/list"
 
         try:
-            response = self.http_client.get(
+            _response = self.http_client.get(  # noqa: F841
                 test_url,
                 headers=headers,
                 timeout=10,

@@ -10,9 +10,8 @@ Tests resilience patterns across:
 - Correlation ID propagation
 - Structured logging
 """
-from unittest.mock import MagicMock, Mock, patch
+from unittest.mock import Mock, patch
 
-import pytest
 import requests
 from django.core.cache import cache
 from django.test import TestCase
@@ -87,7 +86,7 @@ class TestIntuneConnectorResilience(TestCase):
         connector.client = mock_client
 
         # Should eventually succeed after retry
-        devices = connector.list_managed_devices(correlation_id="RETRY-TEST")
+        _devices = connector.list_managed_devices(correlation_id="RETRY-TEST")  # noqa: F841
 
         # Verify retry occurred (2 calls)
         self.assertEqual(mock_client.get.call_count, 2)

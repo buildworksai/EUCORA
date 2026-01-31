@@ -9,7 +9,6 @@ Tests verify:
 - E18 SRE Monitoring: Platform connection, health endpoint checks, SLO metric collection, error budget
 - Prometheus/Grafana: Metrics endpoint format, deployment metrics, circuit breaker state, multiprocess
 """
-from datetime import timedelta
 
 from django.contrib.auth.models import User
 from django.db.models import Avg
@@ -233,7 +232,7 @@ class MonitoringIntegrationTests(APITestCase):
         datadog_platform = MonitoringPlatform.objects.create(
             name="Test Datadog",
             platform_type=MonitoringPlatform.PlatformType.DATADOG,
-            connection_config={"api_key": "test-key", "app_key": "test-app-key"},
+            connection_config={"api_key": "test-key", "app_key": "test-app-key"},  # pragma: allowlist secret
             is_active=True,
         )
 
@@ -328,7 +327,6 @@ class MonitoringIntegrationTests(APITestCase):
         """Deployment metrics should be recorded in Prometheus format."""
         # In real implementation, deployment actions would record metrics
         # This test verifies the concept
-        from apps.core.metrics import record_deployment
 
         # Mock metric recording
         # record_deployment(status="success", ring="CANARY", app_name="test-app", requires_cab=False)

@@ -23,12 +23,18 @@ export default function SLAGovernanceDashboard() {
 
   const { data: atRisk } = useQuery<SLACompliance[]>({
     queryKey: ['sla-governance', 'at-risk'],
-    queryFn: () => api.get<SLACompliance[]>(ENDPOINTS.complianceAtRisk),
+    queryFn: async () => {
+      const response = await api.get<{ results: SLACompliance[] } | SLACompliance[]>(ENDPOINTS.complianceAtRisk);
+      return Array.isArray(response) ? response : response.results || [];
+    },
   });
 
   const { data: breaches } = useQuery<SLABreach[]>({
     queryKey: ['sla-governance', 'breaches'],
-    queryFn: () => api.get<SLABreach[]>(ENDPOINTS.breaches + '?limit=10'),
+    queryFn: async () => {
+      const response = await api.get<{ results: SLABreach[] } | SLABreach[]>(ENDPOINTS.breaches + '?limit=10');
+      return Array.isArray(response) ? response : response.results || [];
+    },
   });
 
   const getStatusColor = (status: string) => {

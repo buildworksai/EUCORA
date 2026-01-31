@@ -6,7 +6,6 @@ SLA Breach Detector.
 Detects SLA breaches and generates alerts.
 """
 import logging
-from datetime import datetime
 from typing import List, Optional
 
 from django.utils import timezone

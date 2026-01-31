@@ -42,7 +42,7 @@ class LoginRateThrottle(AnonRateThrottle):
                 username = self.request.data.get("username", "")
                 if username in _IsTestUser.TEST_USERNAMES:
                     return None  # No throttling for test users
-        except:
+        except (AttributeError, TypeError, KeyError):
             pass
         return super().get_cache_key()
 

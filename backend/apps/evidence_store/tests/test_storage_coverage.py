@@ -4,7 +4,7 @@
 Additional tests for evidence_store storage to reach 90% coverage.
 """
 from io import BytesIO
-from unittest.mock import MagicMock, Mock, patch
+from unittest.mock import MagicMock, patch
 
 import pytest
 from minio.error import S3Error
@@ -21,7 +21,6 @@ class TestMinIOStorageCoverage:
         """Test that get_storage returns singleton instance."""
         # Reset singleton
         import apps.evidence_store.storage
-        from apps.evidence_store.storage import _storage
 
         apps.evidence_store.storage._storage = None
 

@@ -8,7 +8,6 @@ from datetime import timedelta
 from decimal import Decimal
 from uuid import uuid4
 
-import pytest
 from django.contrib.auth.models import User
 from django.test import TestCase
 from django.utils import timezone
@@ -165,7 +164,7 @@ class TestMaturityProgressionBaseline(TrustMaturityEngineTestSetup):
     def test_baseline_insufficient_weeks_blocks_progression(self):
         """Less than 4 weeks should block progression."""
         # Create incidents over 3 weeks (insufficient)
-        incident_date = timezone.now() - timedelta(weeks=2)
+        _incident_date = timezone.now() - timedelta(weeks=2)  # noqa: F841
 
         result = self.engine.evaluate_maturity_progression(current_level="LEVEL_0_BASELINE", evaluation_period_weeks=3)
 

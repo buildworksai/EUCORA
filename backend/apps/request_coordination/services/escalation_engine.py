@@ -7,7 +7,7 @@ Evaluates escalation rules and triggers actions.
 """
 import logging
 from datetime import timedelta
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List
 
 from django.db import models
 from django.utils import timezone

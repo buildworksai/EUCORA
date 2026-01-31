@@ -12,7 +12,7 @@ from rest_framework.decorators import api_view, permission_classes
 from rest_framework.permissions import IsAdminUser, IsAuthenticated
 from rest_framework.response import Response
 
-from apps.core.circuit_breaker import CircuitBreakerOpen, get_all_breaker_status, get_breaker, reset_breaker
+from apps.core.circuit_breaker import get_all_breaker_status, get_breaker, reset_breaker
 
 logger = logging.getLogger(__name__)
 
@@ -124,7 +124,7 @@ def reset_circuit_breaker(request, service_name: str) -> Response:
         reset_breaker(service_name)
 
         logger.warning(
-            f"Circuit breaker manually reset",
+            "Circuit breaker manually reset",
             extra={
                 "service": service_name,
                 "user": request.user.username if request.user else "anonymous",

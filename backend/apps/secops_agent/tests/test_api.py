@@ -7,15 +7,7 @@ import pytest
 from django.utils import timezone
 from rest_framework.test import APIClient
 
-from apps.secops_agent.models import (
-    ComplianceBaseline,
-    RemediationPlan,
-    SecurityAlert,
-    SIEMConnection,
-    Vulnerability,
-    VulnerabilityInstance,
-    VulnerabilityScanner,
-)
+from apps.secops_agent.models import RemediationPlan, Vulnerability, VulnerabilityScanner
 
 
 @pytest.fixture

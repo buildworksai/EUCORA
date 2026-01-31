@@ -14,7 +14,6 @@ API Reference: https://learn.microsoft.com/en-us/graph/api/resources/intune-grap
 """
 import logging
 from typing import Any, Dict, List, Optional
-from uuid import UUID
 
 from apps.core.resilient_http import CircuitBreakerOpen, ResilientAPIClient, ResilientAPIError
 from apps.core.structured_logging import StructuredLogger
@@ -125,7 +124,7 @@ class IntuneConnector:
 
             return devices
 
-        except CircuitBreakerOpen as e:
+        except CircuitBreakerOpen:
             self.structured_logger.connector_event(
                 connector_type="intune",
                 operation="LIST_MANAGED_DEVICES",

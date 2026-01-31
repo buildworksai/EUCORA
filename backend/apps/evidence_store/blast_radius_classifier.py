@@ -17,8 +17,6 @@ Implementation Date: 2026-01-23
 import logging
 from typing import Any, Dict, Optional
 
-from django.utils import timezone
-
 from apps.evidence_store.models_p5_5 import BlastRadiusClass
 
 logger = logging.getLogger(__name__)

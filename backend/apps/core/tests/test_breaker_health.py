@@ -8,7 +8,6 @@ Verifies:
 - Single breaker status endpoint
 - Circuit breaker reset endpoint
 """
-from unittest.mock import MagicMock, patch
 
 import pytest
 from rest_framework import status

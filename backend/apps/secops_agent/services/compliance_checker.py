@@ -6,7 +6,7 @@ Compliance Checker Service.
 Validates assets against compliance baselines (CIS, NIST, SOC2, ISO27001).
 """
 import logging
-from typing import Any, Dict, List
+from typing import Any, Dict
 
 from apps.secops_agent.models import ComplianceBaseline
 

@@ -4,25 +4,16 @@
 API views for KB & Triage Agent.
 """
 import logging
-from datetime import timedelta
 
 from django.db.models import Count, Q
 from django.utils import timezone
-from rest_framework import status, viewsets
+from rest_framework import viewsets
 from rest_framework.decorators import action
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.request import Request
 from rest_framework.response import Response
 
-from .models import (
-    IncidentPattern,
-    KnowledgeArticle,
-    KnowledgeSource,
-    ResolutionStep,
-    TriageFeedback,
-    TriageRequest,
-    TriageSuggestion,
-)
+from .models import IncidentPattern, KnowledgeArticle, KnowledgeSource, TriageFeedback, TriageRequest
 from .serializers import (
     IncidentPatternSerializer,
     KnowledgeArticleSerializer,

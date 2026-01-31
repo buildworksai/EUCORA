@@ -14,10 +14,9 @@ Tests verify:
 - Category filtering works correctly
 """
 import uuid
-from unittest.mock import MagicMock, Mock, patch
+from unittest.mock import Mock, patch
 
 from django.contrib.auth.models import User
-from django.test import TestCase
 from rest_framework import status
 from rest_framework.test import APIClient, APITestCase
 
@@ -237,7 +236,7 @@ class RAGPipelineIntegrationTests(APITestCase):
         )
 
         # Test retrieval with high similarity threshold
-        retriever = PolicyContextRetriever()
+        PolicyContextRetriever()
         # In real implementation, similarity search would filter by threshold
         # This test verifies the concept
 
@@ -298,7 +297,7 @@ class RAGPipelineIntegrationTests(APITestCase):
         )
 
         # Test category filtering
-        retriever = PolicyContextRetriever()
+        PolicyContextRetriever()
         # In real implementation, category filter would be applied
         # This test verifies the concept
 

@@ -39,7 +39,6 @@ class CABWorkflowService:
 
     def __init__(self):
         """Initialize CAB workflow service."""
-        pass
 
     @staticmethod
     def submit_for_approval(
@@ -81,12 +80,12 @@ class CABWorkflowService:
 
         # Verify evidence package exists
         try:
-            evidence = EvidencePackage.objects.get(id=evidence_package_id)
+            _evidence = EvidencePackage.objects.get(id=evidence_package_id)  # noqa: F841
         except EvidencePackage.DoesNotExist:
             raise ValueError(f"Evidence package not found: {evidence_package_id}")
 
         # Verify deployment intent exists
-        deployment_intent = DeploymentIntent.objects.get(id=deployment_intent_id)
+        _deployment_intent = DeploymentIntent.objects.get(id=deployment_intent_id)  # noqa: F841
 
         # Generate correlation ID if not provided
         if not correlation_id:

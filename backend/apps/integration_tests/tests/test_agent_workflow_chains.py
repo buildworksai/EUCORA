@@ -11,10 +11,9 @@ Tests verify:
 - Cross-agent integration (E8 → E10-E21)
 """
 import uuid
-from unittest.mock import AsyncMock, MagicMock, patch
+from unittest.mock import patch
 
 from django.contrib.auth.models import User
-from django.test import TestCase
 from rest_framework import status
 from rest_framework.test import APIClient, APITestCase
 
@@ -61,8 +60,6 @@ class AgentWorkflowChainTests(APITestCase):
         """Workflow start should retrieve policy context."""
         import asyncio
 
-        from asgiref.sync import sync_to_async
-
         async def async_mock_retrieve(*args, **kwargs):
             return []
 
@@ -82,7 +79,7 @@ class AgentWorkflowChainTests(APITestCase):
             execution = asyncio.run(executor.start_workflow(workflow, self.user, {"app_name": "test-app"}))
             mock_retrieve.assert_called_once()
             self.assertEqual(execution.status, WorkflowExecution.Status.RUNNING)
-        except Exception as e:
+        except Exception:
             # If async fails, verify the concept at least
             self.assertTrue(True)  # Test concept verified
 

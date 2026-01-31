@@ -172,4 +172,3 @@ class EntraIDClient:
 
     async def close(self) -> None:
         """Close client connections."""
-        pass

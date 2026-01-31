@@ -4,7 +4,6 @@
 Correlation ID isolation tests for SRE Agent (MANDATORY).
 """
 import pytest
-from django.utils import timezone
 
 from apps.sre_agent.models import RunbookExecution, SelfHealingExecution
 

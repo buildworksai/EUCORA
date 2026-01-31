@@ -16,11 +16,9 @@ Tests verify:
 - Idempotency (retry safety)
 """
 import uuid
-from unittest.mock import MagicMock, patch
+from unittest.mock import patch
 
 from django.contrib.auth.models import User
-from django.test import TestCase, override_settings
-from django.utils import timezone
 from rest_framework import status
 from rest_framework.test import APIClient, APITestCase
 
@@ -137,7 +135,7 @@ class DeploymentFlowIntegrationTests(APITestCase):
         mock_risk_score.return_value = 60
 
         # Create deployment
-        response = self.client.post(
+        _response = self.client.post(  # noqa: F841
             "/api/v1/deployments/",
             {
                 "app_name": "sequence-test-app",

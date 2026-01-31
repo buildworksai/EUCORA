@@ -23,9 +23,8 @@ Implementation Date: 2026-01-23
 import logging
 from datetime import timedelta
 from decimal import Decimal
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any, Dict, List, Optional
 
-from django.db.models import Avg, Count, Q
 from django.utils import timezone
 
 from apps.evidence_store.models_p5_5 import (

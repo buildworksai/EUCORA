@@ -3,7 +3,6 @@
 """
 Correlation ID isolation tests for SecOps Agent (MANDATORY).
 """
-import uuid
 
 import pytest
 from django.utils import timezone

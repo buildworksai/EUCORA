@@ -4,11 +4,9 @@
 P4.5 API Views Coverage - Additional tests for zero-coverage endpoints
 """
 
-import json
 
 import pytest
 from django.contrib.auth.models import User
-from django.utils import timezone
 from rest_framework.test import APIClient
 
 
@@ -115,7 +113,6 @@ def test_list_deployments_authenticated(api_client, normal_user):
 def test_get_deployment_by_id(api_client, normal_user):
     """Get deployment by ID endpoint."""
     api_client.force_authenticate(normal_user)
-    import uuid
 
     from apps.deployment_intents.models import DeploymentIntent
     from apps.evidence_store.models import EvidencePack

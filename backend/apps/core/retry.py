@@ -38,4 +38,8 @@ SLOW_SERVICE_RETRY = retry(
 )
 
 # No-retry pattern for operations that should fail fast
-NO_RETRY = lambda x: x
+
+
+def NO_RETRY(x):
+    """Identity function for no-retry pattern."""
+    return x

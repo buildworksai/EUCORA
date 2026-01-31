@@ -5,11 +5,9 @@ P5.3: CAB Submission REST API Views
 Provides endpoints for CAB approval workflow submission, review, and exception management.
 """
 import logging
-import uuid
 
 from django.core.exceptions import ValidationError as DjangoValidationError
 from django.db import transaction
-from django.utils import timezone
 from rest_framework import status
 from rest_framework.decorators import api_view, permission_classes
 from rest_framework.permissions import IsAuthenticated
@@ -17,7 +15,6 @@ from rest_framework.response import Response
 
 from apps.cab_workflow.models import CABApprovalDecision, CABApprovalRequest, CABException
 from apps.cab_workflow.services import CABWorkflowService
-from apps.deployment_intents.models import DeploymentIntent
 from apps.evidence_store.models import EvidencePackage
 
 from .serializers import (

@@ -98,7 +98,7 @@ def get_siem_client(connection: SIEMConnection) -> SIEMClient:
     Returns:
         SIEM client instance
     """
-    siem_type = connection.siem_type
+    connection.siem_type
 
     # For now, return mock client
     # TODO: Implement real clients for Sentinel, Splunk, QRadar, Elastic

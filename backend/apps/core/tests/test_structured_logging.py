@@ -8,7 +8,6 @@ import logging
 from decimal import Decimal
 from unittest.mock import Mock, patch
 
-import pytest
 from django.test import TestCase
 
 from apps.core.structured_logging import (

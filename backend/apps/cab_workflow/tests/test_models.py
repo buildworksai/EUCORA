@@ -3,13 +3,10 @@
 """
 Tests for CAB workflow app.
 """
-import uuid
 
 import pytest
-from django.contrib.auth.models import User
 
 from apps.cab_workflow.models import CABApproval
-from apps.deployment_intents.models import DeploymentIntent
 
 
 @pytest.mark.django_db

@@ -9,7 +9,6 @@ from uuid import uuid4
 
 import pytest
 
-from apps.evidence_store.models import EvidencePack
 from apps.evidence_store.views import _validate_evidence_pack
 
 
@@ -178,4 +177,4 @@ class TestEvidenceStoreViews:
 
     def test_get_evidence_pack_not_found(self, authenticated_client):
         """Test getting non-existent evidence pack."""
-        url = f"/api/v1/evidence/{uuid4()}/"
+        f"/api/v1/evidence/{uuid4()}/"

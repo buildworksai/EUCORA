@@ -4,9 +4,8 @@
 Comprehensive tests for Resilient HTTP Client.
 Tests circuit breaker integration, retry logic, and error handling.
 """
-from unittest.mock import MagicMock, Mock, patch
+from unittest.mock import Mock, patch
 
-import pytest
 import requests
 from django.test import TestCase
 

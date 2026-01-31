@@ -4,7 +4,6 @@
 Tests for KB & Triage Agent models.
 """
 import pytest
-from django.utils import timezone
 
 from apps.kb_triage.models import (
     IncidentPattern,

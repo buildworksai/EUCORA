@@ -5,12 +5,9 @@ P4.5 Comprehensive Test Coverage - Addition to existing test suites
 This file provides additional tests to achieve 90% coverage requirement
 """
 
-import json
 
 import pytest
 from django.contrib.auth.models import User
-from django.test import TestCase
-from django.utils import timezone
 from rest_framework.test import APIClient
 
 # ============================================================================

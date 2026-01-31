@@ -9,7 +9,7 @@ from typing import Any, Dict, List, Optional
 
 from django.contrib.auth.models import User
 
-from .models import AIAgentTask, AIAgentType, AIConversation, AIMessage, AIModelProvider
+from .models import AIAgentType, AIConversation, AIMessage, AIModelProvider
 from .providers import AnthropicProvider, GroqProvider, OpenAIProvider
 
 logger = logging.getLogger(__name__)

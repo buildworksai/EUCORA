@@ -6,7 +6,10 @@ ServiceNow Client for SLA Governance.
 Integrates with ServiceNow ITSM for SLA and incident management.
 """
 import logging
-from typing import Any, Dict, List, Optional
+from typing import TYPE_CHECKING, Any, Dict, List, Optional
+
+if TYPE_CHECKING:
+    from apps.sla_governance.models import SLABreach
 
 logger = logging.getLogger(__name__)
 

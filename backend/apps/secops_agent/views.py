@@ -3,12 +3,10 @@
 """
 API views for SecOps Agent.
 """
-import asyncio
 import logging
 from datetime import datetime, timedelta
-from typing import Dict
 
-from django.db.models import Count, Q
+from django.db.models import Q
 from django.utils import timezone
 from rest_framework import status, viewsets
 from rest_framework.decorators import action
@@ -37,7 +35,6 @@ from .serializers import (
     VulnerabilitySerializer,
 )
 from .services.compliance_checker import ComplianceChecker
-from .services.remediation_service import RemediationService
 from .services.siem_client import get_siem_client
 from .services.vulnerability_scanner import get_scanner_client
 

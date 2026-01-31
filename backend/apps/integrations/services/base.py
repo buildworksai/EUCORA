@@ -8,7 +8,7 @@ All integration services must implement this interface.
 import logging
 import time
 from abc import ABC, abstractmethod
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List
 
 from apps.integrations.models import ExternalSystem
 
@@ -45,7 +45,6 @@ class IntegrationService(ABC):
         Raises:
             Exception: If connection test fails critically
         """
-        pass
 
     @abstractmethod
     def sync(self, system: ExternalSystem) -> Dict[str, Any]:
@@ -65,7 +64,6 @@ class IntegrationService(ABC):
         Raises:
             Exception: If sync fails critically
         """
-        pass
 
     @abstractmethod
     def fetch_assets(self, system: ExternalSystem) -> List[Dict[str, Any]]:
@@ -78,7 +76,6 @@ class IntegrationService(ABC):
         Returns:
             List of asset dictionaries with standardized fields
         """
-        pass
 
     def _authenticate(self, system: ExternalSystem) -> Dict[str, str]:
         """

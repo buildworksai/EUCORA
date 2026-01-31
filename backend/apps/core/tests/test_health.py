@@ -4,11 +4,6 @@
 Tests for health check endpoints.
 """
 import pytest
-from django.core.cache import cache
-from django.db import connection
-from django.test import RequestFactory
-
-from apps.core.health import liveness_check, readiness_check
 
 
 @pytest.mark.django_db

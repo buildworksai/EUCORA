@@ -27,7 +27,6 @@ def reconciliation_loop():
     """
     from apps.connectors.services import get_connector_service
     from apps.deployment_intents.models import DeploymentIntent
-    from apps.event_store.models import DeploymentEvent
 
     logger.info("Starting reconciliation loop")
 
@@ -68,11 +67,12 @@ def reconciliation_loop():
                 # If stuck > 24h, emit drift event and trigger remediation
                 time_since_deploy = timezone.now() - intent.updated_at
                 if time_since_deploy > timedelta(hours=24):
+                    hours_stuck = time_since_deploy.total_seconds() / 3600
                     logger.warning(
-                        f"Deployment intent {intent.id} stuck in DEPLOYING for {time_since_deploy.total_seconds()/3600:.1f}h",
+                        f"Deployment intent {intent.id} stuck in DEPLOYING for {hours_stuck:.1f}h",
                         extra={
                             "deployment_intent_id": intent.id,
-                            "hours_stuck": time_since_deploy.total_seconds() / 3600,
+                            "hours_stuck": hours_stuck,
                         },
                     )
                     drift_count += 1

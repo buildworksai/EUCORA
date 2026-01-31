@@ -5,10 +5,8 @@ Correlation ID isolation tests for Request Coordination Agent.
 
 Ensures correlation IDs are properly generated and can be used for filtering.
 """
-from datetime import timedelta
 
 import pytest
-from django.utils import timezone
 
 from apps.request_coordination.models import EscalationEvent, RequestCommunication, TrackedRequest
 

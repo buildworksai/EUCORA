@@ -63,7 +63,6 @@ class StorageBackend(ABC):
         Returns:
             StorageResult with path, size, etag
         """
-        pass
 
     @abstractmethod
     def download(self, path: str) -> bytes:
@@ -76,7 +75,6 @@ class StorageBackend(ABC):
         Returns:
             File contents as bytes
         """
-        pass
 
     @abstractmethod
     def delete(self, path: str) -> bool:
@@ -89,7 +87,6 @@ class StorageBackend(ABC):
         Returns:
             True if deleted, False if not found
         """
-        pass
 
     @abstractmethod
     def exists(self, path: str) -> bool:
@@ -102,7 +99,6 @@ class StorageBackend(ABC):
         Returns:
             True if exists, False otherwise
         """
-        pass
 
     @abstractmethod
     def get_presigned_url(
@@ -122,7 +118,6 @@ class StorageBackend(ABC):
         Returns:
             Presigned URL string
         """
-        pass
 
     @abstractmethod
     def list_objects(
@@ -140,7 +135,6 @@ class StorageBackend(ABC):
         Returns:
             List of StorageObject
         """
-        pass
 
     @abstractmethod
     def health_check(self) -> HealthCheckResult:
@@ -150,4 +144,3 @@ class StorageBackend(ABC):
         Returns:
             HealthCheckResult with status and details
         """
-        pass

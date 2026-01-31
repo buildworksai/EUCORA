@@ -152,7 +152,7 @@ class ServiceNowRequestClient:
         try:
             client = await self._get_client()
             response = await client.get(
-                f"/api/now/table/task_sla",
+                "/api/now/table/task_sla",
                 params={"sysparm_query": f"task={sys_id}^type=1", "sysparm_fields": "task,sla,due_date,state"},
             )
 
@@ -181,7 +181,6 @@ class MockServiceNowRequestClient:
 
     async def close(self) -> None:
         """No-op for mock client."""
-        pass
 
     async def get_request(self, sys_id: str) -> Optional[Dict[str, Any]]:
         """Return mock request."""

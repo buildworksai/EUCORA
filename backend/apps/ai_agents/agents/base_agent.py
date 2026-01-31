@@ -18,7 +18,6 @@ class BaseAgent(ABC):
     @abstractmethod
     def get_system_prompt(self, context: Optional[Dict[str, Any]] = None) -> str:
         """Get system prompt for this agent."""
-        pass
 
     def requires_human_action(self, response: str, user_message: str = None) -> bool:
         """

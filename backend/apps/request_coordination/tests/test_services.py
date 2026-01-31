@@ -4,7 +4,7 @@
 Service tests for Request Coordination Agent.
 """
 from datetime import timedelta
-from unittest.mock import MagicMock, patch
+from unittest.mock import patch
 
 import pytest
 from django.utils import timezone
@@ -12,7 +12,6 @@ from django.utils import timezone
 from apps.cmdb_integration.models import CMDBConnection
 from apps.request_coordination.models import (
     CommunicationTemplate,
-    EscalationEvent,
     EscalationRule,
     RequestCommunication,
     RequestStakeholder,
@@ -49,7 +48,7 @@ def cmdb_connection(db):
         name="Test ServiceNow",
         instance_url="https://test.service-now.com",
         auth_type="basic",
-        credentials={"username": "test", "password": "test"},
+        credentials={"username": "test", "password": "test"},  # pragma: allowlist secret
     )
 
 
@@ -395,7 +394,9 @@ class TestRequestNotificationService:
         )
 
         service = RequestNotificationService()
-        with patch("apps.request_coordination.services.notification_service.send_mail") as mock_send_mail:
+        with patch(
+            "apps.request_coordination.services.notification_service.send_mail"
+        ) as _mock_send_mail:  # noqa: F841
             communication = service.send_notification(
                 request=tracked_request,
                 communication_type=RequestCommunication.CommunicationType.STATUS_UPDATE,

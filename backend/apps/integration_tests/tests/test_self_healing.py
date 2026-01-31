@@ -13,7 +13,6 @@ Tests verify:
 - Metrics before/after captured
 - Rollback on script failure
 """
-import uuid
 from datetime import timedelta
 from unittest.mock import Mock, patch
 
@@ -96,7 +95,7 @@ class SelfHealingIntegrationTests(APITestCase):
 
     def test_r1_rule_auto_executes(self):
         """R1 rules should auto-execute without approval."""
-        execution = SelfHealingExecution.objects.create(
+        _execution = SelfHealingExecution.objects.create(  # noqa: F841
             rule=self.rule_r1,
             trigger_event={"metric": "response_time", "value": 2000},
             status=SelfHealingExecution.Status.PENDING,
@@ -162,7 +161,7 @@ class SelfHealingIntegrationTests(APITestCase):
     def test_cooldown_period_enforced(self):
         """Cooldown period should prevent rapid re-execution."""
         # Create completed execution (5 minutes ago, cooldown is 15 minutes)
-        completed_execution = SelfHealingExecution.objects.create(
+        _completed_execution = SelfHealingExecution.objects.create(  # noqa: F841
             rule=self.rule_r1,
             trigger_event={},
             status=SelfHealingExecution.Status.COMPLETED,

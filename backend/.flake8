@@ -1,0 +1,23 @@
+# SPDX-License-Identifier: Apache-2.0
+# Copyright (c) 2026 BuildWorks.AI
+# Flake8 Configuration for EUCORA Control Plane
+
+[flake8]
+max-line-length = 120
+# E203: whitespace before ':' - conflicts with Black's slice notation style
+# W503: line break before binary operator - conflicts with Black (deprecated rule)
+# C901: function too complex - complexity is acceptable for business logic functions
+extend-ignore = E203, W503, C901
+exclude =
+    .git,
+    __pycache__,
+    .venv,
+    build,
+    dist,
+    migrations,
+    *.egg-info
+per-file-ignores =
+    # Test files may have longer lines for readability
+    */tests/*.py: E501
+    # Data seeding files with long JSON/data structures
+    */management/commands/seed_*.py: E501

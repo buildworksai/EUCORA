@@ -117,7 +117,6 @@ class RequestNotificationService:
 
     def _build_context(self, request: TrackedRequest, extra: Optional[Dict[str, Any]] = None) -> Dict[str, Any]:
         """Build template context from request."""
-        from datetime import timedelta
 
         context = {
             "request_number": request.servicenow_number,

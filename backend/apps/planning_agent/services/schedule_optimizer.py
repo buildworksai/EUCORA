@@ -7,7 +7,7 @@ Optimizes deployment schedules considering windows and change freezes.
 """
 import logging
 from datetime import datetime, timedelta
-from typing import List, Optional
+from typing import List
 
 from django.utils import timezone
 

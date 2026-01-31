@@ -3,7 +3,6 @@
 """
 Tests for AI agent helpers.
 """
-import pytest
 
 from apps.ai_agents.agents.amani_assistant import AmaniAssistant
 from apps.ai_agents.agents.base_agent import BaseAgent

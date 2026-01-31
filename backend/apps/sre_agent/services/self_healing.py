@@ -3,14 +3,12 @@
 """
 Self-healing service for executing remediation scripts.
 """
-import json
 import logging
 import subprocess
-from datetime import datetime, timedelta
+from datetime import timedelta
 from pathlib import Path
 from typing import Any, Dict, Optional
 
-from django.db.models import Q
 from django.utils import timezone
 
 from ..models import SelfHealingExecution, SelfHealingRule

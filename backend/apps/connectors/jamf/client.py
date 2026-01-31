@@ -24,7 +24,7 @@ Example:
 import logging
 from typing import Any, Dict, List, Optional
 
-from apps.connectors.jamf.auth import JamfAuth, JamfAuthError
+from apps.connectors.jamf.auth import JamfAuth
 from apps.core.circuit_breaker import CircuitBreakerOpen
 from apps.core.resilient_http import ResilientAPIClient, ResilientAPIError
 from apps.core.structured_logging import StructuredLogger

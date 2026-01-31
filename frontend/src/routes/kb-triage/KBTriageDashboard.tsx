@@ -18,12 +18,18 @@ export default function KBTriageDashboard() {
 
   const { data: triageRequests } = useQuery({
     queryKey: ['kb-triage', 'triage'],
-    queryFn: () => api.get<TriageRequest[]>(ENDPOINTS.triage + '?status=pending&limit=20'),
+    queryFn: async () => {
+      const response = await api.get<{ results: TriageRequest[] } | TriageRequest[]>(ENDPOINTS.triage + '?status=pending&limit=20');
+      return Array.isArray(response) ? response : response.results || [];
+    },
   });
 
   const { data: patterns } = useQuery({
     queryKey: ['kb-triage', 'patterns'],
-    queryFn: () => api.get<IncidentPattern[]>(ENDPOINTS.patterns + '?status=active&limit=10'),
+    queryFn: async () => {
+      const response = await api.get<{ results: IncidentPattern[] } | IncidentPattern[]>(ENDPOINTS.patterns + '?status=active&limit=10');
+      return Array.isArray(response) ? response : response.results || [];
+    },
   });
 
   return (

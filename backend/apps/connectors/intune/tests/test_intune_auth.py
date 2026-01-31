@@ -4,10 +4,8 @@
 Comprehensive tests for Intune authentication.
 Tests OAuth 2.0 flow, token caching, and error handling.
 """
-from datetime import datetime, timedelta
-from unittest.mock import MagicMock, Mock, patch
+from unittest.mock import Mock, patch
 
-import pytest
 from django.core.cache import cache
 from django.test import TestCase
 

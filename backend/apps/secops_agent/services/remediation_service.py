@@ -8,7 +8,7 @@ Generates remediation plans for vulnerabilities.
 import logging
 from typing import Any, Dict, List
 
-from apps.secops_agent.models import RemediationPlan, Vulnerability, VulnerabilityInstance
+from apps.secops_agent.models import Vulnerability, VulnerabilityInstance
 
 logger = logging.getLogger(__name__)
 

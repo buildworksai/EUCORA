@@ -8,7 +8,6 @@ import json
 from uuid import uuid4
 
 from django.db import models
-from django.utils import timezone
 
 from apps.core.models import CorrelationIdModel, DemoQuerySet, TimeStampedModel
 

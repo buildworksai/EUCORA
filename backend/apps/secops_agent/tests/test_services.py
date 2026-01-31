@@ -6,7 +6,7 @@ Service tests for SecOps Agent.
 import pytest
 from django.utils import timezone
 
-from apps.secops_agent.models import ComplianceBaseline, RemediationPlan, Vulnerability, VulnerabilityScanner
+from apps.secops_agent.models import ComplianceBaseline, Vulnerability, VulnerabilityScanner
 from apps.secops_agent.services.compliance_checker import ComplianceChecker
 from apps.secops_agent.services.remediation_service import RemediationService
 from apps.secops_agent.services.vulnerability_scanner import MockVulnerabilityScannerClient

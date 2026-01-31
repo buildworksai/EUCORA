@@ -6,7 +6,7 @@ Blast Radius Calculator.
 Calculates blast radius and impact for deployments.
 """
 import logging
-from typing import Dict, List
+from typing import List
 
 from apps.planning_agent.models import BlastRadiusAnalysis, DeploymentPlan, RingDevice
 

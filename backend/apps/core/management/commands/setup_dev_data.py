@@ -30,10 +30,10 @@ class Command(BaseCommand):
                 user.save()
                 self.stdout.write(
                     self.style.SUCCESS(
-                        f"✓ Created default development user:\n"
-                        f"  Username: devadmin\n"
-                        f"  Email: admin@eucora.local\n"
-                        f"  Password: eucora-dev-password"
+                        "✓ Created default development user:\n"
+                        "  Username: devadmin\n"
+                        "  Email: admin@eucora.local\n"
+                        "  Password: eucora-dev-password"
                     )
                 )
             else:

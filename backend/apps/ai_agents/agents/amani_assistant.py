@@ -65,7 +65,9 @@ class AmaniAssistant(BaseAgent):
     Supports custom system prompts from users while enforcing governance rules.
     """
 
-    DEFAULT_SYSTEM_PROMPT = """You are Amani, an AI assistant for EUCORA (End-User Computing Orchestration & Reliability Architecture).
+    # Long system prompt - E501 ignored for readability
+    DEFAULT_SYSTEM_PROMPT = """You are Amani, an AI assistant for EUCORA \
+(End-User Computing Orchestration & Reliability Architecture).
 
 CRITICAL GOVERNANCE RULES (NEVER VIOLATE THESE):
 1. You are an ASSISTANT, not a decision-maker. All recommendations require human approval.

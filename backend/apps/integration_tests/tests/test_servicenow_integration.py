@@ -10,7 +10,6 @@ Tests verify:
 - E19 SLA Governance: Service catalog sync, SLA breach detection, incident creation
 """
 from datetime import date, timedelta
-from unittest.mock import patch
 
 from django.contrib.auth.models import User
 from django.utils import timezone
@@ -42,7 +41,7 @@ class ServiceNowIntegrationTests(APITestCase):
             name="Test ServiceNow Instance",
             instance_url="https://test-instance.service-now.com",
             auth_type=CMDBConnection.AuthType.BASIC,
-            credentials={"username": "test_user", "password": "test_pass"},
+            credentials={"username": "test_user", "password": "test_pass"},  # pragma: allowlist secret
             is_active=True,
         )
 
@@ -70,7 +69,6 @@ class ServiceNowIntegrationTests(APITestCase):
     def test_cmdb_connection_authentication(self):
         """CMDB connection should authenticate correctly."""
         import asyncio
-        from unittest.mock import AsyncMock
 
         from apps.cmdb_integration.services.servicenow_client import ServiceNowCMDBClient
 

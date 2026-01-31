@@ -22,10 +22,9 @@ from datetime import datetime, timedelta
 from typing import Dict, Optional
 
 from decouple import config
-from django.conf import settings
 from django.core.cache import cache
 
-from apps.core.resilient_http import ResilientAPIError, ResilientHTTPClient
+from apps.core.resilient_http import ResilientHTTPClient
 from apps.core.structured_logging import StructuredLogger
 
 logger = logging.getLogger(__name__)

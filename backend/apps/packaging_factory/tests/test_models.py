@@ -8,7 +8,6 @@ from datetime import timedelta
 
 from django.contrib.auth import get_user_model
 from django.test import TestCase
-from django.utils import timezone
 
 from apps.packaging_factory.models import PackagingPipeline, PackagingStageLog
 

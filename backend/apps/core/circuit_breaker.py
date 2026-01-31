@@ -19,7 +19,7 @@ Usage:
 """
 import logging
 from functools import wraps
-from typing import Any, Callable, Dict, List, Optional
+from typing import Any, Callable, Dict, Optional
 
 from pybreaker import CircuitBreaker, CircuitBreakerError
 
@@ -70,11 +70,9 @@ class CircuitBreakerListener:
 
     def before_call(self, cb, *args, **kwargs):
         """Called before breaker executes a function (pybreaker interface)."""
-        pass
 
     def after_call(self, cb, *args, **kwargs):
         """Called after successful breaker execution (pybreaker interface)."""
-        pass
 
 
 def _create_breaker(name: str, fail_max: int = 5, reset_timeout: int = 60) -> CircuitBreaker:
@@ -286,4 +284,3 @@ def reset_breaker(service_name: str) -> None:
     breaker = get_breaker(service_name)
     breaker.close()
     logger.info(f"Circuit breaker manually reset: {service_name}", extra={"service": service_name})
-    pass

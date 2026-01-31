@@ -4,7 +4,6 @@
 P4.5 Model Methods Coverage - Ensure all model methods are tested
 """
 
-from uuid import uuid4
 
 import pytest
 from django.contrib.auth.models import User
@@ -62,11 +61,11 @@ class TestEventStoreModels:
         """DeploymentEvent respects ordering by timestamp."""
         from apps.event_store.models import DeploymentEvent
 
-        event1 = DeploymentEvent.objects.create(
+        _event1 = DeploymentEvent.objects.create(  # noqa: F841
             event_type="deployment_started", deployment_intent_id="test", actor="system", event_data={}
         )
 
-        event2 = DeploymentEvent.objects.create(
+        _event2 = DeploymentEvent.objects.create(  # noqa: F841
             event_type="deployment_completed", deployment_intent_id="test", actor="system", event_data={}
         )
 

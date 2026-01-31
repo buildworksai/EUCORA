@@ -5,7 +5,6 @@ Authentication models (currently using Django's built-in User model).
 
 Future: Extend with custom user profile if needed.
 """
-from django.db import models
 
 # Using Django's built-in User model for now
 # from django.contrib.auth.models import User

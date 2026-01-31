@@ -9,7 +9,6 @@ Endpoints:
 - Blast radius classification
 - Risk model version management
 """
-from decimal import Decimal
 
 from django.shortcuts import get_object_or_404
 from django.utils import timezone
@@ -19,13 +18,7 @@ from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 
 from .blast_radius_classifier import BlastRadiusClassifier
-from .models_p5_5 import (
-    BlastRadiusClass,
-    DeploymentIncident,
-    RiskModelVersion,
-    TrustMaturityLevel,
-    TrustMaturityProgress,
-)
+from .models_p5_5 import BlastRadiusClass, DeploymentIncident, RiskModelVersion, TrustMaturityProgress
 from .serializers_p5_5 import (
     BlastRadiusClassificationSerializer,
     DeploymentIncidentCreateSerializer,

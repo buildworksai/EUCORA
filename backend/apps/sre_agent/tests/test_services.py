@@ -4,7 +4,6 @@
 Service tests for SRE Agent.
 """
 import pytest
-from django.utils import timezone
 
 from apps.sre_agent.models import HealthEndpoint, SLODefinition
 

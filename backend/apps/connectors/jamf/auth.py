@@ -252,7 +252,10 @@ class JamfAuth:
             self.structured_logger.security_event(
                 event_type="JAMF_AUTH_SUCCESS",
                 severity="LOW",
-                message=f'Successfully acquired Jamf Basic auth token (expires_in={normalized_token_data["expires_in"]}s)',
+                message=(
+                    f"Successfully acquired Jamf Basic auth token "
+                    f'(expires_in={normalized_token_data["expires_in"]}s)'
+                ),
                 details={"auth_method": "basic", "server": self.server_url, "username": self.username},
             )
 

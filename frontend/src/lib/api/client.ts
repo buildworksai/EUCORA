@@ -100,21 +100,21 @@ async function apiRequest<T>(
   const isMutation = options.method && options.method !== 'GET';
 
   // Normalize endpoint - ensure it starts with / and handle API_BASE_URL properly
-  let normalizedEndpoint = endpoint.startsWith('/') ? endpoint : `/${endpoint}`;
+  const normalizedEndpoint = endpoint.startsWith('/') ? endpoint : `/${endpoint}`;
 
-  // If API_BASE_URL already includes /api/v1, don't add it again
+  // Get raw base URL (without /api/v1 suffix if present)
+  const rawBaseUrl = API_BASE_URL.replace(/\/api\/v1\/?$/, '');
+
+  // Construct full URL based on endpoint pattern
   let fullUrl: string;
-  if (API_BASE_URL.includes('/api/v1')) {
-    // Remove /api/v1 from endpoint if present
-    if (normalizedEndpoint.startsWith('/api/v1')) {
-      normalizedEndpoint = normalizedEndpoint.replace('/api/v1', '');
-    }
-    fullUrl = `${API_BASE_URL}${normalizedEndpoint}`;
+  if (normalizedEndpoint.startsWith('/api/v1/') || normalizedEndpoint.startsWith('/api/v1')) {
+    // Endpoint has full versioned path - use raw base URL
+    fullUrl = `${rawBaseUrl}${normalizedEndpoint}`;
+  } else if (normalizedEndpoint.startsWith('/api/')) {
+    // Endpoint has non-versioned /api/ path (e.g., /api/secops/) - use raw base URL
+    fullUrl = `${rawBaseUrl}${normalizedEndpoint}`;
   } else {
-    // API_BASE_URL doesn't have /api/v1, add it if endpoint doesn't have it
-    if (!normalizedEndpoint.startsWith('/api/v1')) {
-      normalizedEndpoint = `/api/v1${normalizedEndpoint}`;
-    }
+    // Endpoint has no /api prefix - use API_BASE_URL (which includes /api/v1)
     fullUrl = `${API_BASE_URL}${normalizedEndpoint}`;
   }
 

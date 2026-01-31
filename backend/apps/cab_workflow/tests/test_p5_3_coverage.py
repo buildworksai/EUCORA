@@ -6,9 +6,7 @@ Covers error handling paths, edge cases, and service layer logic.
 """
 from datetime import timedelta
 from decimal import Decimal
-from unittest.mock import MagicMock, patch
 
-import pytest
 from django.contrib.auth.models import User
 from django.test import TestCase
 from django.utils import timezone

@@ -6,8 +6,6 @@ Tests for connectors services.
 import subprocess
 from unittest.mock import MagicMock, patch
 
-import pytest
-
 from apps.connectors.services import PowerShellConnectorService
 
 

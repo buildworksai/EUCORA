@@ -7,7 +7,6 @@ Implements cursor-based pagination for large datasets and sequential paging
 for smaller datasets to prevent N+1 queries and improve response times.
 """
 from rest_framework.pagination import CursorPagination, PageNumberPagination
-from rest_framework.response import Response
 
 
 class StandardCursorPagination(CursorPagination):

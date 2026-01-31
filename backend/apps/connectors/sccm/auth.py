@@ -20,8 +20,7 @@ Configuration (environment variables):
 - SCCM_CERT_PASSWORD: Certificate password (for cert auth)
 """
 import logging
-from datetime import datetime, timedelta
-from typing import Any, Dict, Optional, Tuple
+from typing import Dict, Optional, Tuple
 
 import requests
 from decouple import config

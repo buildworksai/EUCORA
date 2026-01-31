@@ -4,7 +4,6 @@
 Tests for SRE Agent models.
 """
 import pytest
-from django.utils import timezone
 
 from apps.sre_agent.models import (
     HealthCheckResult,

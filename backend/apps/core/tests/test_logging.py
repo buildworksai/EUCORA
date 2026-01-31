@@ -7,7 +7,6 @@ import json
 import logging
 from io import StringIO
 
-import pytest
 from django.contrib.auth.models import User
 from django.test import Client, RequestFactory, TestCase
 

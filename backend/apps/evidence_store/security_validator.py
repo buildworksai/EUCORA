@@ -14,7 +14,7 @@ Implementation Date: 2026-01-23
 import hashlib
 import json
 import logging
-from typing import Any, Dict, Tuple
+from typing import Any, Dict
 
 from django.utils import timezone
 
@@ -151,7 +151,7 @@ class DeploymentSecurityValidator:
             self._block_deployment(
                 correlation_id=correlation_id,
                 reason_code="EVIDENCE_TAMPERED",
-                details=(f"Evidence package content hash mismatch! " f"Evidence may have been tampered with."),
+                details="Evidence package content hash mismatch! Evidence may have been tampered with.",
             )
 
         self.validation_results["evidence_immutability"] = {

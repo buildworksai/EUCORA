@@ -7,8 +7,7 @@ Orchestrates synchronization of requests from ServiceNow,
 including status change detection and stakeholder management.
 """
 import logging
-from datetime import timedelta
-from typing import Any, Dict, List, Optional
+from typing import List
 
 from django.conf import settings
 from django.utils import timezone

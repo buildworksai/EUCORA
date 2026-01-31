@@ -210,7 +210,7 @@ class AgentTaskAPITests(TestCase):
         task1 = AgentTask.objects.create(
             agent=self.agent, task_type="DEPLOY", payload={}, created_by=self.user, status="PENDING"
         )
-        task2 = AgentTask.objects.create(
+        _task2 = AgentTask.objects.create(  # noqa: F841
             agent=self.agent, task_type="REMEDIATE", payload={}, created_by=self.user, status="COMPLETED"
         )
 
@@ -402,7 +402,7 @@ class AgentDeploymentStatusAPITests(TestCase):
 
     def test_filter_deployment_status_by_agent(self):
         """Test filtering deployment status by agent_id."""
-        deployment = AgentDeploymentStatus.objects.create(
+        _deployment = AgentDeploymentStatus.objects.create(  # noqa: F841
             agent=self.agent,
             deployment_intent_id=uuid.uuid4(),
             package_name="pkg-001",
@@ -502,7 +502,7 @@ class AgentListAPITests(TestCase):
 
     def test_filter_agents_by_online_status(self):
         """Test filtering agents by online/offline status."""
-        online_agent = Agent.objects.create(
+        _online_agent = Agent.objects.create(  # noqa: F841
             hostname="test-online",
             platform="windows",
             platform_version="11",
@@ -515,7 +515,7 @@ class AgentListAPITests(TestCase):
             mac_address="00:00:00:00:00:01",
             last_heartbeat_at=timezone.now(),
         )
-        offline_agent = Agent.objects.create(
+        _offline_agent = Agent.objects.create(  # noqa: F841
             hostname="test-offline",
             platform="windows",
             platform_version="11",

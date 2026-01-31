@@ -3,7 +3,6 @@
 """
 REST API views for agent management.
 """
-from django.shortcuts import get_object_or_404
 from rest_framework import status, viewsets
 from rest_framework.decorators import action
 from rest_framework.permissions import IsAuthenticated

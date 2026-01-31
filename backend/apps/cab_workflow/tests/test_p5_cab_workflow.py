@@ -9,7 +9,6 @@ import uuid
 from datetime import timedelta
 from decimal import Decimal
 
-import pytest
 from django.contrib.auth.models import User
 from django.test import TestCase
 from django.utils import timezone

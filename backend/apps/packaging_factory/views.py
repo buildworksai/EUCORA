@@ -84,7 +84,7 @@ class PackagingPipelineViewSet(viewsets.ModelViewSet):
         if auto_execute:
             try:
                 pipeline = service.execute_pipeline(pipeline_id=str(pipeline.id), correlation_id=correlation_id)
-            except Exception as e:
+            except Exception:
                 # Pipeline failed - return with error details
                 pass
 

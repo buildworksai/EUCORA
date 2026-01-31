@@ -7,13 +7,12 @@ Target: 30 tests covering all service methods and business logic.
 """
 import uuid
 from datetime import timedelta
-from unittest.mock import MagicMock, patch
 
 from django.contrib.auth import get_user_model
 from django.test import TestCase
 from django.utils import timezone
 
-from apps.agent_management.models import Agent, AgentDeploymentStatus, AgentOfflineQueue, AgentTask, AgentTelemetry
+from apps.agent_management.models import Agent, AgentOfflineQueue, AgentTask
 from apps.agent_management.services import AgentManagementService
 
 User = get_user_model()
@@ -181,7 +180,7 @@ class HeartbeatProcessingTests(TestCase):
         AgentOfflineQueue.objects.create(agent=self.agent, task=task1, retry_count=0, correlation_id="corr-001")
         AgentOfflineQueue.objects.create(agent=self.agent, task=task2, retry_count=0, correlation_id="corr-002")
 
-        result = self.service.process_heartbeat(agent_id=str(self.agent.id), correlation_id="corr-001")
+        _result = self.service.process_heartbeat(agent_id=str(self.agent.id), correlation_id="corr-001")  # noqa: F841
 
         # Queue items should be marked as delivered
         queue_items = AgentOfflineQueue.objects.filter(agent=self.agent)

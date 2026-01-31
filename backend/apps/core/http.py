@@ -16,14 +16,13 @@ Usage:
     response = client.post('https://api.servicenow.com/...', json=data)
 """
 import logging
-from typing import Any, Dict, List, Optional
+from typing import Dict, List, Optional
 
 import requests
 from requests.adapters import HTTPAdapter
 from urllib3.util.retry import Retry
 
 from apps.core.circuit_breaker import CircuitBreakerOpen, get_breaker
-from apps.core.retry import DEFAULT_RETRY
 
 logger = logging.getLogger(__name__)
 

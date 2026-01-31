@@ -4,17 +4,13 @@
 P5.3: Comprehensive tests for CAB Submission REST API.
 Tests all endpoints with proper authentication and role-based access control.
 """
-from datetime import timedelta
 from decimal import Decimal
 
-import pytest
 from django.contrib.auth.models import Group, User
 from django.test import TestCase
-from django.utils import timezone
 from rest_framework import status
 from rest_framework.test import APIClient
 
-from apps.cab_workflow.models import CABApprovalDecision, CABApprovalRequest, CABException
 from apps.deployment_intents.models import DeploymentIntent
 from apps.evidence_store.models import EvidencePackage
 
@@ -257,7 +253,7 @@ class TestCABRetrievalEndpoints(CABAPITestSetup):
         """Getting nonexistent request should fail."""
         self.client.force_authenticate(user=self.requester)
 
-        response = self.client.get(f"/api/v1/cab/00000000-0000-0000-0000-000000000000/")
+        response = self.client.get("/api/v1/cab/00000000-0000-0000-0000-000000000000/")
         self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
 
     def test_list_pending_requests(self):

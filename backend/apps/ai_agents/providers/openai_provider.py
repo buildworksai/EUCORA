@@ -4,7 +4,6 @@
 OpenAI provider implementation.
 """
 import logging
-import os
 from typing import AsyncGenerator, Dict, List
 
 from .base import BaseModelProvider

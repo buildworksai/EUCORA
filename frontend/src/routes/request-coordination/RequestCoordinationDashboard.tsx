@@ -19,12 +19,18 @@ export default function RequestCoordinationDashboard() {
 
   const { data: requests } = useQuery({
     queryKey: ['request-coordination', 'requests'],
-    queryFn: () => api.get<TrackedRequest[]>(ENDPOINTS.requests),
+    queryFn: async () => {
+      const response = await api.get<{ results: TrackedRequest[] } | TrackedRequest[]>(ENDPOINTS.requests);
+      return Array.isArray(response) ? response : response.results || [];
+    },
   });
 
   const { data: escalations } = useQuery({
     queryKey: ['request-coordination', 'escalations'],
-    queryFn: () => api.get<EscalationEvent[]>(ENDPOINTS.escalations),
+    queryFn: async () => {
+      const response = await api.get<{ results: EscalationEvent[] } | EscalationEvent[]>(ENDPOINTS.escalations);
+      return Array.isArray(response) ? response : response.results || [];
+    },
   });
 
   const { data: slaCompliance } = useQuery({

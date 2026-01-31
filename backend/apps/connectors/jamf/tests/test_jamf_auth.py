@@ -4,10 +4,8 @@
 Comprehensive tests for Jamf Pro authentication.
 Tests OAuth 2.0 and Basic authentication methods, token caching, and validation.
 """
-from datetime import datetime, timedelta
-from unittest.mock import MagicMock, Mock, patch
+from unittest.mock import Mock, patch
 
-import pytest
 from django.core.cache import cache
 from django.test import TestCase
 
@@ -198,11 +196,11 @@ class TestJamfOAuthTokenAcquisition(TestCase):
         auth = JamfAuth()
 
         # First call
-        token1 = auth.get_access_token()
+        auth.get_access_token()
         self.assertEqual(mock_http_client.post.call_count, 1)
 
         # Force refresh
-        token2 = auth.get_access_token(force_refresh=True)
+        _token2 = auth.get_access_token(force_refresh=True)  # noqa: F841
         self.assertEqual(mock_http_client.post.call_count, 2)
 
     @patch("apps.connectors.jamf.auth.ResilientHTTPClient")
@@ -353,14 +351,14 @@ class TestJamfTokenCaching(TestCase):
         auth = JamfAuth()
 
         # Acquire and cache token
-        token1 = auth.get_access_token()
+        auth.get_access_token()
         self.assertEqual(mock_http_client.post.call_count, 1)
 
         # Clear cache
         auth.clear_cached_token()
 
         # Next call should acquire new token
-        token2 = auth.get_access_token()
+        auth.get_access_token()
         self.assertEqual(mock_http_client.post.call_count, 2)
 
 
