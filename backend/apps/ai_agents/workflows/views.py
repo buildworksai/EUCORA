@@ -3,9 +3,9 @@
 """
 API views for AI Agent Workflows.
 """
-import asyncio
 import logging
 
+from asgiref.sync import async_to_sync
 from django.db import transaction
 from rest_framework import status, viewsets
 from rest_framework.decorators import action
@@ -53,9 +53,9 @@ class WorkflowDefinitionViewSet(viewsets.ReadOnlyModelViewSet):
         input_data = serializer.validated_data["input_data"]
 
         try:
-            # Start workflow asynchronously
+            # Start workflow asynchronously (using async_to_sync for compatibility with running event loops)
             executor = WorkflowExecutor()
-            execution = asyncio.run(executor.start_workflow(workflow, request.user, input_data))
+            execution = async_to_sync(executor.start_workflow)(workflow, request.user, input_data)
 
             execution_serializer = WorkflowExecutionSerializer(execution)
             return Response(execution_serializer.data, status=status.HTTP_201_CREATED)
@@ -120,7 +120,7 @@ class WorkflowExecutionViewSet(viewsets.ModelViewSet):
             notes = serializer.validated_data.get("notes", "")
 
             with transaction.atomic():
-                updated_execution = asyncio.run(executor.approve_step(execution, request.user, notes))
+                updated_execution = async_to_sync(executor.approve_step)(execution, request.user, notes)
 
             execution_serializer = WorkflowExecutionSerializer(updated_execution)
             return Response(execution_serializer.data)
@@ -153,7 +153,7 @@ class WorkflowExecutionViewSet(viewsets.ModelViewSet):
             reason = serializer.validated_data["reason"]
 
             with transaction.atomic():
-                updated_execution = asyncio.run(executor.reject_step(execution, request.user, reason))
+                updated_execution = async_to_sync(executor.reject_step)(execution, request.user, reason)
 
             execution_serializer = WorkflowExecutionSerializer(updated_execution)
             return Response(execution_serializer.data)

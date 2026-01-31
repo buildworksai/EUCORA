@@ -3,9 +3,9 @@
 """
 API views for Change Communications.
 """
-import asyncio
 import logging
 
+from asgiref.sync import async_to_sync
 from django.db.models import Count
 from django.utils import timezone
 from rest_framework import status, viewsets
@@ -273,7 +273,7 @@ class CommunicationViewSet(viewsets.ModelViewSet):
         async def send():
             return await service.send_notification(change_record, event_type, groups, extra_context)
 
-        results = asyncio.run(send())
+        results = async_to_sync(send)()
 
         return Response(
             {
@@ -307,7 +307,7 @@ class CommunicationViewSet(viewsets.ModelViewSet):
         async def retry():
             return await service.retry_failed(str(communication.id))
 
-        result = asyncio.run(retry())
+        result = async_to_sync(retry)()
 
         return Response(
             {

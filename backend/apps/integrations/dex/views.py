@@ -5,10 +5,10 @@ API views for DEX integration.
 
 Provides endpoints for provider configuration, metrics, dashboard, and Green IT data.
 """
-import asyncio
 import logging
 from datetime import timedelta
 
+from asgiref.sync import async_to_sync
 from django.db.models import Avg, Count, Q, Sum
 from django.utils import timezone
 from rest_framework import status, viewsets
@@ -64,7 +64,7 @@ class DEXProviderViewSet(viewsets.ModelViewSet):
 
         try:
             service = DEXSyncService(provider)
-            is_healthy = asyncio.run(service.client.health_check())
+            is_healthy = async_to_sync(service.client.health_check)()
 
             if is_healthy:
                 return Response({"status": "success", "message": "Connection successful"}, status=status.HTTP_200_OK)
@@ -88,7 +88,7 @@ class DEXProviderViewSet(viewsets.ModelViewSet):
 
         try:
             service = DEXSyncService(provider)
-            result = asyncio.run(service.sync())
+            result = async_to_sync(service.sync)()
 
             return Response(
                 {

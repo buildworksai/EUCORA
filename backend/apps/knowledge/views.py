@@ -3,6 +3,7 @@
 """
 API views for Knowledge.
 """
+from asgiref.sync import async_to_sync
 from django.db.models import Count, Max, Q
 from rest_framework import status, viewsets
 from rest_framework.decorators import action
@@ -40,15 +41,13 @@ class EmbeddingConfigViewSet(viewsets.ModelViewSet):
     @action(detail=True, methods=["post"])
     def test(self, request: Request, pk=None) -> Response:
         """Test embedding provider connection."""
-        import asyncio
-
         config = self.get_object()
         test_text = request.data.get("test_text", "This is a test sentence.")
 
         try:
             service = EmbeddingService.get_instance()
             provider = service._create_provider(config)
-            embedding = asyncio.run(provider.embed(test_text))
+            embedding = async_to_sync(provider.embed)(test_text)
 
             return Response(
                 {
@@ -72,15 +71,13 @@ class KnowledgeSearchViewSet(viewsets.ViewSet):
     @action(detail=False, methods=["post"])
     def search(self, request: Request) -> Response:
         """Semantic search."""
-        import asyncio
-
         serializer = SearchRequestSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
 
         service = EmbeddingService.get_instance()
         retrieval_service = KnowledgeRetrievalService(service)
 
-        results = asyncio.run(retrieval_service.search(**serializer.validated_data))
+        results = async_to_sync(retrieval_service.search)(**serializer.validated_data)
 
         result_serializer = RetrievedKnowledgeSerializer(results, many=True)
         return Response(result_serializer.data)
@@ -88,15 +85,13 @@ class KnowledgeSearchViewSet(viewsets.ViewSet):
     @action(detail=False, methods=["post"])
     def hybrid(self, request: Request) -> Response:
         """Hybrid search (vector + keyword)."""
-        import asyncio
-
         serializer = SearchRequestSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
 
         service = EmbeddingService.get_instance()
         retrieval_service = KnowledgeRetrievalService(service)
 
-        results = asyncio.run(retrieval_service.hybrid_search(**serializer.validated_data))
+        results = async_to_sync(retrieval_service.hybrid_search)(**serializer.validated_data)
 
         result_serializer = RetrievedKnowledgeSerializer(results, many=True)
         return Response(result_serializer.data)
@@ -104,15 +99,13 @@ class KnowledgeSearchViewSet(viewsets.ViewSet):
     @action(detail=False, methods=["post"])
     def index(self, request: Request) -> Response:
         """Index content."""
-        import asyncio
-
         serializer = IndexRequestSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
 
         service = EmbeddingService.get_instance()
         pipeline = KnowledgeIndexingPipeline(service)
 
-        count = asyncio.run(pipeline.index_text(**serializer.validated_data))
+        count = async_to_sync(pipeline.index_text)(**serializer.validated_data)
 
         return Response({"success": True, "chunks_indexed": count})
 
