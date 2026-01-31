@@ -121,24 +121,35 @@ const navGroups: NavGroup[] = [
     },
 ];
 
-// Storage key for persisting collapsed state
-const COLLAPSED_GROUPS_KEY = 'eucora-sidebar-collapsed-groups';
+// Storage key for persisting expanded group (accordion behavior - only one open at a time)
+const EXPANDED_GROUP_KEY = 'eucora-sidebar-expanded-group';
 
-function getStoredCollapsedGroups(): string[] {
+function getStoredExpandedGroup(): string | null {
     try {
-        const stored = localStorage.getItem(COLLAPSED_GROUPS_KEY);
-        return stored ? JSON.parse(stored) : [];
+        return localStorage.getItem(EXPANDED_GROUP_KEY);
     } catch {
-        return [];
+        return null;
     }
 }
 
-function storeCollapsedGroups(groups: string[]): void {
+function storeExpandedGroup(groupId: string | null): void {
     try {
-        localStorage.setItem(COLLAPSED_GROUPS_KEY, JSON.stringify(groups));
+        if (groupId) {
+            localStorage.setItem(EXPANDED_GROUP_KEY, groupId);
+        } else {
+            localStorage.removeItem(EXPANDED_GROUP_KEY);
+        }
     } catch {
         // Ignore storage errors
     }
+}
+
+// Find which group contains the current route
+function findActiveGroup(pathname: string): string | null {
+    const group = navGroups.find(g => 
+        g.items.some(item => pathname === item.href || pathname.startsWith(item.href + '/'))
+    );
+    return group?.id || null;
 }
 
 export function Sidebar() {
@@ -149,51 +160,40 @@ export function Sidebar() {
     const userIsDemo = isDemo(user);
     const location = useLocation();
 
-    // Track which groups are collapsed
-    const [collapsedGroups, setCollapsedGroups] = useState<Set<string>>(() => 
-        new Set(getStoredCollapsedGroups())
-    );
+    // Accordion behavior: only one group expanded at a time (null = all collapsed)
+    const [expandedGroup, setExpandedGroup] = useState<string | null>(() => {
+        // On initial load, expand the group containing the current route, or use stored preference
+        const activeGroup = findActiveGroup(location.pathname);
+        return activeGroup || getStoredExpandedGroup();
+    });
 
-    // Persist collapsed state
+    // Persist expanded state
     useEffect(() => {
-        storeCollapsedGroups(Array.from(collapsedGroups));
-    }, [collapsedGroups]);
+        storeExpandedGroup(expandedGroup);
+    }, [expandedGroup]);
 
     // Track previous pathname to detect route changes
     const prevPathnameRef = useRef(location.pathname);
 
-    // Auto-expand group containing active route (using RAF to avoid sync setState warning)
+    // Auto-expand group containing active route when navigating
     useEffect(() => {
         if (prevPathnameRef.current !== location.pathname) {
             prevPathnameRef.current = location.pathname;
             
-            const activeGroup = navGroups.find(group => 
-                group.items.some(item => location.pathname.startsWith(item.href))
-            );
+            const activeGroup = findActiveGroup(location.pathname);
             
-            if (activeGroup && collapsedGroups.has(activeGroup.id)) {
+            if (activeGroup && activeGroup !== expandedGroup) {
                 // Use requestAnimationFrame to defer state update
                 requestAnimationFrame(() => {
-                    setCollapsedGroups(prev => {
-                        const next = new Set(prev);
-                        next.delete(activeGroup.id);
-                        return next;
-                    });
+                    setExpandedGroup(activeGroup);
                 });
             }
         }
-    }, [location.pathname, collapsedGroups]);
+    }, [location.pathname, expandedGroup]);
 
+    // Toggle group - accordion behavior (clicking expanded group collapses it)
     const toggleGroup = (groupId: string) => {
-        setCollapsedGroups(prev => {
-            const next = new Set(prev);
-            if (next.has(groupId)) {
-                next.delete(groupId);
-            } else {
-                next.add(groupId);
-            }
-            return next;
-        });
+        setExpandedGroup(prev => prev === groupId ? null : groupId);
     };
 
     // Filter groups and items based on permissions
@@ -244,7 +244,7 @@ export function Sidebar() {
             {/* Navigation - Scrollable */}
             <nav className="w-full flex-1 min-h-0 px-3 overflow-y-auto scrollbar-thin scrollbar-thumb-white/10 scrollbar-track-transparent">
                 {visibleGroups.map((group, groupIndex) => {
-                    const isCollapsed = collapsedGroups.has(group.id);
+                    const isExpanded = expandedGroup === group.id;
                     const hasActiveItem = group.items.some(item => 
                         location.pathname === item.href || location.pathname.startsWith(item.href + '/')
                     );
@@ -273,7 +273,7 @@ export function Sidebar() {
                                 </span>
                                 <ChevronDown className={cn(
                                     "w-3.5 h-3.5 transition-transform duration-200",
-                                    isCollapsed && "-rotate-90",
+                                    !isExpanded && "-rotate-90",
                                     !isSidebarOpen && "hidden"
                                 )} />
                                 {group.adminOnly && (
@@ -287,7 +287,7 @@ export function Sidebar() {
                             {/* Group Items */}
                             <div className={cn(
                                 "overflow-hidden transition-all duration-200",
-                                isCollapsed && isSidebarOpen ? "max-h-0 opacity-0" : "max-h-[500px] opacity-100"
+                                !isExpanded && isSidebarOpen ? "max-h-0 opacity-0" : "max-h-[500px] opacity-100"
                             )}>
                                 <div className="space-y-0.5 py-1">
                                     {group.items.map((item) => (
