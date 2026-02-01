@@ -47,7 +47,7 @@ $Result = @{
 }
 
 try {
-    Write-StructuredLog -Level Info -CorrelationId $CorrelationId -Message "Starting SCCM content distribution repair" -Properties @{
+    Write-StructuredLog -Level Info -CorrelationId $CorrelationId -Message "Starting SCCM content distribution repair" -Metadata @{
         PackageId = $PackageId
         DistributionPoint = $DistributionPoint
     }

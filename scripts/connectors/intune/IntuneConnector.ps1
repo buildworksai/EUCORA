@@ -282,8 +282,11 @@ function Get-IntuneDeploymentStatus {
     # Acquire OAuth2 token
     $accessToken = Get-ConnectorAuthToken -ConnectorName 'intune' -CorrelationId $CorrelationId
 
+    # Sanitize CorrelationId for OData filter (escape single quotes)
+    $sanitizedCorrelationId = $CorrelationId -replace "'", "''"
+
     # Search for apps with correlation ID
-    $filter = "contains(notes,'$CorrelationId')"
+    $filter = "contains(notes,'$sanitizedCorrelationId')"
     $searchUri = Get-EndpointConfig -Service "intune" -Endpoint "mobile_apps_filter" -Parameters @{filter = $filter}
     $headers = @{
         Authorization = "Bearer $accessToken"

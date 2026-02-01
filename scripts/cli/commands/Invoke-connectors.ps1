@@ -21,10 +21,19 @@ param(
 Set-StrictMode -Version Latest
 $ErrorActionPreference = 'Stop'
 . "$PSScriptRoot/../../connectors/ConnectorManager.ps1"
+. "$PSScriptRoot/../../utilities/common/Get-CorrelationId.ps1"
 . "$PSScriptRoot/../../utilities/logging/Write-StructuredLog.ps1"
 
-$statuses = Test-ConnectorConnection -AuthToken $AuthToken
-Write-StructuredLog -Level 'Info' -Message 'Connectors command executed' -CorrelationId (Get-CorrelationId -Type uuid) `
-    -Metadata @{ count = $statuses.Count }
+try {
+    $statuses = Test-ConnectorConnection -AuthToken $AuthToken
+    $correlationId = Get-CorrelationId -Type uuid
+    Write-StructuredLog -Level 'Info' -Message 'Connectors command executed' -CorrelationId $correlationId `
+        -Metadata @{ count = $statuses.Count }
 
-return $statuses
+    return $statuses
+    exit 0
+} catch {
+    Write-StructuredLog -Level 'Error' -Message "Connectors command failed: $($_.Exception.Message)" -CorrelationId (Get-CorrelationId -Type uuid) `
+        -Metadata @{ error = $_.Exception.Message; stack_trace = $_.ScriptStackTrace }
+    exit 1
+}

@@ -36,11 +36,19 @@ $ErrorActionPreference = 'Stop'
 . "$PSScriptRoot/../../utilities/common/Get-CorrelationId.ps1"
 . "$PSScriptRoot/../../utilities/logging/Write-StructuredLog.ps1"
 
-$DeploymentIntent = Resolve-Hashtable -Input $DeploymentIntent
-$correlationId = if ($CorrelationId) { $CorrelationId } else { Get-CorrelationId -Type deployment }
-$result = Publish-Application -DeploymentIntent $DeploymentIntent -CorrelationId $correlationId
+try {
+    $DeploymentIntent = Resolve-Hashtable -Input $DeploymentIntent
+    $correlationId = if ($CorrelationId) { $CorrelationId } else { Get-CorrelationId -Type deployment }
+    $result = Publish-Application -DeploymentIntent $DeploymentIntent -CorrelationId $correlationId
 
-Write-StructuredLog -Level 'Info' -Message 'Deploy command executed' -CorrelationId $correlationId `
-    -Metadata @{ deployment_intent = $DeploymentIntent; command = 'deploy' }
+    Write-StructuredLog -Level 'Info' -Message 'Deploy command executed' -CorrelationId $correlationId `
+        -Metadata @{ deployment_intent = $DeploymentIntent; command = 'deploy' }
 
-return $result
+    return $result
+    exit 0
+} catch {
+    $correlationId = if ($CorrelationId) { $CorrelationId } else { Get-CorrelationId -Type deployment }
+    Write-StructuredLog -Level 'Error' -Message "Deploy command failed: $($_.Exception.Message)" -CorrelationId $correlationId `
+        -Metadata @{ error = $_.Exception.Message; stack_trace = $_.ScriptStackTrace }
+    exit 1
+}

@@ -12,26 +12,40 @@ from django.utils import timezone
 logger = logging.getLogger(__name__)
 
 
-@shared_task(name="apps.event_store.tasks.cleanup_old_events")
-def cleanup_old_events():
+@shared_task(
+    name="apps.event_store.tasks.cleanup_old_events",
+    bind=True,
+    max_retries=3,
+    soft_time_limit=600,
+    time_limit=660,
+    autoretry_for=(Exception,),
+    retry_backoff=True,
+    retry_backoff_max=600,
+    retry_jitter=True,
+)
+def cleanup_old_events(self):
     """
     Cleanup old events based on retention policy.
 
     Note: Event store is append-only, so this task should only archive,
     not delete. Actual deletion requires CAB approval and compliance review.
     """
-    from apps.event_store.models import DeploymentEvent
+    try:
+        from apps.event_store.models import DeploymentEvent
 
-    # Retention policy: Keep events for 7 years (compliance requirement)
-    # This task only logs statistics, actual archival handled by compliance team
-    retention_date = timezone.now() - timedelta(days=2555)  # ~7 years
+        # Retention policy: Keep events for 7 years (compliance requirement)
+        # This task only logs statistics, actual archival handled by compliance team
+        retention_date = timezone.now() - timedelta(days=2555)  # ~7 years
 
-    old_events_count = DeploymentEvent.objects.filter(created_at__lt=retention_date).count()
+        old_events_count = DeploymentEvent.objects.filter(created_at__lt=retention_date).count()
 
-    logger.info(
-        f"Event cleanup check: {old_events_count} events older than retention period",
-        extra={"retention_date": retention_date.isoformat()},
-    )
+        logger.info(
+            f"Event cleanup check: {old_events_count} events older than retention period",
+            extra={"retention_date": retention_date.isoformat()},
+        )
 
-    # In production, this would trigger archival workflow, not deletion
-    return {"old_events_count": old_events_count, "retention_date": retention_date.isoformat()}
+        # In production, this would trigger archival workflow, not deletion
+        return {"old_events_count": old_events_count, "retention_date": retention_date.isoformat()}
+    except Exception as e:
+        logger.error(f"Event cleanup failed: {e}", exc_info=True)
+        raise

@@ -14,7 +14,16 @@ from apps.integrations.services import get_integration_service
 logger = logging.getLogger(__name__)
 
 
-@shared_task(bind=True, max_retries=3)
+@shared_task(
+    bind=True,
+    max_retries=3,
+    soft_time_limit=600,
+    time_limit=660,
+    autoretry_for=(Exception,),
+    retry_backoff=True,
+    retry_backoff_max=600,
+    retry_jitter=True,
+)
 def sync_external_system(self, system_id: str):
     """
     Background task to sync data from external system.
@@ -123,19 +132,51 @@ def sync_external_system(self, system_id: str):
         return {"status": "failed", "error": str(e)}
 
 
-@shared_task
-def sync_all_integrations():
+@shared_task(
+    bind=True,
+    max_retries=3,
+    soft_time_limit=300,
+    time_limit=330,
+    autoretry_for=(Exception,),
+    retry_backoff=True,
+    retry_backoff_max=600,
+    retry_jitter=True,
+)
+def sync_all_integrations(self):
     """
     Periodic task to sync all enabled integrations.
 
     This task is scheduled by Celery Beat to run periodically.
     """
-    enabled_systems = ExternalSystem.objects.filter(is_enabled=True, is_demo=False)
+    try:
+        enabled_systems = ExternalSystem.objects.filter(is_enabled=True, is_demo=False)
+        system_count = enabled_systems.count()
 
-    logger.info(f"Starting sync for {enabled_systems.count()} enabled integrations")
+        logger.info(f"Starting sync for {system_count} enabled integrations")
 
-    for system in enabled_systems:
-        # Queue individual sync tasks
-        sync_external_system.delay(str(system.id))
+        queued_count = 0
+        failed_count = 0
 
-    return {"status": "queued", "count": enabled_systems.count()}
+        for system in enabled_systems:
+            try:
+                # Queue individual sync tasks
+                sync_external_system.delay(str(system.id))
+                queued_count += 1
+            except Exception as e:
+                logger.error(f"Failed to queue sync for system {system.id}: {e}", exc_info=True)
+                failed_count += 1
+
+        logger.info(
+            f"Sync queueing completed: {queued_count} queued, {failed_count} failed",
+            extra={"queued": queued_count, "failed": failed_count},
+        )
+
+        return {
+            "status": "completed",
+            "queued": queued_count,
+            "failed": failed_count,
+            "total": system_count,
+        }
+    except Exception as e:
+        logger.error(f"sync_all_integrations failed: {e}", exc_info=True)
+        raise

@@ -68,7 +68,6 @@ export default function AdminDemoData() {
         toast.success('Demo data seeding completed');
       }
     } catch (error) {
-      console.error('Seeding error:', error);
       const errorMessage = error instanceof Error ? error.message : 'Failed to seed demo data';
       toast.error(errorMessage);
       // Refetch anyway to show current state
@@ -99,7 +98,6 @@ export default function AdminDemoData() {
         toast.warning(`Demo mode toggle may not have applied. Current state: ${result?.demo_mode_enabled}`);
       }
     } catch (error) {
-      console.error('Demo mode toggle error:', error);
       const errorMessage = error instanceof Error ? error.message : 'Failed to update demo mode';
       toast.error(errorMessage);
       // Refetch anyway to get current state

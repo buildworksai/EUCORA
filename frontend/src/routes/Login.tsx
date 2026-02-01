@@ -68,13 +68,17 @@ export default function Login() {
   };
 
   const fillDemoCredentials = () => {
+    const isProduction = import.meta.env.PROD;
+    const demoPassword = import.meta.env.VITE_DEMO_PASSWORD || (isProduction ? '' : 'admin@134');
     setValue('email', 'demo@eucora.com');
-    setValue('password', import.meta.env.VITE_DEMO_PASSWORD || 'admin@134');
+    setValue('password', demoPassword);
   };
 
   const fillAdminCredentials = () => {
+    const isProduction = import.meta.env.PROD;
+    const demoPassword = import.meta.env.VITE_DEMO_PASSWORD || (isProduction ? '' : 'admin@134');
     setValue('email', 'admin@eucora.com');
-    setValue('password', import.meta.env.VITE_DEMO_PASSWORD || 'admin@134');
+    setValue('password', demoPassword);
   };
 
   return (
@@ -276,12 +280,12 @@ export default function Login() {
                 <div>
                   <p className="font-medium text-gray-300">Admin Access</p>
                   <p>admin@eucora.com</p>
-                  <p>{import.meta.env.VITE_DEMO_PASSWORD || 'admin@134'}</p>
+                  <p>{import.meta.env.VITE_DEMO_PASSWORD || (import.meta.env.PROD ? '' : 'admin@134')}</p>
                 </div>
                 <div>
                   <p className="font-medium text-gray-300">Demo Access</p>
                   <p>demo@eucora.com</p>
-                  <p>{import.meta.env.VITE_DEMO_PASSWORD || 'admin@134'}</p>
+                  <p>{import.meta.env.VITE_DEMO_PASSWORD || (import.meta.env.PROD ? '' : 'admin@134')}</p>
                 </div>
               </div>
             </div>

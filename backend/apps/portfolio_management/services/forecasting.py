@@ -6,13 +6,14 @@ License true-up forecasting service.
 Generates predictions for vendor ELA renewals including true-up quantities
 and costs based on historical consumption trends and growth projections.
 """
+from datetime import timedelta
 from decimal import Decimal
 from typing import Dict
 
 from django.db.models import Avg
 from django.utils import timezone
 
-from apps.license_management.models import LicenseSKU, Vendor
+from apps.license_management.models import ConsumptionSnapshot, LicenseSKU, Vendor
 from apps.portfolio_management.models import LicenseTrueUpForecast, Portfolio
 
 
@@ -80,8 +81,7 @@ def _project_consumption(vendor: Vendor, portfolio: Portfolio, forecast_period: 
     """
     Project future consumption based on historical trends.
 
-    Placeholder implementation - should use historical consumption data
-    and growth trends to predict future consumption.
+    Uses ConsumptionSnapshot data to calculate growth trend and project future consumption.
 
     Args:
         vendor: Vendor instance
@@ -92,10 +92,55 @@ def _project_consumption(vendor: Vendor, portfolio: Portfolio, forecast_period: 
     Returns:
         Projected consumption quantity
     """
-    # TODO: Implement actual projection logic using ConsumptionSnapshot data
-    # Placeholder: assume 10% growth
-    growth_rate = 1.10
-    projected = int(entitled_quantity * growth_rate)
+    # Get SKUs for vendor in portfolio
+    # portfolio_apps = ApplicationOwnership.objects.filter(portfolio=portfolio, is_active=True).values_list(
+    #     "application_id", flat=True
+    # )
+
+    skus = LicenseSKU.objects.filter(vendor=vendor, is_active=True)
+    # Filter SKUs by portfolio applications if possible
+    # For now, use all vendor SKUs
+
+    # Get historical consumption snapshots (last 6 months)
+    six_months_ago = timezone.now() - timedelta(days=180)
+    snapshots = ConsumptionSnapshot.objects.filter(
+        sku__in=skus,
+        reconciled_at__gte=six_months_ago,
+    ).order_by("reconciled_at")
+
+    if not snapshots.exists():
+        # No historical data - use conservative 5% growth
+        return int(entitled_quantity * 1.05)
+
+    # Calculate average consumption from snapshots
+    avg_consumption = snapshots.aggregate(avg=Avg("consumed"))["avg"] or 0
+
+    # Get most recent snapshot
+    latest_snapshot = snapshots.order_by("-reconciled_at").first()
+    current_consumption = latest_snapshot.consumed if latest_snapshot else entitled_quantity
+
+    # Calculate growth rate from historical data
+    if len(snapshots) >= 2:
+        # Simple linear growth calculation
+        first_consumption = snapshots.first().consumed
+        last_consumption = snapshots.last().consumed
+
+        if first_consumption > 0:
+            growth_rate = (last_consumption / first_consumption) ** (1.0 / max(1, len(snapshots) - 1))
+        else:
+            growth_rate = 1.10  # Default 10% growth
+    else:
+        # Not enough data - use average vs current
+        if avg_consumption > 0 and current_consumption > 0:
+            growth_rate = current_consumption / avg_consumption
+        else:
+            growth_rate = 1.10  # Default 10% growth
+
+    # Cap growth rate at reasonable bounds (0.95 to 1.20 = -5% to +20%)
+    growth_rate = max(0.95, min(1.20, growth_rate))
+
+    # Project consumption
+    projected = int(current_consumption * growth_rate)
 
     return projected
 
@@ -175,9 +220,80 @@ def _calculate_confidence_score(vendor: Vendor, portfolio: Portfolio) -> float:
     Returns:
         Confidence score (0.0-1.0)
     """
-    # TODO: Implement actual confidence calculation based on data quality
-    # Placeholder: medium confidence
-    return 0.75
+    # Get SKUs for vendor
+    skus = LicenseSKU.objects.filter(vendor=vendor, is_active=True)
+
+    # Get historical snapshots
+    six_months_ago = timezone.now() - timedelta(days=180)
+    snapshots = ConsumptionSnapshot.objects.filter(
+        sku__in=skus,
+        reconciled_at__gte=six_months_ago,
+    ).order_by("reconciled_at")
+
+    if not snapshots.exists():
+        return 0.3  # Low confidence - no historical data
+
+    snapshot_count = snapshots.count()
+
+    # Factor 1: Data availability (0-0.4 points)
+    # More snapshots = higher confidence
+    if snapshot_count >= 12:
+        data_availability_score = 0.4
+    elif snapshot_count >= 6:
+        data_availability_score = 0.3
+    elif snapshot_count >= 3:
+        data_availability_score = 0.2
+    else:
+        data_availability_score = 0.1
+
+    # Factor 2: Data recency (0-0.3 points)
+    # More recent data = higher confidence
+    latest_snapshot = snapshots.order_by("-reconciled_at").first()
+    if latest_snapshot:
+        days_old = (timezone.now() - latest_snapshot.reconciled_at).days
+        if days_old <= 7:
+            recency_score = 0.3
+        elif days_old <= 30:
+            recency_score = 0.2
+        elif days_old <= 90:
+            recency_score = 0.1
+        else:
+            recency_score = 0.05
+    else:
+        recency_score = 0.0
+
+    # Factor 3: Pattern stability (0-0.3 points)
+    # Stable consumption = higher confidence
+    if snapshot_count >= 3:
+        consumption_values = list(snapshots.values_list("consumed", flat=True))
+        if len(consumption_values) > 1:
+            min_consumption = min(consumption_values)
+            max_consumption = max(consumption_values)
+            avg_consumption = sum(consumption_values) / len(consumption_values)
+
+            if avg_consumption > 0:
+                variation = (max_consumption - min_consumption) / avg_consumption
+                # Lower variation = higher stability score
+                if variation < 0.1:  # <10% variation
+                    stability_score = 0.3
+                elif variation < 0.2:  # <20% variation
+                    stability_score = 0.2
+                elif variation < 0.3:  # <30% variation
+                    stability_score = 0.1
+                else:
+                    stability_score = 0.05
+            else:
+                stability_score = 0.1
+        else:
+            stability_score = 0.1
+    else:
+        stability_score = 0.1
+
+    # Total confidence score
+    confidence = data_availability_score + recency_score + stability_score
+
+    # Ensure score is between 0.0 and 1.0
+    return max(0.0, min(1.0, confidence))
 
 
 def _generate_recommendations(vendor: Vendor, true_up_quantity: int, entitled_quantity: int, risk_level: str) -> Dict:

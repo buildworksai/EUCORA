@@ -84,8 +84,7 @@ export function DocumentUploadDialog({
       setFiles([]);
       setCategoryId('');
       onUploadComplete();
-    } catch (err) {
-      console.error('Upload error:', err);
+    } catch {
       toast.error('Failed to upload documents');
     }
   };

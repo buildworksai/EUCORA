@@ -20,13 +20,22 @@ param(
 )
 Set-StrictMode -Version Latest
 $ErrorActionPreference = 'Stop'
+. "$PSScriptRoot/../../utilities/common/Get-CorrelationId.ps1"
 . "$PSScriptRoot/../../utilities/logging/Write-StructuredLog.ps1"
 . "$PSScriptRoot/../../utilities/common/Get-ConfigValue.ps1"
 
-$versionInfo = @{
-    cli_version = 'v1.0'
-    control_plane_api = Get-ConfigValue -Key 'control_plane.api_url'
-    status = 'Design'
+try {
+    $versionInfo = @{
+        cli_version = 'v1.0'
+        control_plane_api = Get-ConfigValue -Key 'control_plane.api_url'
+        status = 'Design'
+    }
+    $correlationId = Get-CorrelationId -Type uuid
+    Write-StructuredLog -Level 'Info' -Message 'Version command executed' -CorrelationId $correlationId
+    return $versionInfo
+    exit 0
+} catch {
+    Write-StructuredLog -Level 'Error' -Message "Version command failed: $($_.Exception.Message)" -CorrelationId (Get-CorrelationId -Type uuid) `
+        -Metadata @{ error = $_.Exception.Message; stack_trace = $_.ScriptStackTrace }
+    exit 1
 }
-Write-StructuredLog -Level 'Info' -Message 'Version command executed' -CorrelationId (Get-CorrelationId -Type uuid)
-return $versionInfo

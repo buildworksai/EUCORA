@@ -29,30 +29,43 @@ $ErrorActionPreference = 'Stop'
 . "$PSScriptRoot/../../utilities/common/Get-CorrelationId.ps1"
 . "$PSScriptRoot/../../utilities/logging/Write-StructuredLog.ps1"
 
-$EvidencePack = Resolve-Hashtable -Input $EvidencePack
+try {
+    $EvidencePack = Resolve-Hashtable -Input $EvidencePack
 
-$requiredFields = @(
-    'evidence_pack_id',
-    'deployment_intent_id',
-    'artifact',
-    'sbom',
-    'vulnerability_scan',
-    'rollout_plan',
-    'rollback_plan',
-    'test_evidence',
-    'risk_assessment'
-)
+    if ($EvidencePack -isnot [hashtable] -and $EvidencePack -isnot [System.Collections.Hashtable]) {
+        throw "EvidencePack must be a hashtable"
+    }
 
-$missing = $requiredFields | Where-Object { -not $EvidencePack.ContainsKey($_) -or (-not $EvidencePack[$_]) }
+    $requiredFields = @(
+        'evidence_pack_id',
+        'deployment_intent_id',
+        'artifact',
+        'sbom',
+        'vulnerability_scan',
+        'rollout_plan',
+        'rollback_plan',
+        'test_evidence',
+        'risk_assessment'
+    )
 
-if ($missing) {
-    $message = "Evidence pack missing required fields: $($missing -join ', ')"
-    Write-StructuredLog -Level 'Error' -Message $message -CorrelationId (Get-CorrelationId -Type evidence)
-    throw $message
-}
+    $missing = $requiredFields | Where-Object { -not $EvidencePack.ContainsKey($_) -or (-not $EvidencePack[$_]) }
 
-Write-StructuredLog -Level 'Info' -Message 'Evidence pack validation passed' -CorrelationId (Get-CorrelationId -Type evidence)
-return @{
-    status = 'evidence_validated'
-    evidence_pack_id = $EvidencePack.evidence_pack_id
+    if ($missing) {
+        $message = "Evidence pack missing required fields: $($missing -join ', ')"
+        $correlationId = Get-CorrelationId -Type evidence
+        Write-StructuredLog -Level 'Error' -Message $message -CorrelationId $correlationId
+        throw $message
+    }
+
+    $correlationId = Get-CorrelationId -Type evidence
+    Write-StructuredLog -Level 'Info' -Message 'Evidence pack validation passed' -CorrelationId $correlationId
+    return @{
+        status = 'evidence_validated'
+        evidence_pack_id = $EvidencePack.evidence_pack_id
+    }
+    exit 0
+} catch {
+    Write-StructuredLog -Level 'Error' -Message "Evidence pack validation failed: $($_.Exception.Message)" -CorrelationId (Get-CorrelationId -Type evidence) `
+        -Metadata @{ error = $_.Exception.Message; stack_trace = $_.ScriptStackTrace }
+    exit 1
 }

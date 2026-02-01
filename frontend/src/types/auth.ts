@@ -119,12 +119,22 @@ export const DEFAULT_PERMISSIONS: Record<UserRole, Permission[]> = {
   ],
 };
 
-// Mock users for development
+// Mock users for development only
+const isProduction = import.meta.env.PROD;
+const DEMO_PASSWORD = import.meta.env.VITE_DEMO_PASSWORD;
+
+if (isProduction && import.meta.env.VITE_USE_MOCK_AUTH === 'true' && !DEMO_PASSWORD) {
+  throw new Error(
+    'VITE_DEMO_PASSWORD is required when VITE_USE_MOCK_AUTH=true in production. ' +
+    'Mock authentication should not be enabled in production.'
+  );
+}
+
 export const MOCK_USERS: Record<string, User & { password: string }> = {
   'admin@eucora.com': {
     id: '1',
     email: 'admin@eucora.com',
-    password: import.meta.env.VITE_DEMO_PASSWORD || 'admin@134',
+    password: DEMO_PASSWORD || (isProduction ? '' : 'admin@134'),
     firstName: 'System',
     lastName: 'Administrator',
     role: 'admin',
@@ -139,7 +149,7 @@ export const MOCK_USERS: Record<string, User & { password: string }> = {
   'demo@eucora.com': {
     id: '2',
     email: 'demo@eucora.com',
-    password: import.meta.env.VITE_DEMO_PASSWORD || 'admin@134',
+    password: DEMO_PASSWORD || (isProduction ? '' : 'admin@134'),
     firstName: 'Demo',
     lastName: 'User',
     role: 'demo',

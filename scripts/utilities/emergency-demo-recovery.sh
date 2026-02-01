@@ -4,45 +4,69 @@
 # Emergency Demo Recovery Script
 # Use this when demos break during customer presentations
 
-set -e
+set -euo pipefail
+
+# Cleanup function
+cleanup() {
+    local exit_code=$?
+    if [ $exit_code -ne 0 ]; then
+        echo "Error: Emergency recovery failed with exit code $exit_code" >&2
+    fi
+    exit $exit_code
+}
+
+# Set trap for cleanup
+trap cleanup EXIT ERR
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 PROJECT_ROOT="$(cd "$SCRIPT_DIR/../.." && pwd)"
-BACKEND_DIR="$PROJECT_ROOT/backend"
+BACKEND_DIR="${PROJECT_ROOT}/backend"
 
 echo "🚨 EMERGENCY DEMO RECOVERY"
 echo "=========================="
 echo ""
 
+# Validate paths
+if [ ! -d "${BACKEND_DIR}" ]; then
+    echo "Error: Backend directory not found: ${BACKEND_DIR}" >&2
+    exit 1
+fi
+
 # Check if we're in Docker or local environment
-if [ -f /.dockerenv ] || [ -n "$DOCKER_CONTAINER" ]; then
+if [ -f /.dockerenv ] || [ -n "${DOCKER_CONTAINER:-}" ]; then
     PYTHON_CMD="python"
     MANAGE_PY="manage.py"
     echo "📦 Running in Docker container"
 else
     PYTHON_CMD="python3"
-    MANAGE_PY="$BACKEND_DIR/manage.py"
+    MANAGE_PY="${BACKEND_DIR}/manage.py"
     echo "💻 Running in local environment"
 
-    if [ -d "$BACKEND_DIR/venv" ]; then
-        source "$BACKEND_DIR/venv/bin/activate"
-    elif [ -d "$PROJECT_ROOT/venv" ]; then
-        source "$PROJECT_ROOT/venv/bin/activate"
+    if [ -d "${BACKEND_DIR}/venv" ]; then
+        source "${BACKEND_DIR}/venv/bin/activate"
+    elif [ -d "${PROJECT_ROOT}/venv" ]; then
+        source "${PROJECT_ROOT}/venv/bin/activate"
     fi
 fi
 
-cd "$BACKEND_DIR"
+cd "${BACKEND_DIR}"
+
+# Validate manage.py exists
+if [ ! -f "${MANAGE_PY}" ]; then
+    echo "Error: manage.py not found at ${MANAGE_PY}" >&2
+    exit 1
+fi
 
 # Check if Django is available
-if ! $PYTHON_CMD -c "import django" 2>/dev/null; then
-    echo "❌ Error: Django is not installed"
-    echo "   Use Docker: docker-compose exec eucora-api bash -c 'python manage.py shell'"
+if ! "${PYTHON_CMD}" -c "import django" 2>/dev/null; then
+    echo "❌ Error: Django is not installed" >&2
+    echo "   Use Docker: docker-compose exec eucora-api bash -c 'python manage.py shell'" >&2
     exit 1
 fi
 
 echo ""
 echo "Step 1: Checking database connection..."
-if ! $PYTHON_CMD -c "
+if ! timeout 30 "${PYTHON_CMD}" -c "
 import django
 import os
 os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'config.settings.development')
@@ -51,13 +75,13 @@ from django.db import connection
 connection.ensure_connection()
 print('✅ Database connected')
 " 2>&1; then
-    echo "❌ Database connection failed!"
+    echo "❌ Database connection failed!" >&2
     exit 1
 fi
 
 echo ""
 echo "Step 2: Checking demo data status..."
-$PYTHON_CMD "$MANAGE_PY" shell << 'EOF'
+timeout 60 "${PYTHON_CMD}" "${MANAGE_PY}" shell << 'EOF'
 import sys
 from apps.core.demo_data import demo_data_stats
 from apps.core.utils import get_demo_mode_enabled
@@ -90,10 +114,10 @@ EOF
 
 EXIT_CODE=$?
 
-if [ $EXIT_CODE -eq 1 ]; then
+if [ ${EXIT_CODE} -eq 1 ]; then
     echo ""
     echo "Step 3: Seeding minimum demo data (fast recovery)..."
-    $PYTHON_CMD "$MANAGE_PY" seed_demo_data \
+    timeout 300 "${PYTHON_CMD}" "${MANAGE_PY}" seed_demo_data \
         --assets 100 \
         --applications 10 \
         --deployments 20 \
@@ -101,29 +125,29 @@ if [ $EXIT_CODE -eq 1 ]; then
         --events 100 \
         --batch-size 50 \
         || {
-            echo "❌ Seeding failed, trying smaller batch..."
-            $PYTHON_CMD "$MANAGE_PY" seed_demo_data \
+            echo "❌ Seeding failed, trying smaller batch..." >&2
+            timeout 300 "${PYTHON_CMD}" "${MANAGE_PY}" seed_demo_data \
                 --assets 50 \
                 --applications 5 \
                 --deployments 10 \
                 --users 3 \
                 --events 50 \
                 --batch-size 25 \
-                || echo "⚠️  Seeding partially failed, but continuing..."
+                || echo "⚠️  Seeding partially failed, but continuing..." >&2
         }
-elif [ $EXIT_CODE -eq 2 ]; then
+elif [ ${EXIT_CODE} -eq 2 ]; then
     echo ""
     echo "Step 3: Enabling demo mode..."
-    $PYTHON_CMD "$MANAGE_PY" shell -c "
+    timeout 30 "${PYTHON_CMD}" "${MANAGE_PY}" shell -c "
 from apps.core.utils import set_demo_mode_enabled
 set_demo_mode_enabled(True)
 print('✅ Demo mode enabled')
-" || echo "⚠️  Failed to enable demo mode"
+" || echo "⚠️  Failed to enable demo mode" >&2
 fi
 
 echo ""
 echo "Step 4: Final verification..."
-$PYTHON_CMD "$MANAGE_PY" shell << 'EOF'
+timeout 60 "${PYTHON_CMD}" "${MANAGE_PY}" shell << 'EOF'
 from apps.core.demo_data import demo_data_stats
 from apps.core.utils import get_demo_mode_enabled
 
@@ -155,3 +179,4 @@ echo "Next steps:"
 echo "  1. Check health: curl http://localhost:8000/health/demo-ready"
 echo "  2. Access admin: http://localhost:5173/admin/demo-data"
 echo "  3. If issues persist, check logs: docker-compose logs eucora-api"
+exit 0

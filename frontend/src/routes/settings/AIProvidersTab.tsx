@@ -95,8 +95,7 @@ export default function AIProvidersTab() {
         is_default: config.is_default,
       },
       {
-        onSuccess: (data) => {
-          console.log('Provider configured successfully:', data);
+        onSuccess: () => {
           toast.success(`${providerConfig.name} configuration saved`);
           setProviderConfigs((prev) => ({
             ...prev,
@@ -112,7 +111,6 @@ export default function AIProvidersTab() {
             }
             return 'Failed to save configuration';
           };
-          console.error('Failed to save provider:', error);
           const errorMessage = getErrorMessage(error);
           toast.error(`${providerConfig.name}: ${errorMessage}`);
         },

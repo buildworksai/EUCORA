@@ -382,9 +382,12 @@ function Get-SccmDeploymentStatus {
 
     $config = Get-ConnectorConfig -Name 'sccm'
 
+    # Sanitize CorrelationId for OData filter (escape single quotes)
+    $sanitizedCorrelationId = $CorrelationId -replace "'", "''"
+
     # Search for deployments with correlation ID in assignment name
     $baseUrl = $config.api_url.TrimEnd('/')
-    $filter = "contains(AssignmentName,'$CorrelationId')"
+    $filter = "contains(AssignmentName,'$sanitizedCorrelationId')"
     $searchPath = Get-EndpointConfig -Service "sccm" -Endpoint "deployments_filter" -Parameters @{filter = $filter}
     $searchUri = "$baseUrl$searchPath"
     $headers = Get-SccmAuthHeaders -CorrelationId $CorrelationId
@@ -517,9 +520,12 @@ function Get-SccmTargetDevices {
             return @()
         }
 
+        # Sanitize collectionId for OData filter (escape single quotes)
+        $sanitizedCollectionId = $collectionId -replace "'", "''"
+
         # Query collection members
         $baseUrl = $config.api_url.TrimEnd('/')
-        $filter = "CollectionID eq '$collectionId'"
+        $filter = "CollectionID eq '$sanitizedCollectionId'"
         $membersPath = Get-EndpointConfig -Service "sccm" -Endpoint "collection_members" -Parameters @{filter = $filter}
         $membersUri = "$baseUrl$membersPath"
         $headers = Get-SccmAuthHeaders -CorrelationId $testCid

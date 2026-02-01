@@ -36,7 +36,11 @@ class TestVulnerabilityScannerAPI:
         )
         response = authenticated_client.get("/api/secops/scanners/")
         assert response.status_code == 200
-        assert len(response.data) == 1
+        # Handle paginated response
+        if isinstance(response.data, dict) and "results" in response.data:
+            assert len(response.data["results"]) == 1
+        else:
+            assert len(response.data) == 1
 
     def test_create_scanner(self, authenticated_client):
         """Test creating a scanner."""

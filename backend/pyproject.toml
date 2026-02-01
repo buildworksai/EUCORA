@@ -58,6 +58,7 @@ dependencies = [
     "requests>=2.32.4,<3.0",  # Updated from 2.31.0 to fix CVE-2024-35195, CVE-2024-47081
     "httpx~=0.28.0",  # Async HTTP client
     "httpx-ntlm~=1.4.0",  # NTLM auth for 1E DEX integration
+    "requests-ntlm~=1.2.0",  # NTLM auth for SCCM connector (synchronous)
     # Date/Time Utilities
     "python-dateutil~=2.8.2",
     # Utilities

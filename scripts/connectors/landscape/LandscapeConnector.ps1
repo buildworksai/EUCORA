@@ -322,7 +322,7 @@ function Get-LandscapeDeploymentStatus {
         status = 'queried'
         correlation_id = $CorrelationId
         profile_id = $profileId
-        profile_title = $profile.title
+        profile_title = $packageProfileResult.title
         activity_id = $activityId
         success_count = $successCount
         failure_count = $failureCount

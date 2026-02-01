@@ -385,8 +385,11 @@ function Get-JamfDeploymentStatus {
         return $response
     }
 
+    # Escape regex special characters in CorrelationId
+    $escapedCorrelationId = [regex]::Escape($CorrelationId)
+
     # Find policy matching correlation ID
-    $matchingPolicy = $response.policies | Where-Object { $_.name -match $CorrelationId }
+    $matchingPolicy = $response.policies | Where-Object { $_.name -match $escapedCorrelationId }
 
     if (-not $matchingPolicy) {
         return @{

@@ -40,10 +40,18 @@ $ErrorActionPreference = 'Stop'
 . "$PSScriptRoot/../../utilities/common/Get-CorrelationId.ps1"
 . "$PSScriptRoot/../../utilities/logging/Write-StructuredLog.ps1"
 
-$correlationId = if ($CorrelationId) { $CorrelationId } else { Get-CorrelationId -Type deployment }
-$result = Remove-Application -ApplicationId $ApplicationId -CorrelationId $correlationId -ConnectorName $Connector
+try {
+    $correlationId = if ($CorrelationId) { $CorrelationId } else { Get-CorrelationId -Type deployment }
+    $result = Remove-Application -ApplicationId $ApplicationId -CorrelationId $correlationId -ConnectorName $Connector
 
-Write-StructuredLog -Level 'Warning' -Message 'Rollback command executed' -CorrelationId $correlationId `
-    -Metadata @{ application_id = $ApplicationId; connector = $Connector }
+    Write-StructuredLog -Level 'Warning' -Message 'Rollback command executed' -CorrelationId $correlationId `
+        -Metadata @{ application_id = $ApplicationId; connector = $Connector }
 
-return $result
+    return $result
+    exit 0
+} catch {
+    $correlationId = if ($CorrelationId) { $CorrelationId } else { Get-CorrelationId -Type deployment }
+    Write-StructuredLog -Level 'Error' -Message "Rollback command failed: $($_.Exception.Message)" -CorrelationId $correlationId `
+        -Metadata @{ error = $_.Exception.Message; stack_trace = $_.ScriptStackTrace; application_id = $ApplicationId }
+    exit 1
+}

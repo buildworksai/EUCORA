@@ -26,20 +26,29 @@ param(
 )
 Set-StrictMode -Version Latest
 $ErrorActionPreference = 'Stop'
+. "$PSScriptRoot/../../utilities/common/Get-CorrelationId.ps1"
 . "$PSScriptRoot/../../utilities/logging/Write-StructuredLog.ps1"
 
-$ringFilter = if ($Ring) { $Ring } else { 'ring-1-canary' }
-$entries = 1..3 | ForEach-Object {
-    [ordered]@{
-        timestamp = (Get-Date).AddMinutes(-($_ * 5)).ToString('o')
-        level = 'Info'
-        message = "Ring log entry #$_"
-        ring = $ringFilter
-        correlation_id = Get-CorrelationId -Type deployment
+try {
+    $ringFilter = if ($Ring) { $Ring } else { 'ring-1-canary' }
+    $entries = 1..3 | ForEach-Object {
+        [ordered]@{
+            timestamp = (Get-Date).AddMinutes(-($_ * 5)).ToString('o')
+            level = 'Info'
+            message = "Ring log entry #$_"
+            ring = $ringFilter
+            correlation_id = Get-CorrelationId -Type deployment
+        }
     }
+
+    $correlationId = Get-CorrelationId -Type evidence
+    Write-StructuredLog -Level 'Info' -Message 'Logs command executed' -CorrelationId $correlationId `
+        -Metadata @{ ring = $ringFilter; entries = $entries.Count }
+
+    return $entries
+    exit 0
+} catch {
+    Write-StructuredLog -Level 'Error' -Message "Logs command failed: $($_.Exception.Message)" -CorrelationId (Get-CorrelationId -Type evidence) `
+        -Metadata @{ error = $_.Exception.Message; stack_trace = $_.ScriptStackTrace; ring = $Ring }
+    exit 1
 }
-
-Write-StructuredLog -Level 'Info' -Message 'Logs command executed' -CorrelationId (Get-CorrelationId -Type evidence) `
-    -Metadata @{ ring = $ringFilter; entries = $entries.Count }
-
-return $entries

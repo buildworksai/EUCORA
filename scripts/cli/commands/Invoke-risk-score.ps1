@@ -30,16 +30,34 @@ $ErrorActionPreference = 'Stop'
 . "$PSScriptRoot/../../utilities/common/Get-CorrelationId.ps1"
 . "$PSScriptRoot/../../utilities/logging/Write-StructuredLog.ps1"
 
-$DeploymentIntent = Resolve-Hashtable -Input $DeploymentIntent
-$factors = if ($DeploymentIntent.ContainsKey('Factors')) { $DeploymentIntent.Factors } else { @{} }
-$riskScore = Calculate-RiskScore -Factors $factors
-$model = Get-RiskModel
+try {
+    $DeploymentIntent = Resolve-Hashtable -Input $DeploymentIntent
 
-Write-StructuredLog -Level 'Info' -Message 'Risk score computed' -CorrelationId (Get-CorrelationId -Type uuid) `
-    -Metadata @{ factors = $factors; score = $riskScore }
+    # Validate Factors structure
+    if ($DeploymentIntent.ContainsKey('Factors')) {
+        if ($DeploymentIntent.Factors -isnot [hashtable] -and $DeploymentIntent.Factors -isnot [System.Collections.Hashtable]) {
+            throw "Factors must be a hashtable"
+        }
+        $factors = $DeploymentIntent.Factors
+    } else {
+        $factors = @{}
+    }
 
-return @{
-    risk_score = $riskScore
-    version = $model.version
-    source = 'risk_model_v1.0'
+    $riskScore = Calculate-RiskScore -Factors $factors
+    $model = Get-RiskModel
+    $correlationId = Get-CorrelationId -Type uuid
+
+    Write-StructuredLog -Level 'Info' -Message 'Risk score computed' -CorrelationId $correlationId `
+        -Metadata @{ factors = $factors; score = $riskScore }
+
+    return @{
+        risk_score = $riskScore
+        version = $model.version
+        source = 'risk_model_v1.0'
+    }
+    exit 0
+} catch {
+    Write-StructuredLog -Level 'Error' -Message "Risk score calculation failed: $($_.Exception.Message)" -CorrelationId (Get-CorrelationId -Type uuid) `
+        -Metadata @{ error = $_.Exception.Message; stack_trace = $_.ScriptStackTrace }
+    exit 1
 }

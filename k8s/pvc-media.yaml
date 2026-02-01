@@ -1,0 +1,14 @@
+# SPDX-License-Identifier: Apache-2.0
+# Copyright (c) 2026 BuildWorks.AI
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: eucora-media-pvc
+  namespace: eucora
+spec:
+  accessModes:
+    - ReadWriteMany
+  resources:
+    requests:
+      storage: 50Gi
+  storageClassName: standard

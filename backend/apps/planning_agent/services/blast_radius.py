@@ -62,18 +62,64 @@ class BlastRadiusCalculator:
 
     def _extract_departments(self, devices: List[RingDevice]) -> List[str]:
         """Extract unique departments from devices."""
-        # TODO: Extract from user profiles or device metadata
-        return ["Engineering", "Sales", "Support", "Operations"]
+        departments = set()
+        for device in devices:
+            # Try to get department from device metadata
+            if hasattr(device, "department") and device.department:
+                departments.add(device.department)
+            elif hasattr(device, "metadata") and isinstance(device.metadata, dict):
+                dept = device.metadata.get("department")
+                if dept:
+                    departments.add(dept)
+
+        if not departments:
+            # Fallback to common departments if no data available
+            return ["Engineering", "Sales", "Support", "Operations"]
+
+        return sorted(list(departments))
 
     def _extract_regions(self, devices: List[RingDevice]) -> List[str]:
         """Extract unique regions from devices."""
-        # TODO: Extract from device metadata
-        return ["US-East", "US-West", "EU-Central"]
+        regions = set()
+        for device in devices:
+            # Try to get region from device metadata
+            if hasattr(device, "region") and device.region:
+                regions.add(device.region)
+            elif hasattr(device, "location") and device.location:
+                regions.add(device.location)
+            elif hasattr(device, "metadata") and isinstance(device.metadata, dict):
+                region = device.metadata.get("region") or device.metadata.get("location")
+                if region:
+                    regions.add(region)
+
+        if not regions:
+            # Fallback to common regions if no data available
+            return ["US-East", "US-West", "EU-Central"]
+
+        return sorted(list(regions))
 
     def _identify_critical_systems(self, devices: List[RingDevice]) -> List[str]:
         """Identify critical systems affected."""
-        # TODO: Identify based on device roles or applications
-        return []
+        critical_systems = set()
+
+        for device in devices:
+            # Check if device is marked as critical
+            if hasattr(device, "criticality") and device.criticality == RingDevice.Criticality.VIP:
+                # Extract system/applications from device
+                if hasattr(device, "applications"):
+                    critical_systems.update(device.applications)
+                elif hasattr(device, "metadata") and isinstance(device.metadata, dict):
+                    apps = device.metadata.get("applications", [])
+                    if isinstance(apps, list):
+                        critical_systems.update(apps)
+
+            # Check device role for critical systems
+            if hasattr(device, "role"):
+                role = device.role
+                if role and "critical" in role.lower():
+                    critical_systems.add(role)
+
+        return sorted(list(critical_systems))
 
     def _calculate_productivity_impact(self, total_users: int, vip_users: int, device_count: int) -> float:
         """

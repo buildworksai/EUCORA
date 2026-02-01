@@ -48,8 +48,8 @@ export default function PolicyConfiguration({ applicationId, versionId }: Policy
           }))
         ),
       });
-    } catch (error) {
-      console.error('Failed to save policy:', error);
+    } catch {
+      // Error already handled by toast notification
     }
   };
 

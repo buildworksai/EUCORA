@@ -1,0 +1,83 @@
+# SPDX-License-Identifier: Apache-2.0
+# Copyright (c) 2026 BuildWorks.AI
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: eucora-web
+  namespace: eucora
+  labels:
+    app: eucora-web
+    component: frontend
+spec:
+  replicas: 2
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 1
+      maxUnavailable: 0
+  selector:
+    matchLabels:
+      app: eucora-web
+  template:
+    metadata:
+      labels:
+        app: eucora-web
+        component: frontend
+    spec:
+      containers:
+      - name: web
+        image: eucora/web:latest
+        imagePullPolicy: Always
+        ports:
+        - containerPort: 80
+          name: http
+        env:
+        - name: VITE_API_URL
+          valueFrom:
+            configMapKeyRef:
+              name: eucora-config
+              key: VITE_API_URL
+        - name: VITE_USE_MOCK_AUTH
+          value: "false"
+        - name: VITE_AZURE_CLIENT_ID
+          valueFrom:
+            secretKeyRef:
+              name: eucora-secrets
+              key: VITE_AZURE_CLIENT_ID
+        - name: VITE_AZURE_TENANT_ID
+          valueFrom:
+            secretKeyRef:
+              name: eucora-secrets
+              key: VITE_AZURE_TENANT_ID
+        - name: VITE_AZURE_REDIRECT_URI
+          valueFrom:
+            configMapKeyRef:
+              name: eucora-config
+              key: VITE_AZURE_REDIRECT_URI
+        resources:
+          requests:
+            memory: "256Mi"
+            cpu: "100m"
+          limits:
+            memory: "512Mi"
+            cpu: "500m"
+        livenessProbe:
+          httpGet:
+            path: /health
+            port: 80
+          initialDelaySeconds: 10
+          periodSeconds: 10
+          timeoutSeconds: 3
+          failureThreshold: 3
+        readinessProbe:
+          httpGet:
+            path: /health
+            port: 80
+          initialDelaySeconds: 5
+          periodSeconds: 5
+          timeoutSeconds: 3
+          failureThreshold: 3
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 101
+        fsGroup: 101

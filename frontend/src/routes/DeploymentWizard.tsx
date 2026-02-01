@@ -92,9 +92,8 @@ export default function DeploymentWizard() {
             });
 
             navigate('/dashboard');
-        } catch (error) {
-            // Error is already handled by the mutation
-            console.error('Failed to create deployment:', error);
+        } catch {
+            // Error is already handled by the mutation and toast notification
         }
     };
 

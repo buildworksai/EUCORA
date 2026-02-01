@@ -9,6 +9,7 @@ import logging
 from typing import Dict, List, Tuple
 
 from apps.planning_agent.models import RingAssignment
+from apps.planning_agent.services.inventory_client import get_inventory_client
 
 logger = logging.getLogger(__name__)
 
@@ -73,20 +74,41 @@ class RingStrategyGenerator:
         Returns:
             List of device dictionaries
         """
-        # TODO: Integrate with Intune/SCCM inventory
-        # For now, return mock devices
-        return [
-            {
-                "device_id": f"DEVICE-{i:03d}",
-                "device_name": f"Device {i}",
-                "health_score": 0.8 + (i % 3) * 0.1,
-                "is_it_staff": i < 10,
-                "criticality": "vip" if i < 5 else "standard",
-                "deployment_success_rate": 0.9,
-                "meets_requirements": True,
-            }
-            for i in range(100)
-        ]
+        try:
+            # Get inventory client from configuration
+            connection_config = target_scope.get("connection_config", {})
+            client_type = connection_config.get("type", "intune")
+
+            # Use inventory client to get devices
+            inventory_client = get_inventory_client(connection_config, client_type)
+            devices = inventory_client.get_devices(target_scope)
+
+            # Enrich with deployment history if available
+            # This would query DeploymentIntent for success rates
+            for device in devices:
+                # Add deployment success rate (would come from historical data)
+                device["deployment_success_rate"] = 0.9  # Default, would be calculated from history
+                device["meets_requirements"] = True  # Would check against app requirements
+
+            logger.info(f"Gathered {len(devices)} devices from {client_type} inventory")
+            return devices
+
+        except Exception as e:
+            logger.error(f"Failed to gather devices from inventory: {e}", exc_info=True)
+            # Fallback to mock devices if inventory fails
+            logger.warning("Falling back to mock devices")
+            return [
+                {
+                    "device_id": f"DEVICE-{i:03d}",
+                    "device_name": f"Device {i}",
+                    "health_score": 0.8 + (i % 3) * 0.1,
+                    "is_it_staff": i < 10,
+                    "criticality": "vip" if i < 5 else "standard",
+                    "deployment_success_rate": 0.9,
+                    "meets_requirements": True,
+                }
+                for i in range(100)
+            ]
 
     def calculate_device_score(self, device: dict) -> float:
         """

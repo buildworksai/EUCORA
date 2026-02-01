@@ -21,10 +21,22 @@ spec:
         app: eucora-celery-beat
         component: scheduler
     spec:
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1000
+        fsGroup: 1000
+        seccompProfile:
+          type: RuntimeDefault
       containers:
       - name: beat
         image: eucora/api:latest
         imagePullPolicy: Always
+        securityContext:
+          allowPrivilegeEscalation: false
+          readOnlyRootFilesystem: false
+          capabilities:
+            drop:
+              - ALL
         command: ["celery", "-A", "config", "beat", "--loglevel=info"]
         envFrom:
         - configMapRef:

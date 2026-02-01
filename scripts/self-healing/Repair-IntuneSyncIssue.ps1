@@ -42,7 +42,7 @@ $Result = @{
 }
 
 try {
-    Write-StructuredLog -Level Info -CorrelationId $CorrelationId -Message "Starting Intune sync repair" -Properties @{
+    Write-StructuredLog -Level Info -CorrelationId $CorrelationId -Message "Starting Intune sync repair" -Metadata @{
         DeviceId = $DeviceId
     }
 

@@ -3,7 +3,19 @@
  */
 import { toast } from 'sonner';
 
-const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000';
+// Validate required environment variables in production
+const isProduction = import.meta.env.PROD;
+const API_BASE_URL = import.meta.env.VITE_API_URL;
+
+if (isProduction && !API_BASE_URL) {
+  throw new Error(
+    'VITE_API_URL environment variable is required in production. ' +
+    'Please set it in your environment configuration.'
+  );
+}
+
+// Fallback to localhost only in development
+const API_BASE_URL_FINAL = API_BASE_URL || (isProduction ? '' : 'http://localhost:8000');
 
 /**
  * Get or generate correlation ID for request tracing.
@@ -57,9 +69,9 @@ async function getCsrfToken(): Promise<string | null> {
       csrfTokenCache = data.csrf_token || null;
       return csrfTokenCache;
     }
-  } catch (error) {
+  } catch {
     // Silently fail - CSRF token might not be needed for GET requests
-    console.debug('Failed to fetch CSRF token:', error);
+    // Logging removed for production security
   }
 
   return null;
@@ -103,7 +115,7 @@ async function apiRequest<T>(
   const normalizedEndpoint = endpoint.startsWith('/') ? endpoint : `/${endpoint}`;
 
   // Get raw base URL (without /api/v1 suffix if present)
-  const rawBaseUrl = API_BASE_URL.replace(/\/api\/v1\/?$/, '');
+  const rawBaseUrl = API_BASE_URL_FINAL.replace(/\/api\/v1\/?$/, '');
 
   // Construct full URL based on endpoint pattern
   let fullUrl: string;
@@ -165,8 +177,8 @@ async function apiRequest<T>(
               window.location.href = '/login';
             }
           }
-        } catch (error) {
-          console.error('Failed to handle 401 error:', error);
+        } catch {
+          // Logging removed for production security - error already handled
         }
         // Don't show toast for 401 - handled by redirect
         throw new Error('Session expired. Please log in again.');

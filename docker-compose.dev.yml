@@ -214,7 +214,7 @@ services:
       - ./frontend:/app
       - /app/node_modules
     ports:
-      - "5173:5173"
+      - "15173:5173"
     environment:
       # API URL - Points to the dockerized backend
       - VITE_API_URL=http://localhost:8000/api/v1
@@ -223,7 +223,7 @@ services:
       # Microsoft Entra ID Configuration (for production)
       - VITE_AZURE_CLIENT_ID=${AZURE_CLIENT_ID:-placeholder-client-id}
       - VITE_AZURE_TENANT_ID=${AZURE_TENANT_ID:-placeholder-tenant-id}
-      - VITE_AZURE_REDIRECT_URI=http://localhost:5173/auth/callback
+      - VITE_AZURE_REDIRECT_URI=http://localhost:15173/auth/callback
       # Application Configuration
       - VITE_APP_NAME=EUCORA
       - VITE_APP_VERSION=1.0.0

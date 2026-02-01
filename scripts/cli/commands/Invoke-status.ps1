@@ -35,16 +35,24 @@ $ErrorActionPreference = 'Stop'
 . "$PSScriptRoot/../../utilities/common/Get-CorrelationId.ps1"
 . "$PSScriptRoot/../../utilities/logging/Write-StructuredLog.ps1"
 
-if (-not $CorrelationId) {
-    $CorrelationId = Get-CorrelationId -Type deployment
+try {
+    if (-not $CorrelationId) {
+        $CorrelationId = Get-CorrelationId -Type deployment
+    }
+
+    if (-not (Test-CorrelationId -CorrelationId $CorrelationId)) {
+        throw "Invalid correlation id: $CorrelationId"
+    }
+
+    $status = Get-DeploymentStatus -CorrelationId $CorrelationId -ConnectorName $Connector
+    Write-StructuredLog -Level 'Info' -Message 'Status command completed' -CorrelationId $CorrelationId `
+        -Metadata @{ status = $status.status_by_connector; connector = $Connector }
+
+    return $status
+    exit 0
+} catch {
+    $correlationId = if ($CorrelationId) { $CorrelationId } else { Get-CorrelationId -Type deployment }
+    Write-StructuredLog -Level 'Error' -Message "Status command failed: $($_.Exception.Message)" -CorrelationId $correlationId `
+        -Metadata @{ error = $_.Exception.Message; stack_trace = $_.ScriptStackTrace }
+    exit 1
 }
-
-if (-not (Test-CorrelationId -CorrelationId $CorrelationId)) {
-    throw "Invalid correlation id: $CorrelationId"
-}
-
-$status = Get-DeploymentStatus -CorrelationId $CorrelationId -ConnectorName $Connector
-Write-StructuredLog -Level 'Info' -Message 'Status command completed' -CorrelationId $CorrelationId `
-    -Metadata @{ status = $status.status_by_connector; connector = $Connector }
-
-return $status

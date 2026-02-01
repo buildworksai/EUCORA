@@ -24,11 +24,17 @@ from typing import Dict, Optional, Tuple
 
 import requests
 from decouple import config
-from requests_ntlm import HttpNtlmAuth
 
 from apps.core.structured_logging import StructuredLogger
 
 logger = logging.getLogger(__name__)
+
+try:
+    from requests_ntlm import HttpNtlmAuth
+except ImportError:
+    # requests_ntlm not installed - SCCM NTLM auth will not be available
+    HttpNtlmAuth = None
+    logger.warning("requests_ntlm not installed. SCCM NTLM authentication will not be available.")
 
 
 class SCCMAuthError(Exception):
@@ -77,7 +83,11 @@ class SCCMAuth:
         """Initialize authentication based on configured method."""
         if self.auth_method == "wia":
             # Windows Integrated Auth - uses current process credentials
-            # Requires python-ntlm or requests-kerberos
+            # Requires requests_ntlm
+            if HttpNtlmAuth is None:
+                raise SCCMAuthError(
+                    "SCCM Windows Integrated Auth requires requests_ntlm. " "Install with: pip install requests-ntlm"
+                )
             self.username = None
             self.password = None
             self.cert_path = None
@@ -138,9 +148,13 @@ class SCCMAuth:
         if self.auth_method == "wia":
             # Windows Integrated Authentication using NTLM
             # Uses current process credentials (requires domain-joined machine)
+            if HttpNtlmAuth is None:
+                raise SCCMAuthError("requests_ntlm not installed. Cannot use Windows Integrated Auth.")
             session.auth = HttpNtlmAuth("", "")  # Empty = use current user
         elif self.auth_method == "basic":
             # NTLM auth with explicit credentials
+            if HttpNtlmAuth is None:
+                raise SCCMAuthError("requests_ntlm not installed. Cannot use NTLM authentication.")
             session.auth = HttpNtlmAuth(self.username, self.password)
         elif self.auth_method == "certificate":
             # Certificate-based authentication

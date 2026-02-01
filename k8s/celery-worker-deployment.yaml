@@ -24,10 +24,22 @@ spec:
         app: eucora-celery-worker
         component: worker
     spec:
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1000
+        fsGroup: 1000
+        seccompProfile:
+          type: RuntimeDefault
       containers:
       - name: worker
         image: eucora/api:latest
         imagePullPolicy: Always
+        securityContext:
+          allowPrivilegeEscalation: false
+          readOnlyRootFilesystem: false
+          capabilities:
+            drop:
+              - ALL
         command: ["celery", "-A", "config", "worker", "--loglevel=info", "--concurrency=4", "--max-tasks-per-child=1000"]
         envFrom:
         - configMapRef:

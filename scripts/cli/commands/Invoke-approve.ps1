@@ -34,14 +34,28 @@ $ErrorActionPreference = 'Stop'
 . "$PSScriptRoot/../../utilities/common/Get-CorrelationId.ps1"
 . "$PSScriptRoot/../../utilities/logging/Write-StructuredLog.ps1"
 
-$DeploymentIntent = Resolve-Hashtable -Input $DeploymentIntent
-$correlationId = if ($CorrelationId) { $CorrelationId } else { Get-CorrelationId -Type cab }
-Write-StructuredLog -Level 'Info' -Message 'Approval recorded' -CorrelationId $correlationId `
-    -Metadata @{ deployment_intent = $DeploymentIntent }
+try {
+    $DeploymentIntent = Resolve-Hashtable -Input $DeploymentIntent
 
-return @{
-    status = 'approved'
-    correlation_id = $correlationId
-    deployment_intent = $DeploymentIntent
-    approved_at = (Get-Date).ToString('o')
+    # Validate DeploymentIntent structure
+    if ($DeploymentIntent -isnot [hashtable] -and $DeploymentIntent -isnot [System.Collections.Hashtable]) {
+        throw "DeploymentIntent must be a hashtable"
+    }
+
+    $correlationId = if ($CorrelationId) { $CorrelationId } else { Get-CorrelationId -Type cab }
+    Write-StructuredLog -Level 'Info' -Message 'Approval recorded' -CorrelationId $correlationId `
+        -Metadata @{ deployment_intent = $DeploymentIntent }
+
+    return @{
+        status = 'approved'
+        correlation_id = $correlationId
+        deployment_intent = $DeploymentIntent
+        approved_at = (Get-Date).ToString('o')
+    }
+    exit 0
+} catch {
+    $correlationId = if ($CorrelationId) { $CorrelationId } else { Get-CorrelationId -Type cab }
+    Write-StructuredLog -Level 'Error' -Message "Approval failed: $($_.Exception.Message)" -CorrelationId $correlationId `
+        -Metadata @{ error = $_.Exception.Message; stack_trace = $_.ScriptStackTrace }
+    exit 1
 }

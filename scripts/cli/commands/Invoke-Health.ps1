@@ -23,5 +23,13 @@ $ErrorActionPreference = 'Stop'
 . "$PSScriptRoot/../../utilities/common/Get-CorrelationId.ps1"
 . "$PSScriptRoot/../../utilities/logging/Write-StructuredLog.ps1"
 
-Write-StructuredLog -Level 'Info' -Message 'Health command executed' -CorrelationId (Get-CorrelationId -Type uuid) -Metadata @{component = 'cli.health'}
-return @{ status = 'healthy'; timestamp = (Get-Date).ToString('o') }
+try {
+    $correlationId = Get-CorrelationId -Type uuid
+    Write-StructuredLog -Level 'Info' -Message 'Health command executed' -CorrelationId $correlationId -Metadata @{component = 'cli.health'}
+    return @{ status = 'healthy'; timestamp = (Get-Date).ToString('o') }
+    exit 0
+} catch {
+    Write-StructuredLog -Level 'Error' -Message "Health command failed: $($_.Exception.Message)" -CorrelationId (Get-CorrelationId -Type uuid) `
+        -Metadata @{ error = $_.Exception.Message; stack_trace = $_.ScriptStackTrace }
+    exit 1
+}

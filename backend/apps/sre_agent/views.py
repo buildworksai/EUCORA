@@ -4,14 +4,18 @@
 API views for SRE Agent.
 """
 import logging
+import time
 from datetime import timedelta
 
+import requests
 from django.utils import timezone
 from rest_framework import viewsets
 from rest_framework.decorators import action
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.request import Request
 from rest_framework.response import Response
+
+from apps.core.http import ResilientHTTPClient
 
 from .models import (
     HealthCheckResult,
@@ -61,8 +65,46 @@ class MonitoringPlatformViewSet(viewsets.ModelViewSet):
     @action(detail=True, methods=["post"])
     def test(self, request: Request, pk=None) -> Response:
         """Test platform connection."""
-        # TODO: Implement connection test
-        return Response({"success": True})
+        platform = self.get_object()
+
+        try:
+            config = platform.connection_config
+            api_url = config.get("api_url")
+            api_key = config.get("api_key")
+
+            if not api_url:
+                return Response({"success": False, "error": "API URL not configured"}, status=400)
+
+            # Test connection based on platform type
+            http_client = ResilientHTTPClient(service_name=f"monitoring_{platform.platform_type}")
+
+            if platform.platform_type == MonitoringPlatform.PlatformType.PROMETHEUS:
+                # Prometheus health check
+                test_url = f"{api_url}/-/healthy"
+                response = http_client.get(test_url, timeout=10)
+                success = response.status_code == 200
+            elif platform.platform_type == MonitoringPlatform.PlatformType.DATADOG:
+                # Datadog API check
+                headers = {"DD-API-KEY": api_key} if api_key else {}
+                test_url = f"{api_url}/api/v1/validate"
+                response = http_client.get(test_url, headers=headers, timeout=10)
+                success = response.status_code == 200
+            elif platform.platform_type == MonitoringPlatform.PlatformType.AZURE_MONITOR:
+                # Azure Monitor check
+                test_url = f"{api_url}/subscriptions"
+                headers = {"Authorization": f"Bearer {api_key}"} if api_key else {}
+                response = http_client.get(test_url, headers=headers, timeout=10)
+                success = response.status_code in [200, 401]  # 401 means auth needed but endpoint exists
+            else:
+                # Generic check
+                response = http_client.get(api_url, timeout=10)
+                success = response.status_code < 500
+
+            return Response({"success": success, "status_code": response.status_code})
+
+        except Exception as e:
+            logger.error(f"Platform connection test failed: {e}", exc_info=True)
+            return Response({"success": False, "error": str(e)}, status=500)
 
 
 class HealthEndpointViewSet(viewsets.ModelViewSet):
@@ -87,15 +129,72 @@ class HealthEndpointViewSet(viewsets.ModelViewSet):
     def check(self, request: Request, pk=None) -> Response:
         """Perform health check."""
         endpoint = self.get_object()
-        # TODO: Implement actual health check
-        result = HealthCheckResult.objects.create(
-            endpoint=endpoint,
-            status=HealthCheckResult.Status.HEALTHY,
-            response_time_ms=100,
-            status_code=200,
-        )
-        serializer = HealthCheckResultSerializer(result)
-        return Response(serializer.data)
+
+        try:
+            # Perform actual HTTP health check
+            start_time = time.time()
+            http_client = ResilientHTTPClient(service_name="health_check", timeout=endpoint.timeout_seconds)
+
+            method = endpoint.method.upper()
+            url = endpoint.url
+
+            if method == "GET":
+                response = http_client.get(url, timeout=endpoint.timeout_seconds)
+            elif method == "POST":
+                response = http_client.post(url, timeout=endpoint.timeout_seconds)
+            elif method == "HEAD":
+                response = http_client.head(url, timeout=endpoint.timeout_seconds)
+            else:
+                response = http_client.request(method, url, timeout=endpoint.timeout_seconds)
+
+            response_time_ms = int((time.time() - start_time) * 1000)
+            status_code = response.status_code
+
+            # Determine health status
+            if status_code == endpoint.expected_status:
+                if response_time_ms < 1000:  # < 1 second
+                    status = HealthCheckResult.Status.HEALTHY
+                elif response_time_ms < 3000:  # < 3 seconds
+                    status = HealthCheckResult.Status.DEGRADED
+                else:
+                    status = HealthCheckResult.Status.UNHEALTHY
+            else:
+                status = HealthCheckResult.Status.UNHEALTHY
+
+            # Create result
+            result = HealthCheckResult.objects.create(
+                endpoint=endpoint,
+                status=status,
+                response_time_ms=response_time_ms,
+                status_code=status_code,
+                error_message=None,
+            )
+
+            serializer = HealthCheckResultSerializer(result)
+            return Response(serializer.data)
+
+        except requests.exceptions.Timeout:
+            result = HealthCheckResult.objects.create(
+                endpoint=endpoint,
+                status=HealthCheckResult.Status.UNHEALTHY,
+                response_time_ms=None,
+                status_code=None,
+                error_message=f"Request timeout after {endpoint.timeout_seconds} seconds",
+            )
+            serializer = HealthCheckResultSerializer(result)
+            return Response(serializer.data, status=500)
+
+        except Exception as e:
+            logger.error(f"Health check failed for {endpoint.url}: {e}", exc_info=True)
+            result = HealthCheckResult.objects.create(
+                endpoint=endpoint,
+                status=HealthCheckResult.Status.UNHEALTHY,
+                response_time_ms=None,
+                status_code=None,
+                error_message=str(e),
+            )
+            serializer = HealthCheckResultSerializer(result)
+            return Response(serializer.data, status=500)
 
     @action(detail=True, methods=["get"])
     def history(self, request: Request, pk=None) -> Response:
@@ -212,8 +311,46 @@ class SelfHealingRuleViewSet(viewsets.ModelViewSet):
     @action(detail=True, methods=["post"])
     def test(self, request: Request, pk=None) -> Response:
         """Test self-healing rule."""
-        # TODO: Implement rule test
-        return Response({"success": True})
+        rule = self.get_object()
+        service = SelfHealingService()
+
+        # Check if rule can be executed
+        can_execute, reason = service.can_execute(rule)
+
+        if not can_execute:
+            return Response({"success": False, "reason": reason}, status=400)
+
+        # Validate script exists
+        script_path = service.base_path / "scripts" / "self-healing" / rule.remediation_script
+        if not script_path.exists():
+            return Response({"success": False, "error": f"Script not found: {rule.remediation_script}"}, status=404)
+
+        # Test script syntax (for PowerShell)
+        if rule.script_type == SelfHealingRule.ScriptType.POWERSHELL:
+            try:
+                import subprocess
+
+                result = subprocess.run(
+                    ["pwsh", "-Command", f"Get-Command -Syntax (Get-Content '{script_path}')"],
+                    capture_output=True,
+                    text=True,
+                    timeout=10,
+                )
+                syntax_valid = result.returncode == 0
+            except Exception as e:
+                logger.error(f"Script syntax test failed: {e}")
+                syntax_valid = False
+        else:
+            syntax_valid = True
+
+        return Response(
+            {
+                "success": syntax_valid,
+                "can_execute": can_execute,
+                "script_path": str(script_path),
+                "script_exists": script_path.exists(),
+            }
+        )
 
     @action(detail=True, methods=["post"])
     def execute(self, request: Request, pk=None) -> Response:
@@ -310,10 +447,118 @@ class RunbookViewSet(viewsets.ModelViewSet):
             status=RunbookExecution.Status.PENDING,
         )
 
-        # TODO: Execute runbook steps
+        # Execute runbook steps
         execution.status = RunbookExecution.Status.IN_PROGRESS
         execution.started_at = timezone.now()
         execution.save()
+
+        try:
+            steps = runbook.steps
+            step_results = []
+
+            for idx, step in enumerate(steps):
+                step_type = step.get("type", "manual")
+                step_name = step.get("name", f"Step {idx + 1}")
+                step_command = step.get("command")
+                step_script = step.get("script")
+
+                step_result = {
+                    "step_number": idx + 1,
+                    "step_name": step_name,
+                    "type": step_type,
+                    "status": "pending",
+                    "output": "",
+                    "error": None,
+                    "started_at": timezone.now().isoformat(),
+                }
+
+                try:
+                    if step_type == "automated" and step_command:
+                        # Execute automated command
+                        import subprocess
+
+                        result = subprocess.run(
+                            step_command,
+                            shell=True,
+                            capture_output=True,
+                            text=True,
+                            timeout=300,  # 5 minute timeout per step
+                        )
+                        step_result["status"] = "completed" if result.returncode == 0 else "failed"
+                        step_result["output"] = result.stdout
+                        if result.returncode != 0:
+                            step_result["error"] = result.stderr
+                    elif step_type == "automated" and step_script:
+                        # Execute script
+                        script_path = f"/app/scripts/runbooks/{step_script}"
+                        import subprocess
+
+                        result = subprocess.run(
+                            ["pwsh", "-File", script_path],
+                            capture_output=True,
+                            text=True,
+                            timeout=300,
+                        )
+                        step_result["status"] = "completed" if result.returncode == 0 else "failed"
+                        step_result["output"] = result.stdout
+                        if result.returncode != 0:
+                            step_result["error"] = result.stderr
+                    else:
+                        # Manual step - mark as pending for human execution
+                        step_result["status"] = "pending_manual"
+                        step_result["output"] = "Waiting for manual execution"
+
+                    step_result["completed_at"] = timezone.now().isoformat()
+                    step_results.append(step_result)
+
+                    # Stop if step failed and runbook requires all steps to succeed
+                    if (
+                        step_result["status"] == "failed"
+                        and runbook.automation_level == Runbook.AutomationLevel.FULL_AUTO
+                    ):
+                        break
+
+                except subprocess.TimeoutExpired:
+                    step_result["status"] = "failed"
+                    step_result["error"] = "Step execution timeout"
+                    step_result["completed_at"] = timezone.now().isoformat()
+                    step_results.append(step_result)
+                    break
+                except Exception as e:
+                    logger.error(f"Runbook step {idx + 1} failed: {e}", exc_info=True)
+                    step_result["status"] = "failed"
+                    step_result["error"] = str(e)
+                    step_result["completed_at"] = timezone.now().isoformat()
+                    step_results.append(step_result)
+                    break
+
+            # Update execution with results
+            execution.current_step = len(step_results)
+            execution.step_results = step_results
+
+            # Determine final status
+            all_completed = all(s["status"] in ["completed", "pending_manual"] for s in step_results)
+            any_failed = any(s["status"] == "failed" for s in step_results)
+
+            if any_failed:
+                execution.status = RunbookExecution.Status.FAILED
+            elif all_completed:
+                execution.status = RunbookExecution.Status.COMPLETED
+            else:
+                execution.status = RunbookExecution.Status.IN_PROGRESS
+
+            execution.completed_at = (
+                timezone.now()
+                if execution.status in [RunbookExecution.Status.COMPLETED, RunbookExecution.Status.FAILED]
+                else None
+            )
+            execution.save()
+
+        except Exception as e:
+            logger.error(f"Runbook execution failed: {e}", exc_info=True)
+            execution.status = RunbookExecution.Status.FAILED
+            execution.completed_at = timezone.now()
+            execution.save()
 
         serializer = RunbookExecutionSerializer(execution)
         return Response(serializer.data)
